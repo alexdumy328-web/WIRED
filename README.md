@@ -20,4 +20,4 @@ The current AutoWired wordmark is `assets/autowired-logo.svg`.
 
 ## Contact form
 
-The contact form is static and Cloudflare Pages-compatible. It sends submissions through FormSubmit to `meleniagroup@gmail.com`, without requiring a backend or paid hosting. The first submission may require confirming the receiving email address with FormSubmit.
+The contact form is static and Cloudflare Pages-compatible. It sends submissions through FormSubmit to `autowired.ro@gmail.com`, without requiring a backend or paid hosting. The first submission may require confirming the receiving email address with FormSubmit.
