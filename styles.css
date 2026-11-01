@@ -17,10 +17,10 @@ img { display: block; width: 100%; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 .section-shell { width: min(1440px, calc(100% - 96px)); margin: 0 auto; }
 
-.site-header { position: relative; z-index: 10; display: flex; align-items: center; gap: 40px; width: min(1500px, calc(100% - 96px)); height: 88px; margin: 0 auto; }
-.brand { display: inline-flex; align-items: center; width: 360px; height: 125px; }
+.site-header { position: relative; z-index: 10; display: flex; align-items: center; gap: 40px; width: min(1500px, calc(100% - 96px)); height: 116px; margin: 0 auto; }
+.brand { display: inline-flex; align-items: center; width: 320px; height: 107px; }
 .brand { overflow: hidden; }
-.brand img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.brand img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center; }
 .brand-mark { display: grid; place-items: center; width: 31px; height: 31px; background: var(--ink); color: var(--paper); font-size: 16px; font-weight: 800; letter-spacing: -0.1em; }
 .brand-dot { color: var(--acid); }
 .desktop-nav { display: flex; gap: 32px; margin-left: auto; font-size: 12px; font-weight: 700; }
@@ -133,13 +133,6 @@ h2 { margin-bottom: 0; font-size: clamp(45px, 5vw, 67px); font-weight: 700; }
 .contact-card .eyebrow-line { background: var(--acid); }
 .contact-details { padding-top: 15px; }
 .contact-details > p { max-width: 290px; color: #b8c27e; font-size: 13px; line-height: 1.7; }
-.contact-form { display: grid; gap: 12px; margin: 25px 0 29px; }
-.contact-form label { display: grid; gap: 6px; color: #b8c27e; font-family: var(--mono); font-size: 9px; text-transform: uppercase; }
-.contact-form input, .contact-form textarea { width: 100%; border: 1px solid #536217; padding: 11px 12px; background: #171a13; color: var(--ink); font: inherit; font-size: 12px; outline: none; }
-.contact-form textarea { resize: vertical; min-height: 88px; line-height: 1.5; }
-.contact-form input:focus, .contact-form textarea:focus { border-color: var(--acid); box-shadow: 0 0 0 2px rgba(214, 242, 71, 0.12); }
-.form-submit { width: fit-content; border: 0; cursor: pointer; }
-.form-status { margin: 0; color: #b8c27e; font-size: 11px; line-height: 1.5; }
 .contact-phone { display: inline-flex; align-items: center; gap: 30px; margin: 21px 0 29px; border-bottom: 1px solid var(--ink); padding-bottom: 6px; color: var(--ink); font-family: var(--mono); font-size: clamp(20px, 2.4vw, 29px); }
 .contact-phone span { font-family: var(--display); font-size: 24px; }
 .whatsapp-button { display: flex; align-items: center; gap: 12px; max-width: 360px; margin: 0 0 28px; padding: 13px 15px; border: 1px solid #668d55; background: #173820; color: #e9f4e3; transition: background 180ms ease, border-color 180ms ease, transform 180ms ease; }
@@ -159,8 +152,10 @@ h2 { margin-bottom: 0; font-size: clamp(45px, 5vw, 67px); font-weight: 700; }
 .contact-location small { color: #b8c27e; font-size: 9px; text-transform: none; }
 .location-pin { display: grid; place-items: center; width: 25px; height: 25px; border: 1px solid var(--ink); border-radius: 50%; font-size: 18px; transform: rotate(45deg); }
 .location-pin + span { transform: translateY(1px); }
-.site-footer { display: flex; align-items: center; justify-content: space-between; padding: 22px 0 32px; border-top: 1px solid var(--line); color: var(--muted); font-family: var(--mono); font-size: 9px; text-transform: uppercase; }
-.site-footer .brand { width: 280px; height: 96px; }
+.reviews { display: flex; justify-content: center; padding: 47px 0 120px; }
+.reviews-button { min-width: 230px; padding: 21px 26px; justify-content: center; font-size: 13px; }
+.site-footer { display: flex; align-items: center; justify-content: center; padding: 22px 0 32px; border-top: 1px solid var(--line); color: var(--muted); font-family: var(--mono); font-size: 9px; text-transform: uppercase; }
+.site-footer .brand { width: 560px; height: 188px; }
 
 @media (min-width: 851px) and (max-width: 1200px) {
   .hero { grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 5%; }
@@ -171,7 +166,7 @@ h2 { margin-bottom: 0; font-size: clamp(45px, 5vw, 67px); font-weight: 700; }
 @media (max-width: 850px) {
   .section-shell, .site-header { width: min(100% - 42px, 650px); }
   .desktop-nav, .header-phone, .header-tools { display: none; }
-  .site-header { height: 73px; }
+  .site-header { height: 102px; }
   .site-header .brand { margin-right: auto; }
   .menu-toggle { position: relative; display: flex; flex-direction: column; gap: 5px; width: 31px; padding: 7px 0; border: 0; background: transparent; cursor: pointer; }
   .menu-toggle span:not(.sr-only) { width: 100%; height: 1px; background: var(--ink); }
@@ -215,14 +210,16 @@ h2 { margin-bottom: 0; font-size: clamp(45px, 5vw, 67px); font-weight: 700; }
   .contact-details { padding: 0; }
   .contact-phone { gap: 18px; font-size: 22px; }
   .whatsapp-button { max-width: none; }
-  .site-footer { display: grid; grid-template-columns: 1fr 1fr; gap: 19px; }
-  .site-footer > :last-child { grid-column: 2; }
+  .reviews { padding: 28px 0 91px; }
+  .site-footer { display: flex; justify-content: center; }
+  .site-footer .brand { width: 380px; height: 128px; }
 }
 
 @media (max-width: 460px) {
   .section-shell, .site-header { width: calc(100% - 36px); }
-  .site-header { height: 68px; }
-  .brand { width: 300px; height: 104px; }
+  .site-header { height: 92px; }
+  .brand { width: 280px; height: 94px; }
+  .site-footer .brand { width: 320px; height: 107px; }
   .hero { padding-top: 43px; }
   .eyebrow { margin-bottom: 22px; font-size: 9px; }
   h1 { font-size: clamp(50px, 15vw, 70px); }
