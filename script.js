@@ -69,6 +69,18 @@ const year = document.querySelector("#year");
 if (year) year.textContent = new Date().getFullYear();
 setLanguage(localStorage.getItem("wired-language") || "ro");
 
+document.querySelectorAll('a[href^="tel:"]').forEach((link) => {
+  link.addEventListener("click", () => {
+    if (typeof gtag === "function") gtag("event", "phone_contact_click", { contact_method: "phone" });
+  });
+});
+
+document.querySelectorAll('a[href*="wa.me"]').forEach((link) => {
+  link.addEventListener("click", () => {
+    if (typeof gtag === "function") gtag("event", "whatsapp_contact_click", { contact_method: "whatsapp" });
+  });
+});
+
 const photoButtons = [...document.querySelectorAll(".ambient-photo, .project-photo")];
 const lightbox = document.querySelector("#lightbox");
 const lightboxImage = document.querySelector("#lightbox-image");
