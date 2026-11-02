@@ -71,13 +71,17 @@ setLanguage(localStorage.getItem("wired-language") || "ro");
 
 document.querySelectorAll('a[href^="tel:"]').forEach((link) => {
   link.addEventListener("click", () => {
-    if (typeof gtag === "function") gtag("event", "phone_contact_click", { contact_method: "phone" });
+    if (typeof gtag !== "function") return;
+    gtag("event", "phone_contact_click", { contact_method: "phone" });
+    gtag("event", "conversion", { send_to: "AW-18542139232/uiT2CKDHvrAdEOCuyolF" });
   });
 });
 
 document.querySelectorAll('a[href*="wa.me"]').forEach((link) => {
   link.addEventListener("click", () => {
-    if (typeof gtag === "function") gtag("event", "whatsapp_contact_click", { contact_method: "whatsapp" });
+    if (typeof gtag !== "function") return;
+    gtag("event", "whatsapp_contact_click", { contact_method: "whatsapp" });
+    gtag("event", "conversion", { send_to: "AW-18542139232/uiT2CKDHvrAdEOCuyolF" });
   });
 });
 
