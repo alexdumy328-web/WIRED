@@ -69,19 +69,29 @@ const year = document.querySelector("#year");
 if (year) year.textContent = new Date().getFullYear();
 setLanguage(localStorage.getItem("wired-language") || "ro");
 
-document.querySelectorAll('a[href^="tel:"]').forEach((link) => {
-  link.addEventListener("click", () => {
-    if (typeof gtag !== "function") return;
-    gtag("event", "phone_contact_click", { contact_method: "phone" });
-    gtag("event", "conversion", { send_to: "AW-18542139232/uiT2CKDHvrAdEOCuyolF" });
-  });
-});
+function gtag_report_conversion(url) {
+  const callback = () => {
+    if (typeof url !== "undefined") window.location = url;
+  };
 
-document.querySelectorAll('a[href*="wa.me"]').forEach((link) => {
-  link.addEventListener("click", () => {
-    if (typeof gtag !== "function") return;
-    gtag("event", "whatsapp_contact_click", { contact_method: "whatsapp" });
-    gtag("event", "conversion", { send_to: "AW-18542139232/uiT2CKDHvrAdEOCuyolF" });
+  if (typeof gtag !== "function") {
+    callback();
+    return false;
+  }
+
+  gtag("event", "conversion", {
+    send_to: "AW-18542139232/GWjWCOrp6LAdEOCuyolF",
+    value: 1.0,
+    currency: "RON",
+    event_callback: callback
+  });
+  return false;
+}
+
+document.querySelectorAll('a[href^="tel:"], a[href*="wa.me"]').forEach((link) => {
+  link.addEventListener("click", (event) => {
+    event.preventDefault();
+    gtag_report_conversion(link.href);
   });
 });
 
