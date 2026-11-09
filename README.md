@@ -16,8 +16,8 @@ Then visit `http://127.0.0.1:4173`.
 
 The landing hero uses `assets/hero-ambient-lights.jpg`. The ambient-light showcase uses the supplied photos in `assets/ambient-lights-1.jpeg`, `assets/ambient-lights-2.jpeg`, and `assets/ambient-lights-3.jpeg`. The dashcam showcase uses `assets/dashcam-install.jpeg`. Replace those files with newer workshop photos when needed.
 
-The current AutoWired wordmark is `assets/autowired-logo.svg`.
+The header uses `assets/autowired-logo.png`; the footer uses the larger `assets/autowired-logo-big.png`.
 
-## Contact form
+## Contact and Google reviews
 
-The contact form is static and Cloudflare Pages-compatible. It sends submissions through FormSubmit to `autowired.ro@gmail.com`, without requiring a backend or paid hosting. The first submission may require confirming the receiving email address with FormSubmit.
+The contact area now routes visitors to phone and WhatsApp instead of using an embedded form. The Google Reviews section links to the live Google Maps search for AutoWired in Iasi, so ratings and customer comments stay current without duplicating them in the site.

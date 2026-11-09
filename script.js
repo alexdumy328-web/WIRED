@@ -1,29 +1,31 @@
 const translations = {
   en: {
-    navServices: "Services", navContact: "Contact", callWired: "Call AutoWired",
+    navServices: "Services", navReviews: "Reviews", navContact: "Contact", callWired: "Call AutoWired",
     eyebrow: "", heroTitle: "Interior upgrades, <em>done right.</em>",
     heroText: "Dashcams, retrofits and ambient lighting, installed cleanly.",
     heroCta: "Book an install", heroLink: "See services", heroMeta: "Taking bookings in Iasi", heroMetaTwo: "Clean work. Properly fitted.", heroBadge: "Upgrade<br />your interior",
     trustOne: "Built for your car", trustTwo: "Invisible wiring", trustThree: "OEM-style finish", trustFour: "FLRY automotive cable",
     servicesEyebrow: "What we do", servicesTitle: "Made for<br /><em>your car.</em>",
-    dashcamKicker: "See everything", dashcamTitle: "Dashcams", dashcamText: "Front, rear and parking protection with hidden wiring and clean positioning.", askAboutCar: "Ask about your car",
-    retrofitKicker: "Keep it original", retrofitTitle: "Retrofits", retrofitText: "Smart upgrades that look factory — screens, cameras, controls and comfort features.", talkUpgrade: "Talk through an upgrade",
-    ambientKicker: "Set the mood", ambientTitle: "Ambient light", ambientText: "Subtle or bold custom lighting that changes the feeling of your cabin.", designSetup: "Design your setup",
+    dashcamKicker: "See everything", dashcamTitle: "Dashcams", dashcamText: "Front, rear and parking dashcams installed in Iasi with hidden wiring, clean positioning and reliable everyday protection.", askAboutCar: "Ask about your car",
+    retrofitKicker: "Keep it original", retrofitTitle: "Retrofits", retrofitText: "Automotive retrofits in Iasi with screens, cameras, controls and comfort features integrated for a factory-style finish.", talkUpgrade: "Talk through an upgrade",
+    ambientKicker: "Set the mood", ambientTitle: "Ambient light", ambientText: "Custom ambient lighting for car interiors in Iasi, installed cleanly to create a subtle or personalized cabin atmosphere.", designSetup: "Design your setup",
     cableTitle: "Automotive-grade wiring", cableText: "FLRY automotive cables, selected to respect automotive specifications.", ambientShowcaseEyebrow: "Ambient lighting", dashcamShowcaseEyebrow: "Dashcam install", whatsappTitle: "Message us on WhatsApp", whatsappText: "Get a quick answer about your car", whatsappFloat: "WhatsApp",
-    contactEyebrow: "Contact", contactTitle: "Tell us about<br /><em>your car.</em>", contactText: "Tell us what you drive and what you want to change.", formName: "Name", formPhone: "Phone", formEmail: "Email", formDetails: "Details", formDetailsPlaceholder: "Tell us about your car and what you want installed.", formSubmit: "Send request", appointment: "By appointment"
+    contactEyebrow: "Contact", contactTitle: "Tell us about<br /><em>your car.</em>", contactText: "Tell us what you drive and what you want to change.", appointment: "By appointment",
+    reviewsWriteButton: "Leave a review"
   },
   ro: {
-    navServices: "Servicii", navContact: "Contact", callWired: "Sună la AutoWired",
+    navServices: "Servicii", navReviews: "Recenzii", navContact: "Contact", callWired: "Sună la AutoWired",
     eyebrow: "", heroTitle: "Upgrade-uri auto, <em>făcute corect.</em>",
     heroText: "Camere de bord, retrofituri și lumini ambientale, instalate curat.",
     heroCta: "Programează o instalare", heroLink: "Vezi serviciile", heroMeta: "Facem programări în Iași", heroMetaTwo: "Lucru curat. Montaj corect.", heroBadge: "Upgrade<br />pentru interior",
     trustOne: "Creat pentru mașina ta", trustTwo: "Cabluri ascunse", trustThree: "Finisaj OEM", trustFour: "Cablu auto FLRY",
     servicesEyebrow: "Ce facem", servicesTitle: "Făcut pentru<br /><em>mașina ta.</em>",
-    dashcamKicker: "Vezi tot", dashcamTitle: "Camere de bord", dashcamText: "Protecție față, spate și parcare, cu cabluri ascunse și poziționare discretă.", askAboutCar: "Întreabă pentru mașina ta",
-    retrofitKicker: "Păstrează stilul original", retrofitTitle: "Retrofituri", retrofitText: "Upgrade-uri cu aspect de fabrică — ecrane, camere, comenzi și funcții de confort.", talkUpgrade: "Discută un upgrade",
-    ambientKicker: "Creează atmosfera", ambientTitle: "Lumini ambientale", ambientText: "Iluminare discretă sau îndrăzneață care schimbă atmosfera din habitaclu.", designSetup: "Alege configurația",
+    dashcamKicker: "Vezi tot", dashcamTitle: "Camere de bord", dashcamText: "Camere de bord auto pentru filmare față, spate și parcare, instalate în Iași cu cabluri ascunse și poziționare discretă.", askAboutCar: "Întreabă pentru mașina ta",
+    retrofitKicker: "Păstrează stilul original", retrofitTitle: "Retrofituri", retrofitText: "Retrofituri auto în Iași cu ecrane, camere, comenzi și funcții de confort, integrate curat pentru un aspect cât mai apropiat de fabrică.", talkUpgrade: "Discută un upgrade",
+    ambientKicker: "Creează atmosfera", ambientTitle: "Lumini ambientale", ambientText: "Lumini ambientale pentru interiorul mașinii, configurate și montate în Iași pentru o atmosferă discretă sau personalizată în habitaclu.", designSetup: "Alege configurația",
     cableTitle: "Cabluri pentru domeniul auto", cableText: "Cabluri auto FLRY, alese pentru a respecta specificațiile auto.", ambientShowcaseEyebrow: "Lumini ambientale", dashcamShowcaseEyebrow: "Instalare cameră de bord", whatsappTitle: "Scrie-ne pe WhatsApp", whatsappText: "Răspundem rapid despre mașina ta", whatsappFloat: "WhatsApp",
-    contactEyebrow: "Contact", contactTitle: "Spune-ne despre<br /><em>mașina ta.</em>", contactText: "Spune-ne ce mașină ai și ce vrei să schimbi.", formName: "Nume", formPhone: "Telefon", formEmail: "Email", formDetails: "Detalii", formDetailsPlaceholder: "Spune-ne ce mașină ai și ce vrei să montezi.", formSubmit: "Trimite cererea", appointment: "Cu programare"
+    contactEyebrow: "Contact", contactTitle: "Spune-ne despre<br /><em>mașina ta.</em>", contactText: "Spune-ne ce mașină ai și ce vrei să schimbi.", appointment: "Cu programare",
+    reviewsWriteButton: "Lasă o recenzie"
   }
 };
 
@@ -66,6 +68,32 @@ if (menuToggle && mobileNav) {
 const year = document.querySelector("#year");
 if (year) year.textContent = new Date().getFullYear();
 setLanguage(localStorage.getItem("wired-language") || "ro");
+
+function gtag_report_conversion(url) {
+  const callback = () => {
+    if (typeof url !== "undefined") window.location = url;
+  };
+
+  if (typeof gtag !== "function") {
+    callback();
+    return false;
+  }
+
+  gtag("event", "conversion", {
+    send_to: "AW-18542139232/GWjWCOrp6LAdEOCuyolF",
+    value: 1.0,
+    currency: "RON",
+    event_callback: callback
+  });
+  return false;
+}
+
+document.querySelectorAll('a[href^="tel:"], a[href*="wa.me"]').forEach((link) => {
+  link.addEventListener("click", (event) => {
+    event.preventDefault();
+    gtag_report_conversion(link.href);
+  });
+});
 
 const photoButtons = [...document.querySelectorAll(".ambient-photo, .project-photo")];
 const lightbox = document.querySelector("#lightbox");
