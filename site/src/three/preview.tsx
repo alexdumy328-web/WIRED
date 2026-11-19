@@ -16,7 +16,7 @@ sceneState.highlight = q.get('hl') || null
 sceneState.tour = q.get('tour') === '1'
 sceneState.focus = (q.get('focus') as StopId | null) || null
 
-if (import.meta.env.DEV) (window as unknown as { __devices?: unknown }).__devices = { getModel }
+if (import.meta.env.DEV) Object.assign(window as unknown as Record<string, unknown>, { __devices: { getModel }, __sceneState: sceneState })
 
 type View = 'shop' | 'stage' | 'explore'
 type Aspect = 'full' | 'portrait' | 'landscape' | 'band'
