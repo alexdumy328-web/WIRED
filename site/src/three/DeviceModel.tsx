@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Color, MeshBasicMaterial, MeshStandardMaterial, Vector3, type Camera, type Group, type Material, type Object3D } from 'three'
 import type { Bucket } from './builder'
 import { MODEL_PARTS, sceneState, type ModelId } from './contract'
-import { ASSEMBLE_TIME, EXPLODE_TIME, getModel, partProgress, type PartAsset } from './devices'
+import { ASSEMBLE_TIME, EXPLODE_TIME, getMerged, getModel, partProgress, type PartAsset } from './devices'
 import { shadowFlags } from './Room'
 
 const GOLD = new Color('#D9A93F')
@@ -193,6 +193,17 @@ export function DeviceModel({
     </group>
   )
 
+  if (idle) {
+    // Static prop: the assembled model merged per material.
+    return (
+      <group ref={root} scale={st.current.presence > 0 ? 1 : 1e-4}>
+        {getMerged(id).map(([k, g]) => (
+          <mesh key={k} geometry={g} material={mats[k]} castShadow={castShadow && k !== 'glow' && k !== 'glass'} receiveShadow={k !== 'glow'} renderOrder={k === 'glass' ? 2 : 0} />
+        ))}
+        {children}
+      </group>
+    )
+  }
   return (
     <group ref={root} scale={st.current.presence > 0 ? 1 : 1e-4}>
       <group rotation-y={asset.spec.frontYaw ?? 0}>{(children2.get(-1) ?? []).map(renderPart)}</group>

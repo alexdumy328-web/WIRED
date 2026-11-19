@@ -170,13 +170,13 @@ export const BOARD: ModelSpec = {
   // Lies on the ESD mat in front of the oscilloscope; the vintage deck takes this spot when it is on show.
   idle: true,
   place: { pos: [0.5, 0.904, -1.62], yaw: Math.PI / 2 },
-  view: { az: 20, el: 42, fov: 30 },
+  view: { az: 20, el: 32, fov: 30 },
   parts: [
     { id: 'pcb', rank: 4, build: board },
-    { id: 'shield', rank: 0, build: shield, pos: [SHIELD.x, T + 0.0024, SHIELD.z], xpos: [SHIELD.x - 0.01, T + 0.04, SHIELD.z + 0.004], xrot: [0.18, 0, 0.1] },
-    { id: 'connector', rank: 1, build: connector, pos: [HDMI.x, T + 0.0002, HDMI.z], xpos: [HDMI.x, T + 0.026, HDMI.z + 0.018], xrot: [-0.25, 0, 0] },
-    { id: 'capacitors', rank: 2, build: capacitors, pos: [0, T, 0], xpos: [0, T + 0.018, 0] },
-    { id: 'mosfets', rank: 2, build: mosfets, pos: [0, T, 0], xpos: [0, T + 0.03, 0] },
-    { id: 'bga', rank: 3, build: bga, pos: [SOC.x, T + 0.00068, SOC.z], xpos: [SOC.x, T + 0.034, SOC.z + 0.006], xrot: [-0.75, 0, 0] },
+    { id: 'shield', rank: 0, build: shield, pos: [SHIELD.x, T + 0.0024, SHIELD.z], xpos: [SHIELD.x - 0.012, T + 0.065, SHIELD.z - 0.004], xrot: [0.3, 0, 0.18] },
+    { id: 'connector', rank: 1, build: connector, pos: [HDMI.x, T + 0.0002, HDMI.z], xpos: [HDMI.x + 0.004, T + 0.04, HDMI.z + 0.03], xrot: [-0.35, 0.3, 0] },
+    { id: 'capacitors', rank: 2, build: capacitors, pos: [0, T, 0], xpos: [0.006, T + 0.03, 0.004] },
+    { id: 'mosfets', rank: 2, build: mosfets, pos: [0, T, 0], xpos: [0, T + 0.05, 0] },
+    { id: 'bga', rank: 3, build: bga, pos: [SOC.x, T + 0.00068, SOC.z], xpos: [SOC.x, T + 0.055, SOC.z + 0.01], xrot: [-1.1, 0, 0] },
   ],
 }

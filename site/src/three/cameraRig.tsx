@@ -4,7 +4,8 @@ import { Vector3, type PerspectiveCamera } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { MODEL_STOP, sceneState, STATION_MODEL, STOPS, TOUR, type StopId } from './contract'
 import { shopModelPose } from './devices'
-import { NARROW_POSES, NARROW_PULL, POSES } from './layout'
+import { fitView } from './devices/fit'
+import { DIORAMA_PTS, NARROW_POSES, NARROW_PULL, POSES } from './layout'
 
 type MutPose = { pos: Vector3; target: Vector3; fov: number }
 
@@ -17,7 +18,15 @@ const Y = new Vector3(0, 1, 0)
 /** Portrait / square windows use the narrow poses; landscape (aspect >= 1) the desktop ones. */
 const isNarrow = (aspect: number) => aspect < 1
 
-function poseInto(out: MutPose, id: StopId, narrow: boolean): MutPose {
+const DIORAMA = DIORAMA_PTS.map((p) => new Vector3(p[0], p[1], p[2]))
+
+function poseInto(out: MutPose, id: StopId, narrow: boolean, aspect = 1): MutPose {
+  if (id === 'overview' && narrow) {
+    // Portrait / square: fit the whole diorama, turned so its long axis runs up the screen.
+    out.fov = 40
+    fitView(DIORAMA, (26 * Math.PI) / 180, (50 * Math.PI) / 180, out.fov, aspect, out, 1.06, 1.06)
+    return out
+  }
   const override = narrow ? NARROW_POSES[id] : undefined
   const p = override ?? POSES[id]
   out.target.set(p.target[0], p.target[1], p.target[2])
@@ -36,13 +45,13 @@ const _b = mk()
 const _off = new Vector3()
 
 /** Pose along the scroll tour at continuous t. Eased per segment so the camera settles at each stop. */
-function tourPose(out: MutPose, t: number, narrow: boolean): MutPose {
+function tourPose(out: MutPose, t: number, narrow: boolean, aspect: number): MutPose {
   const max = TOUR.length - 1
   const tt = clamp(Number.isFinite(t) ? t : 0, 0, max)
   const i = Math.min(Math.floor(tt), max - 1)
   const f = smoothstep(tt - i)
-  poseInto(_a, TOUR[i], narrow)
-  poseInto(_b, TOUR[i + 1], narrow)
+  poseInto(_a, TOUR[i], narrow, aspect)
+  poseInto(_b, TOUR[i + 1], narrow, aspect)
   out.pos.lerpVectors(_a.pos, _b.pos, f)
   out.target.lerpVectors(_a.target, _b.target, f)
   out.fov = _a.fov + (_b.fov - _a.fov) * f
@@ -146,8 +155,8 @@ export function CameraRig({
     s.eCam = reducedMotion || interactive ? explode : dampScalar(s.eCam, explode, 0.45, dt)
     const key = focus ? `${focus}|${onModel ? model : ''}` : 'tour'
     if (onModel) s.goal.fov = shopModelPose(model, s.eCam, aspect, s.goal).fov
-    else if (focus) poseInto(s.goal, focus, narrow)
-    else tourPose(s.goal, sceneState.t, narrow)
+    else if (focus) poseInto(s.goal, focus, narrow, aspect)
+    else tourPose(s.goal, sceneState.t, narrow, aspect)
 
     const ctl = interactive ? controls?.current : null
 

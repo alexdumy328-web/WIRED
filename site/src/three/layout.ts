@@ -81,11 +81,26 @@ export const NARROW_PULL: Record<StopId, number> = {
 
 /** Portrait / narrow screens: dedicated poses where pulling back is not enough (long axis turned to run vertically). */
 export const NARROW_POSES: Partial<Record<StopId, Pose>> = {
-  overview: orbit([2.45, 0.0, -0.1], 24, 55, 31, 40),
-  bench: { pos: [1.8, 1.85, 0.2], target: [0.34, 1.05, -1.22], fov: 48 },
+  overview: orbit([2.45, 0.0, -0.1], 24, 55, 31, 40), // replaced at runtime by a fit to DIORAMA_PTS (see cameraRig)
+  bench: { pos: [1.72, 1.95, -0.32], target: [0.34, 1.0, -1.4], fov: 50 },
   laptop: { pos: [2.3, 2.45, -2.05], target: [0.5, 1.45, -3.15], fov: 50 },
+  counter: { pos: [1.65, 1.95, -1.05], target: [4.0, 1.0, -3.85], fov: 52 },
   door: orbit([2.7, 1.0, 3.0], 38, 22, 12.5, 46),
 }
+
+/** Outline of the whole diorama (base slab + roof line + van), for fitting the overview to any aspect. */
+export const DIORAMA_PTS: V3[] = [
+  [STREET.baseX0, -0.4, STREET.baseZ0],
+  [STREET.baseX1, -0.4, STREET.baseZ0],
+  [STREET.baseX0, -0.4, STREET.roadEnd],
+  [STREET.baseX1, -0.4, STREET.roadEnd],
+  [-0.15, ROOM.H, ROOM.back - 0.15],
+  [ROOM.W + 0.15, ROOM.H, ROOM.back - 0.15],
+  [-0.15, ROOM.H, ROOM.vest],
+  [ROOM.W + 0.15, ROOM.H, ROOM.vest],
+  [0.2, 1.8, 5.4],
+  [4.5, 1.8, 5.4],
+]
 
 /** Where each station's hotspot via sits (world space). */
 export const ANCHORS: Record<Exclude<StopId, 'overview'>, V3> = {

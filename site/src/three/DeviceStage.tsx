@@ -71,8 +71,9 @@ function Plinth({ theme, radius }: { theme: Theme; radius: { current: number } }
   )
 }
 
-const _pts = Array.from({ length: 34 }, () => new Vector3())
+const _pts = Array.from({ length: 10 }, () => new Vector3())
 const _corners: Vector3[] = []
+const _fit: Vector3[] = []
 const _out = { pos: new Vector3(), target: new Vector3() }
 const _dir = new Vector3()
 
@@ -84,7 +85,7 @@ function StageContent({ theme, reducedMotion, partLabels, controls }: { theme: T
   const lifter = useRef<Group>(null)
   const frame = useMemo(() => stageFrame(shown), [shown])
   const radius = useRef(frame.radius)
-  const st = useRef({ e: 0, dist: 0, ty: 0, init: false })
+  const st = useRef({ e: 0, dist: 0, target: new Vector3(), init: false })
   const camera = useThree((s) => s.camera) as PerspectiveCamera
   const size = useThree((s) => s.size)
 
@@ -107,24 +108,15 @@ function StageContent({ theme, reducedMotion, partLabels, controls }: { theme: T
     const s = st.current
     const goalE = leaving.current ? 0 : Math.min(1, Math.max(0, Number(sceneState.explode) || 0))
     s.e = reducedMotion ? goalE : s.e + (goalE - s.e) * (1 - Math.exp(-dt / 0.45))
+    // Fit the parts as they are (offset onto the plinth) plus the plinth rim, from the current view direction.
     const corners = modelPoints(frame.a, s.e, _corners)
-    let r = 0
-    let y0 = Infinity
-    let y1 = -Infinity
-    for (const c of corners) {
-      r = Math.max(r, Math.hypot(c.x - frame.cx, c.z - frame.cz))
-      y0 = Math.min(y0, c.y + frame.y0 + frame.lift * s.e)
-      y1 = Math.max(y1, c.y + frame.y0 + frame.lift * s.e)
-    }
+    const oy = frame.y0 + frame.lift * s.e
+    _fit.length = 0
+    for (const c of corners) _fit.push(c.set(c.x - frame.cx, c.y + oy, c.z - frame.cz))
     const pr = radius.current
-    for (let i = 0; i < 12; i++) {
-      const a = (i / 12) * Math.PI * 2
-      _pts[i].set(Math.cos(a) * r, y0, Math.sin(a) * r)
-      _pts[12 + i].set(Math.cos(a) * r, y1, Math.sin(a) * r)
-    }
     for (let i = 0; i < 10; i++) {
       const a = (i / 10) * Math.PI * 2
-      _pts[24 + i].set(Math.cos(a) * pr * 0.9, -PLINTH_H * pr, Math.sin(a) * pr * 0.9)
+      _fit.push(_pts[i].set(Math.cos(a) * pr * 0.85, -PLINTH_H * pr, Math.sin(a) * pr * 0.85))
     }
     const ctl = controls.current
     _dir.copy(camera.position).sub(ctl ? ctl.target : _out.target)
@@ -133,19 +125,19 @@ function StageContent({ theme, reducedMotion, partLabels, controls }: { theme: T
     const az = Math.atan2(_dir.x, _dir.z)
     const el = Math.asin(Math.max(-1, Math.min(1, _dir.y)))
     const aspect = size.width / Math.max(1, size.height)
-    fitView(_pts, az, el, camera.fov, aspect, _out, 1.08, 1.16)
+    fitView(_fit, az, el, camera.fov, aspect, _out, 1.1, 1.18)
     const dist = _out.pos.distanceTo(_out.target)
     if (!s.init || reducedMotion) {
       s.dist = dist
-      s.ty = _out.target.y
+      s.target.copy(_out.target)
       s.init = true
     } else {
-      const k = 1 - Math.exp(-dt / 0.35)
+      const k = 1 - Math.exp(-dt / 0.6)
       s.dist += (dist - s.dist) * k
-      s.ty += (_out.target.y - s.ty) * k
+      s.target.lerp(_out.target, k)
     }
     if (ctl) {
-      ctl.target.set(0, s.ty, 0)
+      ctl.target.copy(s.target)
       ctl.minDistance = ctl.maxDistance = s.dist
     }
     camera.near = Math.max(0.005, s.dist * 0.02)

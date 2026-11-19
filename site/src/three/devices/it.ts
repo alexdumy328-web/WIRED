@@ -156,11 +156,11 @@ export const IT: ModelSpec = {
   parts: [
     { id: '_chassis', rank: 6, build: chassis },
     { id: 'paste', rank: 4, appear: true, build: paste, pos: [CPU.x, BOARD_Y + 0.0016 + 0.0024, CPU.z], xpos: [CPU.x, BOARD_Y + 0.0016 + 0.0024, CPU.z] },
-    { id: 'heatsink', rank: 3, build: heatsink, pos: [CPU.x, BOARD_Y + 0.0045, CPU.z], xpos: [CPU.x - 0.03, BOARD_Y + 0.12, CPU.z - 0.03] },
+    { id: 'heatsink', rank: 3, build: heatsink, pos: [CPU.x, BOARD_Y + 0.0045, CPU.z], xpos: [CPU.x - 0.03, BOARD_Y + 0.11, CPU.z + 0.0] },
     { id: 'fan', rank: 2, build: fan, pos: [0.115, BOARD_Y + 0.002, -0.07], xpos: [0.2, BOARD_Y + 0.08, -0.05] },
     { id: 'ram', rank: 1, build: ram, pos: [0.03, BOARD_Y + 0.0055, -0.02], xpos: [0.06, BOARD_Y + 0.07, 0.09], xrot: [0.45, 0, 0] },
     { id: 'ssd', rank: 1, build: ssd, pos: [-0.105, BOARD_Y + 0.0045, -0.05], rot: [0, Math.PI / 2, 0], xpos: [-0.21, BOARD_Y + 0.06, -0.02], xrot: [0, Math.PI / 2, 0.3] },
-    { id: 'bottom', rank: 0, build: bottom, pos: [0, 0.0278, 0], xpos: [0, 0.24, -0.17], xrot: [0.62, 0, 0] },
+    { id: 'bottom', rank: 0, build: bottom, pos: [0, 0.0278, 0], xpos: [0, 0.3, -0.27], xrot: [0.62, 0, 0] },
     { id: '_screws', rank: 0, parent: 'bottom', build: screws, pos: [0, 0.0008, 0], xpos: [0, 0.035, 0] },
   ],
 }

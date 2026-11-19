@@ -1,4 +1,5 @@
 import { Box3, Euler, Matrix4, Quaternion, Vector3, type BufferGeometry } from 'three'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { GeoBuilder, type Bucket } from '../builder'
 import { MODEL_PARTS, type ModelId } from '../contract'
 import { fitView, type FitOut } from './fit'
@@ -56,6 +57,8 @@ export type ModelAsset = {
   ptsA: Vector3[]
   ptsE: Vector3[]
   base: [Bucket, BufferGeometry][] | null
+  /** Assembled model merged into one geometry per material (idle props: a handful of draw calls). */
+  merged: [Bucket, BufferGeometry][] | null
 }
 
 const cache = new Map<ModelId, ModelAsset>()
@@ -133,9 +136,33 @@ export function getModel(id: ModelId): ModelAsset {
       boxE.expandByPoint(e)
     }
   }
-  const asset: ModelAsset = { spec, parts, boxA, boxE, ptsA, ptsE, base: spec.shopBase ? build(spec.shopBase) : null }
+  const asset: ModelAsset = { spec, parts, boxA, boxE, ptsA, ptsE, base: spec.shopBase ? build(spec.shopBase) : null, merged: null }
   cache.set(id, asset)
   return asset
+}
+
+/** The assembled model as one geometry per material bucket, model space (frontYaw applied). */
+export function getMerged(id: ModelId): [Bucket, BufferGeometry][] {
+  const a = getModel(id)
+  if (a.merged) return a.merged
+  const yawM = new Matrix4().makeRotationY(a.spec.frontYaw ?? 0)
+  const lists = new Map<Bucket, BufferGeometry[]>()
+  for (const p of a.parts) {
+    if (p.spec.appear) continue
+    const m = partMatrix(a.parts, p.index, false, new Matrix4()).premultiply(yawM)
+    for (const [k, g] of p.geos) {
+      const list = lists.get(k) ?? []
+      list.push(g.clone().applyMatrix4(m))
+      lists.set(k, list)
+    }
+  }
+  a.merged = [...lists].map(([k, list]) => {
+    const g = mergeGeometries(list, false)!
+    list.forEach((x) => x.dispose())
+    g.computeBoundingSphere()
+    return [k, g] as [Bucket, BufferGeometry]
+  })
+  return a.merged
 }
 
 /** Per-part eased progress on the shared timeline g (0 assembled .. 1 exploded). */
