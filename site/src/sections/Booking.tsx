@@ -67,7 +67,7 @@ export function Booking() {
 
   // The camera looks at the bench for the first picked job, otherwise the counter.
   const stop: StopId = step === 1 && picked[0] ? categoryStop[picked[0].category] : mode === 'mobile' && step > 0 ? 'door' : 'counter'
-  const ref = useStation<HTMLElement>({ stop, frame: -0.5 })
+  const ref = useStation<HTMLElement>({ stop, frame: 0 })
 
   useEffect(() => {
     if (!days.length) return
@@ -180,15 +180,14 @@ export function Booking() {
         : formatLei(est.priceFrom, lang)
 
   return (
-    <section id="programare" ref={ref} className="pointer-events-none relative z-10 scroll-mt-16 py-10 lg:min-h-[100vh] lg:py-20">
-      <div className="h-[40vh] lg:hidden" />
-      <div className="mx-auto flex max-w-[1320px] justify-end px-4 sm:px-6">
-        <div className="panel pointer-events-auto w-full p-5 sm:p-8 lg:w-[min(52rem,62%)]">
-          <h2 className="display-2 text-[clamp(1.9rem,3.6vw,3rem)]">{t.booking.title}</h2>
-          <p className="measure mt-3 text-muted">{t.booking.lead}</p>
+    <section id="programare" ref={ref} className="relative z-10 scroll-mt-16 py-20 sm:py-28">
+      <div className="mx-auto max-w-[1320px] px-4 sm:px-6">
+        <h2 className="display-2 text-[clamp(2rem,4.2vw,3.4rem)]">{t.booking.title}</h2>
+        <p className="measure mt-4 text-lg text-muted">{t.booking.lead}</p>
+        <div className="mt-12 rounded-[28px] border border-line bg-surface p-5 sm:p-10">
 
           {done ? (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-8" role="status">
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} role="status">
               <div className="flex items-center gap-3">
                 <span className="grid size-10 place-items-center rounded-full bg-ok text-white">
                   <Check />
@@ -205,7 +204,7 @@ export function Booking() {
           ) : (
             <>
               {/* Step indicator: vias on a trace; past steps are clickable. */}
-              <ol className="mt-7 flex items-center">
+              <ol className="flex items-center">
                 {stepNames.map((name, i) => (
                   <li key={name} className="flex flex-1 items-center last:flex-none">
                     <button
@@ -229,7 +228,7 @@ export function Booking() {
                 ))}
               </ol>
 
-              <div className="mt-7 grid gap-8 md:grid-cols-[minmax(0,1fr)_15rem]">
+              <div className="mt-7 grid gap-8 md:grid-cols-[minmax(0,1fr)_17rem]">
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.div
                     key={step}
@@ -256,7 +255,7 @@ export function Booking() {
                               if (m !== mode) setJobIds([])
                               setMode(m)
                             }}
-                            className={`rounded-[18px] border p-5 text-left transition-colors ${mode === m ? 'border-gold bg-surface' : 'border-line hover:border-muted'}`}
+                            className={`rounded-[18px] border p-5 text-left transition-colors ${mode === m ? 'border-gold bg-bg' : 'border-line hover:border-muted'}`}
                           >
                             <span className="block font-semibold" style={{ fontStretch: '110%' }}>
                               {title}
@@ -275,7 +274,7 @@ export function Booking() {
                             {jobs.map((j) => {
                               const on = jobIds.includes(j.id)
                               return (
-                                <label key={j.id} className={`flex cursor-pointer items-start gap-3 border-b border-line px-4 py-3 last:border-0 ${on ? 'bg-surface' : ''}`}>
+                                <label key={j.id} className={`flex cursor-pointer items-start gap-3 border-b border-line px-4 py-3 last:border-0 ${on ? 'bg-bg' : ''}`}>
                                   <input type="checkbox" className="mt-1 size-4 accent-[var(--gold)]" checked={on} onChange={() => toggleJob(j.id)} />
                                   <span className="min-w-0 flex-1">
                                     <span className="block text-[15px] font-medium">{L(j.name)}</span>
@@ -337,7 +336,7 @@ export function Booking() {
                                   onClick={() => setDay(d)}
                                   aria-pressed={day === d}
                                   className={`flex min-w-[4.6rem] shrink-0 flex-col items-center rounded-[14px] border px-3 py-2.5 transition-colors ${
-                                    day === d ? 'border-gold bg-surface' : 'border-line hover:border-muted'
+                                    day === d ? 'border-gold bg-bg' : 'border-line hover:border-muted'
                                   }`}
                                 >
                                   <span className="text-[12px] capitalize text-muted">{l.wd}</span>
@@ -412,7 +411,7 @@ export function Booking() {
                   </motion.div>
                 </AnimatePresence>
 
-                <aside className="h-fit rounded-[18px] border border-line bg-surface p-5" aria-live="polite">
+                <aside className="h-fit rounded-[18px] border border-line bg-bg p-5" aria-live="polite">
                   <p className="text-[14px] font-semibold">{t.booking.summary.title}</p>
                   <dl className="mt-3 grid gap-3 text-[14px]">
                     <div>

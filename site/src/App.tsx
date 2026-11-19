@@ -4,9 +4,8 @@ import { I18nProvider, useI18n } from './i18n'
 import { ThemeProvider, useReducedMotion } from './lib/theme'
 import { sceneState } from './three/contract'
 import { Header } from './components/Header'
-import { StationRail, Viewfinder } from './components/Chrome'
 import { SceneLayer } from './components/SceneLayer'
-import { Tour } from './sections/Tour'
+import { Hero } from './sections/Hero'
 import { Services } from './sections/Services'
 import { Mobile } from './sections/Mobile'
 import { Process } from './sections/Process'
@@ -54,10 +53,8 @@ function Page() {
       </a>
       <SceneLayer />
       <Header />
-      <Viewfinder />
-      <StationRail />
-      <main className="pointer-events-none relative">
-        <Tour />
+      <main className="relative">
+        <Hero />
         <Services />
         <Process />
         <Mobile />

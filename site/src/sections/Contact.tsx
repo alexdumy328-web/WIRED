@@ -1,5 +1,5 @@
 import { useI18n } from '../i18n'
-import { useStation } from '../lib/stations'
+import { Section } from '../components/Section'
 import { Logo } from '../components/Logo'
 import { OpenStatus } from '../components/OpenStatus'
 import { Phone, Pin } from '../components/Icons'
@@ -13,48 +13,43 @@ export const SHOP = {
 
 export function Contact() {
   const { t } = useI18n()
-  const ref = useStation<HTMLElement>({ stop: 'door', frame: -0.42 })
   const d = 0.004
   const bbox = [SHOP.lng - d * 1.6, SHOP.lat - d, SHOP.lng + d * 1.6, SHOP.lat + d].join(',')
   return (
-    <section id="contact" ref={ref} className="pointer-events-none relative z-10 scroll-mt-16 py-10 lg:min-h-[100vh] lg:py-20">
-      <div className="h-[40vh] lg:hidden" />
-      <div className="mx-auto flex max-w-[1320px] justify-end px-4 sm:px-6">
-        <div className="panel pointer-events-auto w-full overflow-hidden lg:w-[min(42rem,54%)]">
-          <div className="p-5 sm:p-8">
-            <h2 className="display-2 text-[clamp(1.8rem,3.4vw,2.9rem)]">{t.contact.title}</h2>
-            <p className="mt-4 flex gap-3">
-              <Pin className="mt-0.5 size-5 shrink-0 text-gold" />
-              {t.contact.address}
-            </p>
-            <ul className="mt-4 grid gap-1 text-muted">
-              {t.contact.hours.map((h) => (
-                <li key={h}>{h}</li>
-              ))}
-            </ul>
-            <OpenStatus className="mt-4 inline-flex" />
-            <div className="mt-6 flex flex-wrap gap-3">
-              <a href={`tel:${SHOP.phone}`} className="btn btn-gold">
-                <Phone className="size-4" />
-                {t.contact.call}
-              </a>
-              <a href={`https://wa.me/${SHOP.phone.replace('+', '')}`} className="btn btn-ghost" target="_blank" rel="noreferrer">
-                {t.contact.whatsapp}
-              </a>
-              <a href={SHOP.maps} className="btn btn-ghost" target="_blank" rel="noreferrer">
-                {t.contact.directions}
-              </a>
-            </div>
+    <Section id="contact" stop="door" title={t.contact.title}>
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-14">
+        <div>
+          <p className="flex gap-3 text-lg">
+            <Pin className="mt-1 size-5 shrink-0 text-gold" />
+            {t.contact.address}
+          </p>
+          <ul className="mt-5 grid gap-1 text-muted">
+            {t.contact.hours.map((h) => (
+              <li key={h}>{h}</li>
+            ))}
+          </ul>
+          <OpenStatus className="mt-5 inline-flex" />
+          <div className="mt-8 flex flex-wrap gap-3">
+            <a href={`tel:${SHOP.phone}`} className="btn btn-gold">
+              <Phone className="size-4" />
+              {t.contact.call}
+            </a>
+            <a href={`https://wa.me/${SHOP.phone.replace('+', '')}`} className="btn btn-ghost" target="_blank" rel="noreferrer">
+              {t.contact.whatsapp}
+            </a>
+            <a href={SHOP.maps} className="btn btn-ghost" target="_blank" rel="noreferrer">
+              {t.contact.directions}
+            </a>
           </div>
-          <iframe
-            title={t.contact.directions}
-            className="h-64 w-full border-0 border-t border-line grayscale-[0.6]"
-            loading="lazy"
-            src={`https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${SHOP.lat},${SHOP.lng}`}
-          />
         </div>
+        <iframe
+          title={t.contact.directions}
+          className="h-80 w-full rounded-[24px] border border-line grayscale-[0.5]"
+          loading="lazy"
+          src={`https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${SHOP.lat},${SHOP.lng}`}
+        />
       </div>
-    </section>
+    </Section>
   )
 }
 

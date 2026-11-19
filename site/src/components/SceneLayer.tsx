@@ -1,4 +1,4 @@
-import { Component, lazy, Suspense, useState, type ReactNode } from 'react'
+import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode } from 'react'
 import { useI18n } from '../i18n'
 import { useReducedMotion, useTheme } from '../lib/theme'
 import { stopSection } from '../lib/stations'
@@ -27,19 +27,42 @@ function hasWebGL() {
 }
 
 function PhotoFallback() {
-  return (
-    <div className="absolute inset-0">
-      <img src="/img/lab.jpg" alt="" className="size-full object-cover opacity-40" />
-    </div>
-  )
+  return <img src="/img/lab.jpg" alt="" className="absolute inset-0 size-full object-cover" />
 }
 
-/** The 3D shop, fixed behind the whole page. */
+/**
+ * The 3D shop as a backdrop. Fully visible in the hero; past it, a veil in the page
+ * colour covers ~90% so the model only drifts behind the content.
+ */
 export function SceneLayer() {
   const { t } = useI18n()
   const { resolved } = useTheme()
   const reduced = useReducedMotion()
   const [webgl] = useState(hasWebGL)
+  const [inHero, setInHero] = useState(true)
+  const veil = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    let raf = 0
+    const tick = () => {
+      raf = 0
+      const vh = window.innerHeight
+      const p = Math.min(Math.max(window.scrollY / (vh * 0.7), 0), 1)
+      if (veil.current) veil.current.style.opacity = String(p * 0.93)
+      setInHero(p < 0.5)
+    }
+    const on = () => {
+      if (!raf) raf = requestAnimationFrame(tick)
+    }
+    tick()
+    window.addEventListener('scroll', on, { passive: true })
+    window.addEventListener('resize', on)
+    return () => {
+      window.removeEventListener('scroll', on)
+      window.removeEventListener('resize', on)
+      cancelAnimationFrame(raf)
+    }
+  }, [])
 
   const onSelect = (id: StopId) => {
     sceneState.focus = id
@@ -47,7 +70,7 @@ export function SceneLayer() {
   }
 
   return (
-    <div className="fixed inset-0 z-0" aria-hidden={!webgl}>
+    <div className={`fixed inset-0 z-0 ${inHero ? '' : 'pointer-events-none'}`} aria-hidden={!inHero}>
       {webgl ? (
         <SceneBoundary fallback={<PhotoFallback />}>
           <Suspense fallback={<Loader progress={0} done={false} />}>
@@ -55,7 +78,7 @@ export function SceneLayer() {
               theme={resolved}
               reducedMotion={reduced}
               className="size-full"
-              showHotspots
+              showHotspots={inHero}
               labels={t.hotspots}
               onSelect={onSelect}
             />
@@ -64,6 +87,7 @@ export function SceneLayer() {
       ) : (
         <PhotoFallback />
       )}
+      <div ref={veil} className="pointer-events-none absolute inset-0 bg-bg" style={{ opacity: 0 }} />
     </div>
   )
 }

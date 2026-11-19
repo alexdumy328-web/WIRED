@@ -207,27 +207,7 @@ html.lenis body {
   }
 }
 
-/* On phones, text over the 3D view sits on a blurred panel. */
-@media (max-width: 767px) {
-  .scrim-mobile {
-    background: var(--scrim);
-    -webkit-backdrop-filter: blur(14px) saturate(1.2);
-    backdrop-filter: blur(14px) saturate(1.2);
-    border: 1px solid var(--line);
-    border-radius: 22px;
-    padding: 1.25rem;
-  }
-}
-
 @layer components {
-/* Glass panel used by sections that float over the 3D shop. */
-.panel {
-  background: var(--scrim);
-  -webkit-backdrop-filter: blur(18px) saturate(1.25);
-  backdrop-filter: blur(18px) saturate(1.25);
-  border: 1px solid color-mix(in oklab, var(--line) 80%, transparent);
-  border-radius: 28px;
-}
 
 }
 

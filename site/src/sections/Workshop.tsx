@@ -19,7 +19,7 @@ export function Workshop() {
   const clip = useTransform(scrollYProgress, [0, 0.35], reduced ? ['inset(0% 0% 0% 0% round 28px)', 'inset(0% 0% 0% 0% round 28px)'] : ['inset(8% 6% 8% 6% round 40px)', 'inset(0% 0% 0% 0% round 28px)'])
 
   return (
-    <section id="atelier" ref={ref} className="pointer-events-auto relative z-10 scroll-mt-16 bg-bg py-24 sm:py-32">
+    <section id="atelier" ref={ref} className="relative z-10 scroll-mt-16 bg-bg py-24 sm:py-32">
       <div ref={inner} className="mx-auto max-w-[1320px] px-4 sm:px-6">
         <div className="grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-end">
           <h2 className="display text-[clamp(2.4rem,6vw,5rem)]">{t.workshop.title}</h2>

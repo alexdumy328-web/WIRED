@@ -2,7 +2,7 @@ import { useEffect, useState, type FormEvent } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { fmt, useI18n } from '../i18n'
 import { catalog, categoryOrder } from '../data/catalog'
-import { useStation } from '../lib/stations'
+import { Section } from '../components/Section'
 import type { BookingStatus } from '../types'
 
 type Lookup = { code: string; status: BookingStatus; updatedAt: string }
@@ -31,7 +31,7 @@ function TurnaroundChart() {
   const label = (h: number) => (h < 24 ? fmt(t.eta.hours, { n: h }) : fmt(t.eta.days, { n: Math.ceil(h / 24) }))
 
   return (
-    <figure className="mt-7">
+    <figure>
       <figcaption className="text-[15px] font-semibold" style={{ fontStretch: '110%' }}>
         {t.eta.chartTitle}
       </figcaption>
@@ -101,7 +101,7 @@ function Tracker() {
     : ''
 
   return (
-    <div className="mt-10 border-t border-line pt-8">
+    <div>
       <h3 className="display-2 text-2xl">{t.track.title}</h3>
       <p className="measure mt-2 text-[15px] text-muted">{t.track.lead}</p>
       <form onSubmit={submit} className="mt-5 flex flex-col gap-3 sm:flex-row">
@@ -149,7 +149,6 @@ function Tracker() {
 export function Status() {
   const { t } = useI18n()
   const [queue, setQueue] = useState<number | null>(null)
-  const ref = useStation<HTMLElement>({ stop: 'counter', frame: -0.42 })
 
   useEffect(() => {
     const ctl = new AbortController()
@@ -161,22 +160,28 @@ export function Status() {
   }, [])
 
   return (
-    <section id="status" ref={ref} className="pointer-events-none relative z-10 scroll-mt-16 lg:min-h-[130vh]">
-      <div className="h-[55vh] lg:hidden" />
-      <div className="mx-auto flex max-w-[1320px] justify-end px-4 sm:px-6 lg:sticky lg:top-20 lg:py-6">
-        <div className="panel pointer-events-auto w-full p-5 sm:p-8 lg:w-[min(40rem,50%)]">
-          <h2 className="display-2 text-[clamp(1.8rem,3.4vw,2.9rem)]">{t.eta.title}</h2>
-          <p className="measure mt-3 text-muted">{t.eta.lead}</p>
-          {queue !== null && (
-            <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-line px-3 py-1.5 text-[14px]">
-              <span className="size-2 rounded-full bg-ok" />
-              {fmt(t.eta.queueNow, { n: queue })}
-            </p>
-          )}
+    <Section
+      id="status"
+      stop="counter"
+      title={t.eta.title}
+      lead={t.eta.lead}
+      aside={
+        queue !== null && (
+          <p className="inline-flex items-center gap-2 rounded-full border border-line px-3 py-1.5 text-[14px]">
+            <span className="size-2 rounded-full bg-ok" />
+            {fmt(t.eta.queueNow, { n: queue })}
+          </p>
+        )
+      }
+    >
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+        <div className="rounded-[24px] border border-line bg-surface p-5 sm:p-8">
           <TurnaroundChart />
+        </div>
+        <div className="rounded-[24px] border border-line bg-surface p-5 sm:p-8">
           <Tracker />
         </div>
       </div>
-    </section>
+    </Section>
   )
 }

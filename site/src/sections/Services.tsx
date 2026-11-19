@@ -6,7 +6,8 @@ import { formatEta, formatLei } from '../lib/estimate'
 import { preselect } from '../lib/booking-store'
 import type { Job } from '../types'
 import { Plus } from '../components/Icons'
-import { categoryStop, useStation } from '../lib/stations'
+import { categoryStop } from '../lib/stations'
+import { Section } from '../components/Section'
 
 type ShopCat = Exclude<(typeof categoryOrder)[number], 'auto'>
 const shopCats = categoryOrder.filter((c): c is ShopCat => c !== 'auto')
@@ -57,62 +58,52 @@ export function Services() {
   const [cat, setCat] = useState<ShopCat>(shopCats[0])
   const jobs = catalog.filter((j) => j.category === cat)
   const stop = categoryStop[cat]
-  const ref = useStation<HTMLElement>({
-    stop,
-    frame: 0.42,
-    explode: stop === 'laptop' ? { from: 0.15, to: 0.55 } : undefined,
-  })
 
   return (
-    <section id="servicii" ref={ref} className="pointer-events-none relative z-10 scroll-mt-16 lg:min-h-[190vh]">
-      {/* On phones, leave a window onto the bench before the panel. */}
-      <div className="h-[55vh] lg:hidden" />
-      <div className="mx-auto max-w-[1320px] px-4 sm:px-6 lg:sticky lg:top-20 lg:py-6">
-        <div className="panel pointer-events-auto p-5 sm:p-8 lg:max-h-[calc(100dvh-7rem)] lg:w-[min(44rem,54%)] lg:overflow-y-auto lg:overscroll-contain" data-lenis-prevent>
-          <h2 className="display-2 text-[clamp(2rem,3.6vw,3.1rem)]">{t.services.title}</h2>
-          <p className="measure mt-4 text-muted">{t.services.lead}</p>
-
-          <div role="tablist" aria-label={t.services.title} className="-mx-1 mt-7 flex flex-wrap gap-2">
-            {shopCats.map((c) => {
-              const active = c === cat
-              return (
-                <button
-                  key={c}
-                  role="tab"
-                  type="button"
-                  aria-selected={active}
-                  aria-controls="servicii-panel"
-                  onClick={() => setCat(c)}
-                  className={`relative rounded-full px-4 py-2 text-[15px] font-semibold transition-colors ${active ? 'text-bg' : 'text-muted hover:text-ink'}`}
-                  style={{ fontStretch: '108%' }}
-                >
-                  {active && <motion.span layoutId="cat-pill" className="absolute inset-0 rounded-full bg-ink" transition={{ type: 'spring', bounce: 0.18, duration: 0.45 }} />}
-                  {!active && <span className="absolute inset-0 rounded-full border border-line" />}
-                  <span className="relative">{t.services.categories[c].name}</span>
-                </button>
-              )
-            })}
-          </div>
-          <p className="mt-4 text-[15px] text-muted">{t.services.categories[cat].blurb}</p>
-
-          <div id="servicii-panel" role="tabpanel" className="mt-4">
-            <AnimatePresence mode="wait" initial={false}>
-              <motion.ul
-                key={cat}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                className="border-t border-line"
+    <Section id="servicii" stop={stop} title={t.services.title} lead={t.services.lead} explode={stop === 'laptop' ? { from: 0.1, to: 0.5 } : undefined}>
+      <div className="grid gap-8 lg:grid-cols-[17rem_minmax(0,1fr)] lg:gap-14">
+        <div role="tablist" aria-label={t.services.title} aria-orientation="vertical" className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-col lg:gap-0 lg:overflow-visible lg:px-0 lg:pb-0">
+          {shopCats.map((c) => {
+            const active = c === cat
+            return (
+              <button
+                key={c}
+                role="tab"
+                type="button"
+                aria-selected={active}
+                aria-controls="servicii-panel"
+                onClick={() => setCat(c)}
+                className={`relative shrink-0 rounded-full border px-4 py-2 text-left transition-colors lg:rounded-none lg:border-0 lg:border-b lg:border-line lg:px-0 lg:py-4 lg:pl-5 ${
+                  active ? 'border-ink bg-ink text-bg lg:bg-transparent lg:text-ink' : 'border-line text-muted hover:text-ink'
+                }`}
               >
-                {jobs.map((j) => (
-                  <JobRow key={j.id} job={j} onBook={() => preselect([j.id], 'shop')} />
-                ))}
-              </motion.ul>
-            </AnimatePresence>
-          </div>
+                {active && <motion.span layoutId="cat-trace" className="absolute left-0 top-1/2 hidden h-8 w-[3px] -translate-y-1/2 rounded-full bg-gold lg:block" />}
+                <span className="font-semibold lg:text-lg" style={{ fontStretch: '110%' }}>
+                  {t.services.categories[c].name}
+                </span>
+                <span className="hidden text-[14px] text-muted lg:mt-0.5 lg:block">{t.services.categories[c].blurb}</span>
+              </button>
+            )
+          })}
+        </div>
+
+        <div id="servicii-panel" role="tabpanel" className="h-fit rounded-[24px] border border-line bg-surface px-5 sm:px-8">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.ul
+              key={cat}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              className="[&>li:last-child]:border-0"
+            >
+              {jobs.map((j) => (
+                <JobRow key={j.id} job={j} onBook={() => preselect([j.id], 'shop')} />
+              ))}
+            </motion.ul>
+          </AnimatePresence>
         </div>
       </div>
-    </section>
+    </Section>
   )
 }

@@ -1,20 +1,16 @@
 import { useState } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useI18n } from '../i18n'
-import { useStation } from '../lib/stations'
+import { Section } from '../components/Section'
 import { Plus } from '../components/Icons'
 
 export function Faq() {
   const { t } = useI18n()
   const [open, setOpen] = useState<number | null>(0)
-  const ref = useStation<HTMLElement>({ stop: 'overview', frame: 0.42 })
   return (
-    <section id="intrebari" ref={ref} className="pointer-events-none relative z-10 scroll-mt-16 py-10 lg:min-h-[100vh] lg:py-20">
-      <div className="h-[40vh] lg:hidden" />
-      <div className="mx-auto max-w-[1320px] px-4 sm:px-6">
-        <div className="panel pointer-events-auto p-5 sm:p-8 lg:w-[min(42rem,54%)]">
-          <h2 className="display-2 text-[clamp(1.8rem,3.4vw,2.9rem)]">{t.faq.title}</h2>
-          <ul className="mt-6 border-t border-line">
+    <Section id="intrebari" stop="overview" title={t.faq.title}>
+      <div className="max-w-[52rem]">
+<ul className="border-t border-line">
             {t.faq.items.map((item, i) => {
               const isOpen = open === i
               return (
@@ -49,8 +45,7 @@ export function Faq() {
               )
             })}
           </ul>
-        </div>
       </div>
-    </section>
+    </Section>
   )
 }
