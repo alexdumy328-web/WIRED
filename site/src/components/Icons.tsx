@@ -12,3 +12,4 @@ export const Pin = (p: P) => (<svg {...base} {...p}><path d="M12 21s-7-6.2-7-11.
 export const Star = ({ filled = true, ...p }: P & { filled?: boolean }) => (<svg {...base} {...p} strokeWidth={1.4}><path d="m12 3.5 2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.9l-5.2 2.7 1-5.8-4.3-4.1 5.9-.9Z" fill={filled ? 'currentColor' : 'none'} /></svg>)
 export const Arrow = (p: P) => (<svg {...base} {...p}><path d="M5 12h14M13 6l6 6-6 6" /></svg>)
 export const Chevron = (p: P) => (<svg {...base} {...p}><path d="m6 9 6 6 6-6" /></svg>)
+export const User = (p: P) => (<svg {...base} {...p}><circle cx="12" cy="8.5" r="3.8" /><path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" /></svg>)

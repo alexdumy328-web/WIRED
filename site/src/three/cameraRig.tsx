@@ -1,7 +1,9 @@
 import { useFrame, useThree } from '@react-three/fiber'
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
 import { Vector3, type PerspectiveCamera } from 'three'
-import { sceneState, TOUR, type StopId } from './contract'
+import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
+import { MODEL_STOP, sceneState, STATION_MODEL, STOPS, TOUR, type StopId } from './contract'
+import { shopModelPose } from './devices'
 import { NARROW_POSES, NARROW_PULL, POSES } from './layout'
 
 type MutPose = { pos: Vector3; target: Vector3; fov: number }
@@ -9,6 +11,11 @@ type MutPose = { pos: Vector3; target: Vector3; fov: number }
 const clamp = (v: number, a: number, b: number) => (v < a ? a : v > b ? b : v)
 const smoothstep = (t: number) => t * t * (3 - 2 * t)
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
+const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
+const Y = new Vector3(0, 1, 0)
+
+/** Portrait / square windows use the narrow poses; landscape (aspect >= 1) the desktop ones. */
+const isNarrow = (aspect: number) => aspect < 1
 
 function poseInto(out: MutPose, id: StopId, narrow: boolean): MutPose {
   const override = narrow ? NARROW_POSES[id] : undefined
@@ -26,6 +33,7 @@ function poseInto(out: MutPose, id: StopId, narrow: boolean): MutPose {
 const mk = (): MutPose => ({ pos: new Vector3(), target: new Vector3(), fov: 35 })
 const _a = mk()
 const _b = mk()
+const _off = new Vector3()
 
 /** Pose along the scroll tour at continuous t. Eased per segment so the camera settles at each stop. */
 function tourPose(out: MutPose, t: number, narrow: boolean): MutPose {
@@ -58,16 +66,38 @@ function dampScalar(cur: number, goal: number, smoothTime: number, dt: number) {
   return cur + (goal - cur) * (1 - Math.exp(-dt / Math.max(1e-4, smoothTime)))
 }
 
-type Flight = { fromPos: Vector3; fromTarget: Vector3; start: number; dur: number; arc: number }
+type Flight = { fromPos: Vector3; fromTarget: Vector3; fromFov: number; start: number; dur: number; arc: number }
+
+/** Advance the guided tour to the next station (and its default device). */
+function nextTourStop() {
+  const i = STOPS.indexOf(sceneState.focus ?? 'overview')
+  const next = STOPS[(i + 1) % STOPS.length]
+  const m = STATION_MODEL[next]
+  sceneState.focus = next
+  sceneState.model = m
+  sceneState.explode = m ? 1 : 0
+  sceneState.highlight = null
+}
 
 /**
  * Reads sceneState every frame:
  *  - focus set   -> flies to POSES[focus] along a slightly raised arc (ease-out, ~0.7-1.1 s)
+ *                   or, when a device of that station is on show, to a pose that fits the device
  *  - focus null  -> follows the scroll tour at t (critically damped, ~0.35 s)
- *  - frame       -> lateral subject placement via camera.setViewOffset (damped)
- *  - pointer     -> small parallax; plus a slow idle drift (both off with reducedMotion)
+ *  - frame       -> lateral subject placement via camera.setViewOffset (damped; landscape only)
+ *  - pointer     -> small parallax; plus a slow idle orbit of a few degrees (both off with reducedMotion)
+ *  - tour        -> next station every ~6 s
+ * In interactive mode it only flies between stations; in between, orbit controls own the camera.
  */
-export function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
+export function CameraRig({
+  reducedMotion,
+  interactive = false,
+  controls,
+}: {
+  reducedMotion: boolean
+  interactive?: boolean
+  controls?: RefObject<OrbitControlsImpl | null>
+}) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera
   const st = useRef({
     init: false,
@@ -83,6 +113,8 @@ export function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
     shift: 0,
     px: 0,
     py: 0,
+    eCam: 0,
+    tourAt: 0,
   })
 
   useEffect(() => {
@@ -95,12 +127,29 @@ export function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
     const dt = Math.min(Math.max(rawDt, 1e-4), 0.1)
     const now = state.clock.elapsedTime
     const { width, height } = state.size
-    const narrow = width / Math.max(1, height) < 0.8
+    const aspect = width / Math.max(1, height)
+    const narrow = isNarrow(aspect)
+
+    // Guided tour.
+    if (sceneState.tour) {
+      if (s.tourAt === 0) s.tourAt = now
+      else if (now - s.tourAt > 6) {
+        s.tourAt = now
+        nextTourStop()
+      }
+    } else s.tourAt = 0
 
     const focus = sceneState.focus
-    const key = focus ?? 'tour'
-    if (focus) poseInto(s.goal, focus, narrow)
+    const model = sceneState.model
+    const onModel = !!model && !!focus && MODEL_STOP[model] === focus
+    const explode = clamp(Number(sceneState.explode) || 0, 0, 1)
+    s.eCam = reducedMotion || interactive ? explode : dampScalar(s.eCam, explode, 0.45, dt)
+    const key = focus ? `${focus}|${onModel ? model : ''}` : 'tour'
+    if (onModel) s.goal.fov = shopModelPose(model, s.eCam, aspect, s.goal).fov
+    else if (focus) poseInto(s.goal, focus, narrow)
     else tourPose(s.goal, sceneState.t, narrow)
+
+    const ctl = interactive ? controls?.current : null
 
     if (!s.init) {
       s.pos.copy(s.goal.pos)
@@ -108,20 +157,58 @@ export function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
       s.fov = s.goal.fov
       s.key = key
       s.init = true
+      if (ctl) {
+        camera.position.copy(s.goal.pos)
+        ctl.target.copy(s.goal.target)
+        ctl.update()
+      }
     }
 
     if (key !== s.key) {
       s.key = key
       if (!reducedMotion) {
-        const d = s.pos.distanceTo(s.goal.pos) + 0.5 * s.target.distanceTo(s.goal.target)
+        const fromPos = ctl ? camera.position.clone() : s.pos.clone()
+        const fromTarget = ctl ? ctl.target.clone() : s.target.clone()
+        const d = fromPos.distanceTo(s.goal.pos) + 0.5 * fromTarget.distanceTo(s.goal.target)
         s.flight = {
-          fromPos: s.pos.clone(),
-          fromTarget: s.target.clone(),
+          fromPos,
+          fromTarget,
+          fromFov: ctl ? camera.fov : s.fov,
           start: now,
-          dur: clamp(0.62 + d * 0.035, 0.7, 1.15),
+          dur: clamp(0.62 + d * 0.035, 0.7, 1.15) + (ctl ? 0.25 : 0),
           arc: clamp(d * 0.09, 0, 1.4),
         }
+      } else if (ctl) {
+        camera.position.copy(s.goal.pos)
+        ctl.target.copy(s.goal.target)
+        camera.fov = s.goal.fov
+        camera.updateProjectionMatrix()
+        ctl.update()
       }
+    }
+
+    if (ctl) {
+      // Explore mode: fly between stations, otherwise leave the camera to the orbit controls.
+      if (camera.view) camera.clearViewOffset()
+      const f = s.flight
+      if (f) {
+        ctl.enabled = false
+        const p = clamp((now - f.start) / f.dur, 0, 1)
+        const e = easeInOutCubic(p)
+        camera.position.lerpVectors(f.fromPos, s.goal.pos, e)
+        camera.position.y += Math.sin(Math.PI * e) * f.arc
+        s.virt.target.lerpVectors(f.fromTarget, s.goal.target, e)
+        camera.lookAt(s.virt.target)
+        camera.fov = f.fromFov + (s.goal.fov - f.fromFov) * e
+        camera.updateProjectionMatrix()
+        if (p >= 1) {
+          s.flight = null
+          ctl.target.copy(s.goal.target)
+          ctl.enabled = true
+          ctl.update()
+        }
+      } else ctl.enabled = true
+      return
     }
 
     let smooth = 0.35
@@ -151,18 +238,21 @@ export function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
       s.fov = dampScalar(s.fov, s.goal.fov, 0.35, dt)
     }
 
-    // Parallax + idle drift, scaled with distance to the subject.
+    // Idle orbit of a few degrees + pointer parallax, scaled with distance to the subject.
     const dist = s.pos.distanceTo(s.target)
     let ox = 0
     let oy = 0
+    camera.position.copy(s.pos)
     if (!reducedMotion) {
+      const amp = ((onModel ? 1.6 : 3.5) * Math.PI) / 180
+      _off.subVectors(s.pos, s.target).applyAxisAngle(Y, Math.sin(now * 0.11) * amp)
+      camera.position.copy(s.target).add(_off)
       s.px = dampScalar(s.px, clamp(sceneState.pointer.x, -1, 1), 0.6, dt)
       s.py = dampScalar(s.py, clamp(sceneState.pointer.y, -1, 1), 0.6, dt)
       const k = dist * 0.022
       ox = s.px * k + Math.sin(now * 0.21) * dist * 0.004
       oy = s.py * k * 0.6 + Math.sin(now * 0.17 + 1.3) * dist * 0.0025
     }
-    camera.position.copy(s.pos)
     camera.lookAt(s.target)
     if (ox || oy) {
       camera.translateX(ox)
@@ -170,8 +260,8 @@ export function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
       camera.lookAt(s.target)
     }
 
-    // Lateral framing.
-    const goalShift = narrow ? 0 : clamp(Number(sceneState.frame) || 0, -1.6, 1.6) / 6
+    // Lateral framing (landscape only; a device on show is always centred).
+    const goalShift = narrow || onModel ? 0 : clamp(Number(sceneState.frame) || 0, -1.6, 1.6) / 6
     s.shift = reducedMotion ? goalShift : dampScalar(s.shift, goalShift, 0.45, dt)
     if (camera.fov !== s.fov) camera.fov = s.fov
     camera.setViewOffset(width, height, -s.shift * width, 0, width, height)

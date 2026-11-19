@@ -3,6 +3,8 @@
 /* Tokens come from the room: matte black paint, LED-lit white walls,
    concrete floor grey, ENIG gold pads, green and blue soldermask. */
 :root {
+  /* Width of the desktop 3D window; the content column leaves this room on the right. */
+  --win-w: clamp(360px, 38vw, 620px);
   --bg: #f2f4f5;
   --surface: #ffffff;
   --surface-2: #e8ebed;
@@ -257,4 +259,82 @@ html.lenis body {
 a:hover > .roll .roll-ch,
 a:focus-visible > .roll .roll-ch {
   transform: translateY(-100%);
+}
+
+/* Signals running along the background traces. */
+.nt-signal {
+  stroke-dashoffset: 1000;
+  opacity: 0.55;
+  animation: nt-signal linear infinite;
+}
+@keyframes nt-signal {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nt-signal {
+    display: none;
+  }
+}
+
+/* Part label next to a highlighted part in the 3D window. */
+.nt-part-label {
+  display: inline-block;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: var(--gold-soft);
+  color: #121314;
+  font: 650 12px/1 var(--font-sans);
+  font-stretch: 108%;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.25);
+}
+
+/* -------------------------------------------------------------------------- */
+/* PickupMap Leaflet styles                                                   */
+/* -------------------------------------------------------------------------- */
+.nt-shop-icon,
+.nt-customer-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.leaflet-container {
+  font-family: var(--font-sans) !important;
+  background: var(--surface-2) !important;
+}
+
+.leaflet-bar a {
+  background-color: var(--surface) !important;
+  color: var(--ink) !important;
+  border-bottom: 1px solid var(--line) !important;
+}
+
+.leaflet-bar a:hover {
+  background-color: var(--surface-2) !important;
+  color: var(--ink) !important;
+}
+
+.leaflet-tooltip {
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 4px 8px !important;
+}
+
+.leaflet-tooltip-top:before {
+  border-top-color: var(--line) !important;
+}
+
+/* OpenStreetMap tiles tuned to the site palette. */
+.nt-tiles-light {
+  filter: grayscale(0.55) contrast(0.95) brightness(1.03);
+}
+.nt-tiles-dark {
+  filter: invert(1) hue-rotate(180deg) grayscale(0.6) brightness(0.85) contrast(0.9);
 }

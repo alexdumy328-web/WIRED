@@ -1,8 +1,9 @@
-import { useEffect, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { fmt, useI18n } from '../i18n'
 import { catalog, categoryOrder } from '../data/catalog'
 import { Section } from '../components/Section'
+import { useScrollGuard } from '../lib/scroll-guard'
 import type { BookingStatus } from '../types'
 
 type Lookup = { code: string; status: BookingStatus; updatedAt: string }
@@ -77,6 +78,8 @@ function Tracker() {
   const [code, setCode] = useState('')
   const [state, setState] = useState<'idle' | 'loading' | 'notFound' | 'error'>('idle')
   const [result, setResult] = useState<Lookup | null>(null)
+  const formRef = useRef<HTMLFormElement>(null)
+  const hold = useScrollGuard(formRef, code.trim().length > 0)
 
   const submit = async (e: FormEvent) => {
     e.preventDefault()
@@ -104,7 +107,7 @@ function Tracker() {
     <div>
       <h3 className="display-2 text-2xl">{t.track.title}</h3>
       <p className="measure mt-2 text-[15px] text-muted">{t.track.lead}</p>
-      <form onSubmit={submit} className="mt-5 flex flex-col gap-3 sm:flex-row">
+      <form ref={formRef} onSubmit={submit} className="mt-5 flex flex-col gap-3 sm:flex-row">
         <label className="sr-only" htmlFor="track-code">
           {t.track.title}
         </label>
@@ -123,6 +126,13 @@ function Tracker() {
         </button>
       </form>
       <div aria-live="polite" className="min-h-6">
+        <AnimatePresence>
+          {hold && (
+            <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-3 text-[14px] text-gold">
+              {t.scrollHold}
+            </motion.p>
+          )}
+        </AnimatePresence>
         {state === 'notFound' && <p className="mt-3 text-[15px] text-muted">{t.track.notFound}</p>}
         {state === 'error' && <p className="mt-3 text-[15px] text-muted">{t.track.error}</p>}
         <AnimatePresence>

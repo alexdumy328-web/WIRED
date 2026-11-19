@@ -3,9 +3,12 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useI18n } from '../i18n'
 import { useTheme, type ThemePref } from '../lib/theme'
 import { Logo } from './Logo'
-import { Auto, Close, Menu, Moon, Sun } from './Icons'
+import { Auto, Close, Menu, Moon, Sun, User } from './Icons'
 import { OpenStatus } from './OpenStatus'
 import { Roll } from './Chrome'
+import { openBooking } from '../lib/booking-store'
+import { linkTo, pageOf, usePath } from '../lib/router'
+import { useViewer } from '../auth/viewer'
 
 const order: ThemePref[] = ['system', 'light', 'dark']
 
@@ -24,11 +27,13 @@ export function Header() {
     document.body.style.overflow = open ? 'hidden' : ''
   }, [open])
 
+  const onHome = pageOf(usePath()) === null
+  const { user } = useViewer()
+  const base = onHome ? '' : '/'
   const links = [
     ['#servicii', t.nav.services],
-    ['#auto', t.nav.mobile],
     ['#proces', t.nav.process],
-    ['#atelier', t.nav.workshop],
+    ['#mobil', t.nav.mobile],
     ['#recenzii', t.nav.reviews],
     ['#intrebari', t.nav.faq],
   ] as const
@@ -69,28 +74,43 @@ export function Header() {
       className={`fixed inset-x-0 top-0 z-50 transition-[background-color,border-color] duration-300 ${scrolled ? 'scrim border-b border-line' : 'border-b border-transparent'}`}
     >
       <div className="mx-auto flex h-16 max-w-[1320px] items-center gap-6 px-4 sm:px-6">
-        <a href="#top" className="rounded-md" aria-label="Norgelis Tech">
+        <a href={onHome ? '#top' : '/'} onClick={onHome ? undefined : linkTo('/')} className="rounded-md" aria-label="Norgelis Tech">
           <Logo draw />
         </a>
         <nav className="ml-4 hidden items-center gap-5 whitespace-nowrap text-[15px] lg:flex">
           {links.map(([href, label]) => (
-            <a key={href} href={href} className="text-muted transition-colors hover:text-ink">
+            <a key={href} href={base + href} className="text-muted transition-colors hover:text-ink">
               <Roll text={label} />
             </a>
           ))}
         </nav>
         <div className="ml-auto flex items-center gap-2.5">
           <OpenStatus className="mr-2 hidden min-[1560px]:inline-flex" />
-          <a href="#status" className="hidden whitespace-nowrap text-[15px] text-muted hover:text-ink xl:inline">
-            {t.nav.track}
+          <a href="/atelier" onClick={linkTo('/atelier')} className="hidden whitespace-nowrap text-[15px] font-semibold text-ink hover:text-gold md:inline">
+            {t.nav.workshop3d}
           </a>
           <div className="hidden items-center gap-2 sm:flex">
             {langSwitch}
             {themeBtn}
           </div>
-          <a href="#programare" className="btn btn-gold hidden h-10 min-h-0 sm:inline-flex">
-            {t.nav.book}
+          <a
+            href="/cont"
+            onClick={linkTo('/cont')}
+            className="flex h-10 items-center gap-2 rounded-full border border-line px-2.5 text-[15px] font-semibold text-muted transition-colors hover:text-ink sm:px-3.5"
+            aria-label={user ? t.account.navSignedIn : t.account.nav}
+          >
+            {user ? (
+              <span className="grid size-6 place-items-center rounded-full bg-ink text-[13px] font-bold text-bg" aria-hidden="true">
+                {(user.name || user.email).slice(0, 1).toUpperCase()}
+              </span>
+            ) : (
+              <User className="size-[18px]" />
+            )}
+            <span className="hidden sm:inline">{t.account.nav}</span>
           </a>
+          <button type="button" onClick={() => openBooking()} className="btn btn-gold hidden h-10 min-h-0 sm:inline-flex">
+            {t.nav.book}
+          </button>
           <button
             type="button"
             className="grid size-10 place-items-center rounded-full border border-line lg:hidden"
@@ -121,11 +141,14 @@ export function Header() {
               </button>
             </div>
             <nav className="mt-6 flex flex-col">
-              {[...links, ['#status', t.nav.track] as const].map(([href, label], i) => (
+              {[...links, ['#status', t.nav.track] as const, ['/atelier', t.nav.workshop3d] as const, ['/cont', t.account.nav] as const].map(([href, label], i) => (
                 <motion.a
                   key={href}
                   href={href}
-                  onClick={() => setOpen(false)}
+                  onClick={(e) => {
+                    setOpen(false)
+                    if (href.startsWith('/')) linkTo(href)(e)
+                  }}
                   className="display-2 border-b border-line py-4 text-3xl"
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
@@ -141,9 +164,16 @@ export function Header() {
                 {langSwitch}
                 {themeBtn}
               </div>
-              <a href="#programare" onClick={() => setOpen(false)} className="btn btn-gold w-full">
+              <button
+                type="button"
+                onClick={() => {
+                  setOpen(false)
+                  openBooking()
+                }}
+                className="btn btn-gold w-full"
+              >
                 {t.nav.book}
-              </a>
+              </button>
             </div>
           </motion.div>
         )}

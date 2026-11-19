@@ -1,14 +1,25 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { fmt, useI18n } from '../i18n'
 import { catalog } from '../data/catalog'
 import { estimate, formatEta, formatLei } from '../lib/estimate'
 import { daysAhead, slotsFor } from '../lib/slots'
-import { usePreselect } from '../lib/booking-store'
-import { categoryStop, useStation } from '../lib/stations'
-import type { BookingRequest, ServiceMode } from '../types'
-import type { StopId } from '../three/contract'
-import { Check } from '../components/Icons'
+import { closeBooking, useBooking } from '../lib/booking-store'
+import { focus, pauseStations } from '../lib/stations'
+import { modelFor } from '../lib/models'
+import { setModalOpen } from '../lib/scene-view'
+import { lockPage } from '../lib/scroll'
+import { Logo } from '../components/Logo'
+import { DevicePanel } from '../components/Scene3D'
+import type { AiEstimate, BookingRequest, ServiceMode } from '../types'
+import { VALUE_TIERS, type ValueTier } from '../lib/pricing'
+import type { PickupValue } from '../components/PickupMap'
+
+const PickupMap = lazy(() => import('../components/PickupMap'))
+
+type Where = 'shop' | 'pickup' | 'mobile'
+import { Check, Close } from '../components/Icons'
+import { useViewer } from '../auth/viewer'
 
 type Step = 0 | 1 | 2 | 3
 type Errors = Partial<Record<string, string>>
@@ -30,10 +41,22 @@ function Field({ label, error, children, hint }: { label: string; error?: string
 }
 
 export function Booking() {
+  const pre = useBooking()
+  return <AnimatePresence>{pre.open && <BookingModal key="booking" />}</AnimatePresence>
+}
+
+function BookingModal() {
   const { t, lang, L } = useI18n()
-  const pre = usePreselect()
+  const pre = useBooking()
+  const [confirm, setConfirm] = useState(false)
+  const dialog = useRef<HTMLDivElement>(null)
   const [step, setStep] = useState<Step>(0)
   const [mode, setMode] = useState<ServiceMode>('shop')
+  const [where, setWhere] = useState<Where>('shop')
+  const [tier, setTier] = useState<ValueTier | 'unknown' | null>(null)
+  const [ai, setAi] = useState<{ status: 'idle' | 'loading' | 'error'; data: AiEstimate | null }>({ status: 'idle', data: null })
+  const [pickup, setPickup] = useState<PickupValue | null>(null)
+  const [urgent, setUrgent] = useState(false)
   const [jobIds, setJobIds] = useState<string[]>([])
   const [custom, setCustom] = useState('')
   const [customOn, setCustomOn] = useState(false)
@@ -43,6 +66,11 @@ export function Booking() {
   const [slot, setSlot] = useState('')
   const [location, setLocation] = useState('')
   const [contact, setContact] = useState({ name: '', phone: '', email: '' })
+  // Signed in: fill name and email unless the customer already typed something.
+  const { user: account } = useViewer()
+  useEffect(() => {
+    if (account) setContact((c) => ({ ...c, name: c.name || account.name, email: c.email || account.email }))
+  }, [account])
   const [consent, setConsent] = useState(false)
   const [errors, setErrors] = useState<Errors>({})
   const [sending, setSending] = useState(false)
@@ -52,22 +80,87 @@ export function Booking() {
 
   // "Book this" buttons elsewhere on the page land here with jobs preselected.
   useEffect(() => {
-    if (!pre.nonce || !pre.mode) return
-    setMode(pre.mode)
+    if (!pre.nonce) return
+    if (pre.mode) {
+      setMode(pre.mode)
+      setWhere(pre.mode === 'mobile' ? 'mobile' : 'shop')
+    }
     setJobIds(pre.jobIds)
     setDone(null)
     setStep(pre.jobIds.length ? 1 : 0)
   }, [pre.nonce, pre.mode, pre.jobIds])
 
+  // While open: page scroll locked, sections stop steering the 3D window, focus moves in.
+  useEffect(() => {
+    const prev = document.activeElement as HTMLElement | null
+    lockPage(true)
+    pauseStations(true)
+    setModalOpen(true)
+    dialog.current?.querySelector<HTMLElement>('button, input, textarea')?.focus()
+    return () => {
+      lockPage(false)
+      setModalOpen(false)
+      pauseStations(false)
+      prev?.focus?.()
+    }
+  }, [])
+
   const jobs = useMemo(() => catalog.filter((j) => j.mode === mode), [mode])
   const picked = useMemo(() => catalog.filter((j) => jobIds.includes(j.id)), [jobIds])
-  const est = estimate(picked, customOn && custom.trim().length > 0)
+  const tierValue = tier && tier !== 'unknown' ? tier : null
+  const est = estimate(picked, customOn && custom.trim().length > 0, tierValue)
   const days = useMemo(() => daysAhead(now, 12, mode), [now, mode])
-  const slots = day ? slotsFor(day, mode, new Date(), taken) : []
+  // Urgent pickup also offers today's windows from one hour ahead (slotsFor keeps a 2 h margin).
+  const slotNow = where === 'pickup' && urgent ? new Date(Date.now() - 60 * 60 * 1000) : new Date()
+  const slots = day ? slotsFor(day, mode, slotNow, taken) : []
+  const needsValue = picked.some((j) => j.hourly?.byValue) || customOn
+  const repair: [number, number] = [est.priceFrom + (ai.data?.total[0] ?? 0), est.priceTo + (ai.data?.total[1] ?? 0)]
+  const transport = where === 'pickup' && pickup?.quote && !pickup.quote.tooFar ? pickup.quote.totalLei : 0
+  const aiText = [customOn ? custom.trim() : '', issue.trim()].filter(Boolean).join('\n\n')
 
-  // The camera looks at the bench for the first picked job, otherwise the counter.
-  const stop: StopId = step === 1 && picked[0] ? categoryStop[picked[0].category] : mode === 'mobile' && step > 0 ? 'door' : 'counter'
-  const ref = useStation<HTMLElement>({ stop, frame: 0 })
+  const runAi = async () => {
+    setAi({ status: 'loading', data: null })
+    try {
+      const r = await fetch('/api/estimate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lang,
+          mode,
+          jobIds,
+          device: { brand: device.brand.trim() || undefined, model: device.model.trim() || undefined, year: device.year.trim() || undefined },
+          deviceValue: tierValue ?? undefined,
+          issue: aiText.slice(0, 1500),
+        }),
+      })
+      if (!r.ok) throw new Error(String(r.status))
+      setAi({ status: 'idle', data: (await r.json()) as AiEstimate })
+    } catch {
+      setAi({ status: 'error', data: null })
+    }
+  }
+
+  // The 3D window shows the device for the first picked job, otherwise the counter (or the van).
+  const firstJob = picked[0]
+  useEffect(() => {
+    if (firstJob) focus('counter', modelFor(firstJob))
+    else focus(mode === 'mobile' ? 'door' : 'counter', mode === 'mobile' ? 'auto' : 'laptop')
+  }, [firstJob, mode])
+
+  const dirty =
+    !done &&
+    (jobIds.length > 0 || pickup !== null || custom.trim() !== '' || issue.trim() !== '' || slot !== '' || contact.name !== '' || contact.phone !== '' || device.brand !== '' || device.model !== '')
+  const requestClose = () => (dirty ? setConfirm(true) : closeBooking())
+
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      if (confirm) setConfirm(false)
+      else requestClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  })
 
   useEffect(() => {
     if (!days.length) return
@@ -94,6 +187,8 @@ export function Booking() {
     if (s === 2) {
       if (!slot) e.slot = t.booking.errors.required
       if (mode === 'mobile' && location.trim().length < 3) e.location = t.booking.errors.required
+      if (where === 'pickup' && (!pickup || !pickup.quote)) e.pickup = t.booking.pickup.required
+      if (where === 'pickup' && pickup?.quote?.tooFar) e.pickup = t.booking.pickup.tooFar
     }
     if (s === 3) {
       if (contact.name.trim().length < 2) e.name = t.booking.errors.required
@@ -127,8 +222,21 @@ export function Booking() {
       issue: issue.trim(),
       slot,
       location: mode === 'mobile' ? location.trim() : undefined,
+      deviceValue: tierValue ?? undefined,
+      aiEstimate: ai.data ?? undefined,
+      pickup:
+        where === 'pickup' && pickup?.quote
+          ? {
+              address: pickup.address,
+              lat: pickup.lat,
+              lon: pickup.lon,
+              trips: pickup.trips,
+              urgent,
+              quote: { totalLei: pickup.quote.totalLei, oneWayKm: pickup.quote.oneWayKm, urgentLei: pickup.quote.urgentLei },
+            }
+          : undefined,
       contact: { name: contact.name.trim(), phone: contact.phone.trim(), email: contact.email.trim() || undefined },
-      estimate: { priceFrom: est.priceFrom, priceTo: est.priceTo, etaHours: est.etaHours },
+      estimate: { priceFrom: repair[0] + transport, priceTo: repair[1] + transport, etaHours: est.etaHours },
       lang,
     }
     setSending(true)
@@ -172,19 +280,64 @@ export function Booking() {
     }
   }
   const stepNames = [t.booking.steps.where, t.booking.steps.what, t.booking.steps.when, t.booking.steps.who]
-  const priceText =
-    est.priceFrom === 0
+  const rangeText = ([lo, hi]: [number, number]) =>
+    lo === 0 && hi === 0
       ? '–'
-      : est.priceTo > est.priceFrom
-        ? fmt(t.services.range, { from: formatLei(est.priceFrom, lang).replace(/\s?lei$/, ''), to: formatLei(est.priceTo, lang).replace(/\s?lei$/, '') })
-        : formatLei(est.priceFrom, lang)
+      : hi > lo
+        ? fmt(t.services.range, { from: formatLei(lo, lang).replace(/\s?lei$/, ''), to: formatLei(hi, lang).replace(/\s?lei$/, '') })
+        : formatLei(lo, lang)
+  const priceText = repair[1] === 0 && transport === 0 ? '–' : rangeText([repair[0] + transport, repair[1] + transport])
+  const windowLabel = (start: string) => {
+    const [h, m] = start.split(':').map(Number)
+    return `${start}–${String(h + 1).padStart(2, '0')}:${String(m).padStart(2, '0')}`
+  }
 
   return (
-    <section id="programare" ref={ref} className="relative z-10 scroll-mt-16 py-20 sm:py-28">
-      <div className="mx-auto max-w-[1320px] px-4 sm:px-6">
-        <h2 className="display-2 text-[clamp(2rem,4.2vw,3.4rem)]">{t.booking.title}</h2>
-        <p className="measure mt-4 text-lg text-muted">{t.booking.lead}</p>
-        <div className="mt-12 rounded-[28px] border border-line bg-surface p-5 sm:p-10">
+    <motion.div
+      ref={dialog}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="booking-title"
+      className="fixed inset-0 z-[90] flex flex-col bg-bg"
+      initial={{ opacity: 0, y: 24 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 24 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+    >
+      <DevicePanel className="absolute inset-y-0 right-0 hidden w-[40vw] border-l border-line bg-surface-2 lg:block" />
+      <div className="flex h-16 shrink-0 items-center justify-between border-b border-line px-4 sm:px-6 lg:mr-[40vw]">
+        <Logo />
+        <button type="button" onClick={requestClose} className="grid size-10 place-items-center rounded-full border border-line transition-colors hover:border-ink" aria-label={t.booking.close}>
+          <Close />
+        </button>
+      </div>
+      <AnimatePresence>
+        {confirm && (
+          <motion.div
+            initial={{ opacity: 0, y: -8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -8 }}
+            className="flex flex-wrap items-center justify-between gap-3 border-b border-line bg-surface px-4 py-3 sm:px-6 lg:mr-[40vw]"
+            role="alertdialog"
+            aria-label={t.booking.confirmClose.title}
+          >
+            <p className="font-semibold">{t.booking.confirmClose.title}</p>
+            <div className="flex gap-2">
+              <button type="button" className="btn btn-ghost h-10 min-h-0" onClick={() => setConfirm(false)} autoFocus>
+                {t.booking.confirmClose.stay}
+              </button>
+              <button type="button" className="btn btn-gold h-10 min-h-0" onClick={closeBooking}>
+                {t.booking.confirmClose.leave}
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain lg:mr-[40vw]" data-lenis-prevent>
+      <div className="mx-auto max-w-[56rem] px-4 py-8 sm:px-6 sm:py-12">
+        <h2 id="booking-title" className="display-2 text-[clamp(2rem,3.6vw,3rem)]">{t.booking.title}</h2>
+        <p className="measure mt-3 text-lg text-muted">{t.booking.lead}</p>
+        <div className="mt-8">
 
           {done ? (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} role="status">
@@ -197,7 +350,10 @@ export function Booking() {
               <p className="measure mt-4">{fmt(t.booking.success.body, { code: done })}</p>
               <p className="mt-6 text-[14px] text-muted">{t.booking.success.code}</p>
               <p className="display text-5xl tracking-wide">{done}</p>
-              <button type="button" className="btn btn-ghost mt-8" onClick={reset}>
+              <button type="button" className="btn btn-gold mt-8" onClick={closeBooking}>
+                {t.booking.close}
+              </button>
+              <button type="button" className="btn btn-ghost ml-3 mt-8" onClick={reset}>
                 {t.booking.success.again}
               </button>
             </motion.div>
@@ -228,7 +384,7 @@ export function Booking() {
                 ))}
               </ol>
 
-              <div className="mt-7 grid gap-8 md:grid-cols-[minmax(0,1fr)_17rem]">
+              <div className="mt-7 grid gap-8 xl:grid-cols-[minmax(0,1fr)_16rem]">
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.div
                     key={step}
@@ -239,23 +395,26 @@ export function Booking() {
                     className="min-w-0"
                   >
                     {step === 0 && (
-                      <div className="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label={t.booking.steps.where}>
+                      <div className="grid gap-3 sm:grid-cols-3" role="radiogroup" aria-label={t.booking.steps.where}>
                         {(
                           [
                             ['shop', t.booking.where.shop, t.booking.where.shopHint],
+                            ['pickup', t.booking.where.pickup, t.booking.where.pickupHint],
                             ['mobile', t.booking.where.mobile, t.booking.where.mobileHint],
                           ] as const
-                        ).map(([m, title, hint]) => (
+                        ).map(([w, title, hint]) => (
                           <button
-                            key={m}
+                            key={w}
                             type="button"
                             role="radio"
-                            aria-checked={mode === m}
+                            aria-checked={where === w}
                             onClick={() => {
+                              const m: ServiceMode = w === 'mobile' ? 'mobile' : 'shop'
                               if (m !== mode) setJobIds([])
                               setMode(m)
+                              setWhere(w)
                             }}
-                            className={`rounded-[18px] border p-5 text-left transition-colors ${mode === m ? 'border-gold bg-bg' : 'border-line hover:border-muted'}`}
+                            className={`rounded-[18px] border p-5 text-left transition-colors ${where === w ? 'border-gold bg-surface' : 'border-line hover:border-muted'}`}
                           >
                             <span className="block font-semibold" style={{ fontStretch: '110%' }}>
                               {title}
@@ -274,7 +433,7 @@ export function Booking() {
                             {jobs.map((j) => {
                               const on = jobIds.includes(j.id)
                               return (
-                                <label key={j.id} className={`flex cursor-pointer items-start gap-3 border-b border-line px-4 py-3 last:border-0 ${on ? 'bg-bg' : ''}`}>
+                                <label key={j.id} className={`flex cursor-pointer items-start gap-3 border-b border-line px-4 py-3 last:border-0 ${on ? 'bg-surface' : ''}`}>
                                   <input type="checkbox" className="mt-1 size-4 accent-[var(--gold)]" checked={on} onChange={() => toggleJob(j.id)} />
                                   <span className="min-w-0 flex-1">
                                     <span className="block text-[15px] font-medium">{L(j.name)}</span>
@@ -319,11 +478,66 @@ export function Booking() {
                             aria-invalid={!!errors.issue}
                           />
                         </Field>
+                        {needsValue && (
+                          <fieldset>
+                            <legend className="text-[14px] font-semibold">{t.booking.what.value}</legend>
+                            <p className="mt-1 text-[13px] text-muted">{t.booking.what.valueHint}</p>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {([...VALUE_TIERS, 'unknown'] as const).map((v) => (
+                                <button
+                                  key={v}
+                                  type="button"
+                                  aria-pressed={tier === v}
+                                  onClick={() => setTier(v)}
+                                  className={`rounded-full border px-3.5 py-2 text-[14px] transition-colors ${tier === v ? 'border-gold bg-surface font-semibold' : 'border-line hover:border-muted'}`}
+                                >
+                                  {t.booking.what.valueTiers[v]}
+                                </button>
+                              ))}
+                            </div>
+                          </fieldset>
+                        )}
+                        {customOn && (
+                          <div className="rounded-[18px] border border-line p-4 sm:p-5">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div>
+                                <p className="font-semibold">{t.booking.ai.title}</p>
+                                <p className="measure mt-1 text-[14px] text-muted">{t.booking.ai.lead}</p>
+                              </div>
+                              <button type="button" className="btn btn-ghost h-10 min-h-0" onClick={runAi} disabled={aiText.length < 10 || ai.status === 'loading'}>
+                                {ai.status === 'loading' ? t.booking.ai.loading : t.booking.ai.button}
+                              </button>
+                            </div>
+                            <div aria-live="polite">
+                              {ai.status === 'error' && <p className="mt-3 text-[14px] text-muted">{t.booking.ai.unavailable}</p>}
+                              {ai.data && <AiCard data={ai.data} />}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
 
                     {step === 2 && (
                       <div className="grid gap-5">
+                        {where === 'pickup' && (
+                          <div className="grid gap-3">
+                            <div>
+                              <p className="font-semibold">{t.booking.pickup.title}</p>
+                              <p className="measure mt-1 text-[14px] text-muted">{t.booking.pickup.lead}</p>
+                            </div>
+                            <label className="flex cursor-pointer items-start gap-3 rounded-[14px] border border-line p-3.5">
+                              <input type="checkbox" className="mt-0.5 size-4 accent-[var(--gold)]" checked={urgent} onChange={(e) => setUrgent(e.target.checked)} />
+                              <span>
+                                <span className="block text-[15px] font-semibold">{t.booking.pickup.urgentToggle}</span>
+                                <span className="block text-[13px] text-muted">{t.booking.pickup.urgentHint}</span>
+                              </span>
+                            </label>
+                            <Suspense fallback={<div className="h-[300px] animate-pulse rounded-[18px] border border-line bg-surface md:h-[360px]" />}>
+                              <PickupMap value={pickup} onChange={setPickup} lang={lang} labels={t.booking.pickup} urgent={urgent} />
+                            </Suspense>
+                            {errors.pickup && <p className="text-[13px] text-[#c4443b]">{errors.pickup}</p>}
+                          </div>
+                        )}
                         <fieldset>
                           <legend className="text-[14px] font-semibold">{t.booking.when.pickDay}</legend>
                           <div className="-mx-1 mt-2 flex gap-2 overflow-x-auto px-1 pb-2" data-lenis-prevent-horizontal>
@@ -336,7 +550,7 @@ export function Booking() {
                                   onClick={() => setDay(d)}
                                   aria-pressed={day === d}
                                   className={`flex min-w-[4.6rem] shrink-0 flex-col items-center rounded-[14px] border px-3 py-2.5 transition-colors ${
-                                    day === d ? 'border-gold bg-bg' : 'border-line hover:border-muted'
+                                    day === d ? 'border-gold bg-surface' : 'border-line hover:border-muted'
                                   }`}
                                 >
                                   <span className="text-[12px] capitalize text-muted">{l.wd}</span>
@@ -350,7 +564,7 @@ export function Booking() {
                         </fieldset>
                         {day && (
                           <fieldset>
-                            <legend className="text-[14px] font-semibold">{t.booking.when.pickTime}</legend>
+                            <legend className="text-[14px] font-semibold">{where === 'pickup' ? t.booking.when.pickWindow : t.booking.when.pickTime}</legend>
                             {slots.length ? (
                               <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-5">
                                 {slots.map((s) => (
@@ -361,7 +575,7 @@ export function Booking() {
                                     aria-pressed={slot === s.start}
                                     className={`rounded-[12px] border py-2.5 font-semibold transition-colors ${slot === s.start ? 'border-gold bg-gold text-on-gold' : 'border-line hover:border-muted'}`}
                                   >
-                                    {s.label}
+                                    {where === 'pickup' ? windowLabel(s.label) : s.label}
                                   </button>
                                 ))}
                               </div>
@@ -411,9 +625,21 @@ export function Booking() {
                   </motion.div>
                 </AnimatePresence>
 
-                <aside className="h-fit rounded-[18px] border border-line bg-bg p-5" aria-live="polite">
+                <aside className="h-fit rounded-[18px] border border-line bg-surface p-5" aria-live="polite">
                   <p className="text-[14px] font-semibold">{t.booking.summary.title}</p>
                   <dl className="mt-3 grid gap-3 text-[14px]">
+                    {transport > 0 && (
+                      <>
+                        <div className="flex justify-between gap-3">
+                          <dt className="text-muted">{t.booking.summary.repair}</dt>
+                          <dd className="font-semibold">{rangeText(repair)}</dd>
+                        </div>
+                        <div className="flex justify-between gap-3">
+                          <dt className="text-muted">{t.booking.summary.pickup}</dt>
+                          <dd className="font-semibold">{formatLei(transport, lang)}</dd>
+                        </div>
+                      </>
+                    )}
                     <div>
                       <dt className="text-muted">{t.booking.summary.price}</dt>
                       <dd className="display-2 text-2xl">{priceText}</dd>
@@ -431,6 +657,7 @@ export function Booking() {
                     </ul>
                   )}
                   {mode === 'shop' && <p className="mt-4 text-[13px] text-ok">{t.booking.summary.free}</p>}
+                  {est.partsExtra && <p className="mt-2 text-[13px] text-muted">{t.booking.summary.partsExtra}</p>}
                   {est.needsDiagnosis && <p className="mt-2 text-[13px] text-muted">{t.booking.summary.diagnosisNote}</p>}
                 </aside>
               </div>
@@ -453,6 +680,53 @@ export function Booking() {
           )}
         </div>
       </div>
-    </section>
+      </div>
+    </motion.div>
+  )
+}
+
+function AiCard({ data }: { data: AiEstimate }) {
+  const { t, lang } = useI18n()
+  const lei = (n: number) => formatLei(n, lang)
+  const range = ([lo, hi]: [number, number]) => (hi > lo ? `${lei(lo).replace(/\s?lei$/, '')}–${lei(hi)}` : lei(lo))
+  const pct = Math.round(((data.labour[1] / Math.max(data.labourHours[1] * data.rate[1], 1)) - 1) * 100)
+  const rate = data.rate[0] === data.rate[1] ? fmt(t.services.perHour, { rate: data.rate[0] }) : fmt(t.services.perHourRange, { from: data.rate[0], to: data.rate[1] })
+  return (
+    <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="mt-4 grid gap-3 border-t border-line pt-4 text-[14px]">
+      <p>{data.summary}</p>
+      <dl className="grid gap-1.5">
+        <div className="flex justify-between gap-3">
+          <dt className="text-muted">
+            {t.booking.ai.labour}: {fmt(t.booking.ai.hours, { from: data.labourHours[0], to: data.labourHours[1] })} {fmt(t.booking.ai.rate, { rate })}
+          </dt>
+          <dd className="shrink-0 font-semibold">{range(data.labour)}</dd>
+        </div>
+        {pct > 0 && <p className="text-[13px] text-muted">{fmt(t.booking.ai.consumables, { pct })}</p>}
+        {data.parts.length > 0 && (
+          <div className="flex justify-between gap-3">
+            <dt className="text-muted">
+              {t.booking.ai.parts}: {data.parts.map((p) => p.name).join(', ')}
+            </dt>
+            <dd className="shrink-0 font-semibold">{range(data.partsTotal)}</dd>
+          </div>
+        )}
+        <div className="flex justify-between gap-3 border-t border-line pt-2">
+          <dt className="font-semibold">{t.booking.ai.total}</dt>
+          <dd className="shrink-0 font-semibold">{range(data.total)}</dd>
+        </div>
+      </dl>
+      <p className="text-[13px] text-muted">{t.booking.ai.confidence[data.confidence]}</p>
+      {data.questions.length > 0 && (
+        <div>
+          <p className="text-[13px] font-semibold">{t.booking.ai.questions}</p>
+          <ul className="mt-1 list-disc pl-5 text-[13px] text-muted">
+            {data.questions.map((q) => (
+              <li key={q}>{q}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <p className="text-[12px] text-muted">{t.booking.ai.disclaimer}</p>
+    </motion.div>
   )
 }

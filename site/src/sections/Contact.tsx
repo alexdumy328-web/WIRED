@@ -57,7 +57,7 @@ export function Footer() {
   const { t } = useI18n()
   return (
     <footer className="relative z-10 border-t border-line bg-bg">
-      <div className="mx-auto flex max-w-[1320px] flex-col gap-6 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+      <div className="mx-auto flex max-w-[1360px] flex-col gap-6 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-10">
         <Logo />
         <p className="text-[14px] text-muted">
           © {new Date().getFullYear()} {t.footer.rights} {t.footer.made}

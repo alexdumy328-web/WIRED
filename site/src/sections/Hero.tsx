@@ -1,31 +1,58 @@
+import { useRef } from 'react'
+import { motion, useScroll, useTransform } from 'motion/react'
 import { useI18n } from '../i18n'
-import { useStation } from '../lib/stations'
+import { focus, stopSection, useStation } from '../lib/stations'
+import { openBooking } from '../lib/booking-store'
+import { linkTo } from '../lib/router'
+import { useReducedMotion } from '../lib/theme'
 import { OpenStatus } from '../components/OpenStatus'
+import { ShopPanel } from '../components/Scene3D'
+import type { StopId } from '../three/contract'
 
-/** One screen: headline left, the 3D shop on the right (rendered by SceneLayer behind). */
+/** First screen: headline on the left, the shop in a card on the right (on top on phones). */
 export function Hero() {
   const { t } = useI18n()
-  const ref = useStation<HTMLElement>({ stop: 'overview', frame: 1.5 })
+  const reduced = useReducedMotion()
+  const ref = useStation<HTMLElement>({ stop: 'overview' })
+  const card = useRef<HTMLDivElement>(null)
+  // As the hero scrolls away the card sinks back a little; it never moves while you read.
+  const { scrollYProgress } = useScroll({ target: card, offset: ['start start', 'end start'] })
+  const scale = useTransform(scrollYProgress, [0, 1], reduced ? [1, 1] : [1, 0.9])
+  const y = useTransform(scrollYProgress, [0, 1], reduced ? [0, 0] : [0, 80])
+  const opacity = useTransform(scrollYProgress, [0.5, 1], reduced ? [1, 1] : [1, 0.3])
+
+  const onSelect = (id: StopId) => {
+    focus(id)
+    document.getElementById(stopSection[id])?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
+
   return (
-    <section id="top" ref={ref} className="pointer-events-none relative z-10 flex min-h-[100dvh] items-end pb-12 pt-24 md:items-center md:pb-0">
-      {/* Wash so the headline reads over the model. */}
-      <div className="absolute inset-y-0 left-0 hidden w-[55%] bg-gradient-to-r from-bg via-bg/75 to-transparent md:block" aria-hidden="true" />
-      <div className="absolute inset-x-0 bottom-0 h-[62%] bg-gradient-to-t from-bg via-bg/85 to-transparent md:hidden" aria-hidden="true" />
-      <div className="relative mx-auto w-full max-w-[1320px] px-4 sm:px-6">
-        <div className="pointer-events-auto max-w-[36rem]">
-          <OpenStatus className="inline-flex" />
-          <h1 className="display mt-5 text-[clamp(2.5rem,5.4vw,4.75rem)]">{t.hero.title}</h1>
-          <p className="measure mt-6 max-w-[32rem] text-lg text-muted sm:text-xl">{t.hero.lead}</p>
-          <div className="mt-9 flex flex-wrap gap-3">
-            <a href="#programare" className="btn btn-gold">
-              {t.hero.ctaBook}
-            </a>
-            <a href="#servicii" className="btn btn-ghost">
-              {t.hero.ctaPrices}
-            </a>
-          </div>
+    <section id="top" ref={ref} className="relative grid min-h-[100svh] items-center gap-8 pb-12 pt-20 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-12 lg:pb-16">
+      <div className="order-2 lg:order-1">
+        <OpenStatus className="inline-flex" />
+        <h1 className="display mt-5 max-w-[14ch] text-[clamp(2.4rem,5vw,4.6rem)]">{t.hero.title}</h1>
+        <p className="measure mt-6 max-w-[34rem] text-lg text-muted sm:text-xl">{t.hero.lead}</p>
+        <div className="mt-9 flex flex-wrap gap-3">
+          <button type="button" className="btn btn-gold" onClick={() => openBooking()}>
+            {t.hero.ctaBook}
+          </button>
+          <a href="#servicii" className="btn btn-ghost">
+            {t.hero.ctaPrices}
+          </a>
         </div>
       </div>
+      <motion.div ref={card} style={{ scale, y, opacity }} className="order-1 lg:order-2">
+        <div className="relative">
+          <ShopPanel className="h-[42svh] rounded-[24px] border border-line lg:h-[min(76svh,760px)] lg:rounded-[32px]" onSelect={onSelect} />
+          <a
+            href="/atelier"
+            onClick={linkTo('/atelier')}
+            className="btn btn-ghost absolute bottom-3 left-3 h-10 min-h-0 border-line bg-bg/80 backdrop-blur lg:bottom-5 lg:left-5"
+          >
+            {t.workshopPage.explore}
+          </a>
+        </div>
+      </motion.div>
     </section>
   )
 }

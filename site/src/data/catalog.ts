@@ -1,8 +1,11 @@
 import type { Job } from '../types'
 
-export const categoryOrder = ['laptop', 'pc', 'board', 'coffee', 'appliance', 'it', 'auto'] as const
+export const categoryOrder = ['laptop', 'pc', 'board', 'coffee', 'appliance', 'it', 'vintage', 'auto'] as const
 
-/** Prices in RON, VAT included. Auto jobs are done at the customer's car. */
+/**
+ * Prices in RON, VAT included. Jobs with `hourly` are priced by lib/pricing.ts
+ * (hours × rate × consumables, parts extra); their priceFrom is ignored.
+ */
 export const catalog: Job[] = [
   // Laptops
   {
@@ -113,6 +116,8 @@ export const catalog: Job[] = [
     priceFrom: 250,
     priceTo: 500,
     etaHours: [48, 96],
+    hourly: { hours: [1.5, 3], fineness: 'micro', consumables: 'high' },
+    partsExtra: true,
     needsDiagnosis: true,
   },
   {
@@ -127,6 +132,8 @@ export const catalog: Job[] = [
     priceFrom: 250,
     priceTo: 600,
     etaHours: [48, 96],
+    hourly: { hours: [2, 4], fineness: 'micro', consumables: 'high' },
+    partsExtra: true,
     needsDiagnosis: true,
   },
   {
@@ -141,6 +148,8 @@ export const catalog: Job[] = [
     priceFrom: 250,
     priceTo: 700,
     etaHours: [24, 72],
+    hourly: { hours: [1, 3], fineness: 'micro', consumables: 'medium' },
+    partsExtra: true,
     needsDiagnosis: true,
   },
   {
@@ -155,6 +164,8 @@ export const catalog: Job[] = [
     priceFrom: 400,
     priceTo: 900,
     etaHours: [48, 120],
+    hourly: { hours: [2, 4], fineness: 'micro', consumables: 'high' },
+    partsExtra: true,
     needsDiagnosis: true,
   },
   {
@@ -169,48 +180,93 @@ export const catalog: Job[] = [
     priceFrom: 350,
     priceTo: 900,
     etaHours: [72, 120],
+    hourly: { hours: [1.5, 4], fineness: 'fine', consumables: 'high' },
+    partsExtra: true,
     needsDiagnosis: true,
+  },
+
+  {
+    id: 'board-console',
+    category: 'board',
+    mode: 'shop',
+    name: { ro: 'Console PS5, Xbox, Switch', en: 'PS5, Xbox and Switch consoles' },
+    description: {
+      ro: 'Port HDMI, circuit de alimentare sau componente de pe placă. Lucru fin la microscop, la tariful maxim.',
+      en: 'HDMI port, power circuit or board components. Fine work under the microscope, at the top rate.',
+    },
+    priceFrom: 0,
+    etaHours: [48, 96],
+    needsDiagnosis: true,
+    hourly: { hours: [1, 3], fineness: 'micro', consumables: 'high' },
+    partsExtra: true,
   },
 
   // Espresso and coffee machines
   {
-    id: 'coffee-descale-gaskets',
+    id: 'coffee-clean-manual',
     category: 'coffee',
     mode: 'shop',
-    name: { ro: 'Detartrare și garnituri espressor', en: 'Espresso machine descale and gaskets' },
+    name: { ro: 'Curățare espressor manual', en: 'Manual espresso machine cleaning' },
     description: {
-      ro: 'Detartrăm circuitul, schimbăm garniturile uscate și verificăm presiunea.',
-      en: 'We descale the circuit, replace dry gaskets and check the pressure.',
+      ro: 'Curățăm grupul, sita și duza de abur și schimbăm garnitura grupului dacă e uscată.',
+      en: 'We clean the group head, screen and steam wand and replace a dried-out group gasket.',
     },
-    priceFrom: 150,
-    priceTo: 250,
-    etaHours: [4, 8],
+    priceFrom: 100,
+    etaHours: [4, 24],
   },
   {
-    id: 'coffee-pump',
+    id: 'coffee-clean-auto',
     category: 'coffee',
     mode: 'shop',
-    name: { ro: 'Înlocuire pompă espressor', en: 'Espresso machine pump replacement' },
+    name: { ro: 'Curățare espressor automat', en: 'Automatic espresso machine cleaning' },
     description: {
-      ro: 'Montăm o pompă nouă și verificăm presiunea la extracție.',
-      en: 'We fit a new pump and check the shot pressure.',
+      ro: 'Scoatem unitatea de infuzare, curățăm circuitul de cafea și râșnița și ungem piesele mobile.',
+      en: 'We remove the brew unit, clean the coffee path and grinder and grease the moving parts.',
     },
     priceFrom: 200,
-    priceTo: 350,
     etaHours: [24, 48],
   },
   {
-    id: 'coffee-grinder',
+    id: 'coffee-descale',
     category: 'coffee',
     mode: 'shop',
-    name: { ro: 'Înlocuire râșniță espressor', en: 'Espresso grinder replacement' },
+    name: { ro: 'Decalcifiere espressor', en: 'Espresso machine descaling' },
     description: {
-      ro: 'Montăm un set nou de râșnițe conice și reglăm gradul de măcinare.',
-      en: 'We fit a new set of conical burrs and set the grind range.',
+      ro: 'Pentru manuale și automate. Scoatem calcarul din boiler sau termobloc și din circuit.',
+      en: 'For manual and automatic machines. We clear scale from the boiler or thermoblock and the water path.',
     },
-    priceFrom: 250,
-    priceTo: 450,
-    etaHours: [24, 48],
+    priceFrom: 75,
+    etaHours: [4, 24],
+  },
+  {
+    id: 'coffee-repair',
+    category: 'coffee',
+    mode: 'shop',
+    name: { ro: 'Reparație espressor', en: 'Espresso machine repair' },
+    description: {
+      ro: 'Pompă, valve, garnituri, râșniță sau unitate de infuzare. Manopera ține cont de valoarea aparatului: un Jura costă mai mult decât un espressor de bază, și la manoperă, și la piese.',
+      en: 'Pump, valves, gaskets, grinder or brew unit. Labour follows the machine’s value: a Jura costs more than a basic machine, in labour and in parts.',
+    },
+    priceFrom: 0,
+    etaHours: [48, 120],
+    needsDiagnosis: true,
+    hourly: { hours: [1, 3], fineness: 'standard', consumables: 'medium', byValue: true },
+    partsExtra: true,
+  },
+  {
+    id: 'coffee-board',
+    category: 'coffee',
+    mode: 'shop',
+    name: { ro: 'Placă electronică espressor automat', en: 'Automatic espresso machine control board' },
+    description: {
+      ro: 'Reparăm placa la nivel de componentă în loc să o înlocuim, când se poate.',
+      en: 'We repair the board at component level instead of replacing it, when possible.',
+    },
+    priceFrom: 0,
+    etaHours: [48, 120],
+    needsDiagnosis: true,
+    hourly: { hours: [1, 2.5], fineness: 'fine', consumables: 'medium', byValue: true },
+    partsExtra: true,
   },
 
   // Home appliances
@@ -226,6 +282,8 @@ export const catalog: Job[] = [
     priceFrom: 180,
     priceTo: 400,
     etaHours: [48, 96],
+    hourly: { hours: [1, 2.5], fineness: 'fine', consumables: 'medium', byValue: true },
+    partsExtra: true,
     needsDiagnosis: true,
   },
   {
@@ -240,6 +298,8 @@ export const catalog: Job[] = [
     priceFrom: 90,
     priceTo: 200,
     etaHours: [24, 48],
+    hourly: { hours: [0.5, 1.5], fineness: 'standard', consumables: 'low', byValue: true },
+    partsExtra: true,
   },
   {
     id: 'appliance-vacuum',
@@ -253,6 +313,8 @@ export const catalog: Job[] = [
     priceFrom: 120,
     priceTo: 220,
     etaHours: [24, 48],
+    hourly: { hours: [0.5, 1.5], fineness: 'standard', consumables: 'low', byValue: true },
+    partsExtra: true,
   },
 
   // IT maintenance
@@ -386,5 +448,159 @@ export const catalog: Job[] = [
     priceFrom: 150,
     priceTo: 250,
     etaHours: [1, 3],
+  },
+
+  // Vintage audio
+  {
+    id: 'vintage-cassette',
+    category: 'vintage',
+    mode: 'shop',
+    name: { ro: 'Casetofon sau deck', en: 'Cassette deck' },
+    description: {
+      ro: 'Curele noi, capete curățate și demagnetizate, mecanism reglat, viteza verificată.',
+      en: 'New belts, cleaned and demagnetised heads, adjusted mechanism, speed checked.',
+    },
+    priceFrom: 0,
+    etaHours: [72, 168],
+    needsDiagnosis: true,
+    hourly: { hours: [1.5, 3], fineness: 'fine', consumables: 'medium', byValue: true },
+    partsExtra: true,
+  },
+  {
+    id: 'vintage-reel',
+    category: 'vintage',
+    mode: 'shop',
+    name: { ro: 'Magnetofon cu bobine', en: 'Reel-to-reel tape recorder' },
+    description: {
+      ro: 'Curele, frâne, role de presiune, capete și aliniere. Manopera ține cont de valoarea aparatului.',
+      en: 'Belts, brakes, pinch rollers, heads and alignment. Labour follows the machine’s value.',
+    },
+    priceFrom: 0,
+    etaHours: [120, 240],
+    needsDiagnosis: true,
+    hourly: { hours: [2, 5], fineness: 'fine', consumables: 'medium', byValue: true },
+    partsExtra: true,
+  },
+  {
+    id: 'vintage-amp',
+    category: 'vintage',
+    mode: 'shop',
+    name: { ro: 'Amplificator sau receiver', en: 'Amplifier or receiver' },
+    description: {
+      ro: 'Condensatori schimbați, tranzistori finali verificați, potențiometre curățate, curent de repaus reglat.',
+      en: 'Recapping, output transistors checked, pots cleaned, bias set.',
+    },
+    priceFrom: 0,
+    etaHours: [72, 240],
+    needsDiagnosis: true,
+    hourly: { hours: [2, 6], fineness: 'fine', consumables: 'high', byValue: true },
+    partsExtra: true,
+  },
+  {
+    id: 'vintage-turntable',
+    category: 'vintage',
+    mode: 'shop',
+    name: { ro: 'Pick-up', en: 'Turntable' },
+    description: {
+      ro: 'Curea sau motor, braț reglat, viteză verificată. Doza și acul le schimbăm doar dacă vrei.',
+      en: 'Belt or motor, tonearm set up, speed checked. We replace the cartridge and stylus only if you want.',
+    },
+    priceFrom: 0,
+    etaHours: [48, 120],
+    hourly: { hours: [1, 2.5], fineness: 'fine', consumables: 'low', byValue: true },
+    partsExtra: true,
+  },
+
+  // Large appliances, at the customer's home
+  {
+    id: 'home-washer-diagnosis',
+    category: 'appliance',
+    mode: 'mobile',
+    name: { ro: 'Diagnoză mașină de spălat la domiciliu', en: 'Washing machine diagnosis at your home' },
+    description: {
+      ro: 'Venim la tine, găsim defectul și îți spunem prețul reparației înainte să lucrăm.',
+      en: 'We come to you, find the fault and give you the repair price before any work.',
+    },
+    priceFrom: 120,
+    etaHours: [1, 2],
+    needsDiagnosis: true,
+  },
+  {
+    id: 'home-washer-pump',
+    category: 'appliance',
+    mode: 'mobile',
+    name: { ro: 'Pompă de evacuare mașină de spălat', en: 'Washing machine drain pump' },
+    description: {
+      ro: 'Schimbăm pompa care nu mai scoate apa și curățăm filtrul. Prețul include piesa.',
+      en: 'We replace the pump that no longer drains and clean the filter. Price includes the part.',
+    },
+    priceFrom: 250,
+    priceTo: 400,
+    etaHours: [1, 2],
+    hourly: { hours: [1, 2], fineness: 'standard', consumables: 'medium', byValue: true },
+    partsExtra: true,
+  },
+  {
+    id: 'home-washer-heater',
+    category: 'appliance',
+    mode: 'mobile',
+    name: { ro: 'Rezistență mașină de spălat', en: 'Washing machine heater' },
+    description: {
+      ro: 'Mașina spală cu apă rece. Măsurăm rezistența și senzorul, apoi le schimbăm pe cele arse.',
+      en: 'The machine washes cold. We measure the heater and sensor, then replace the burnt one.',
+    },
+    priceFrom: 220,
+    priceTo: 380,
+    etaHours: [1, 2],
+    hourly: { hours: [1, 2], fineness: 'standard', consumables: 'medium', byValue: true },
+    partsExtra: true,
+  },
+  {
+    id: 'home-dishwasher',
+    category: 'appliance',
+    mode: 'mobile',
+    name: { ro: 'Mașină de spălat vase', en: 'Dishwasher repair' },
+    description: {
+      ro: 'Pompă, rezistență, senzori sau modul. Lucrăm la tine în bucătărie.',
+      en: 'Pump, heater, sensors or control board. We work in your kitchen.',
+    },
+    priceFrom: 200,
+    priceTo: 450,
+    etaHours: [1, 3],
+    hourly: { hours: [1, 2.5], fineness: 'standard', consumables: 'medium', byValue: true },
+    partsExtra: true,
+    needsDiagnosis: true,
+  },
+  {
+    id: 'home-oven',
+    category: 'appliance',
+    mode: 'mobile',
+    name: { ro: 'Cuptor sau plită electrică', en: 'Electric oven or hob' },
+    description: {
+      ro: 'Rezistențe, termostat și comenzi. Verificăm și cablajul de alimentare.',
+      en: 'Heating elements, thermostat and controls. We also check the supply wiring.',
+    },
+    priceFrom: 180,
+    priceTo: 400,
+    etaHours: [1, 2],
+    hourly: { hours: [1, 2.5], fineness: 'standard', consumables: 'medium', byValue: true },
+    partsExtra: true,
+    needsDiagnosis: true,
+  },
+  {
+    id: 'home-fridge',
+    category: 'appliance',
+    mode: 'mobile',
+    name: { ro: 'Frigider care nu răcește', en: 'Fridge not cooling' },
+    description: {
+      ro: 'Termostat, ventilator și releu de pornire. Nu facem lucrări pe freon.',
+      en: 'Thermostat, fan and start relay. We do not work on refrigerant.',
+    },
+    priceFrom: 180,
+    priceTo: 380,
+    etaHours: [1, 2],
+    hourly: { hours: [1, 2.5], fineness: 'standard', consumables: 'medium', byValue: true },
+    partsExtra: true,
+    needsDiagnosis: true,
   },
 ]

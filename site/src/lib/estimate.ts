@@ -1,10 +1,22 @@
 import type { Job } from '../types.ts';
+import { labourPrice, type ValueTier } from './pricing.ts';
+
+/** Price range of one job in lei: set price, or hours × rate × consumables for hourly jobs (parts extra). */
+export function jobPrice(job: Job, tier?: ValueTier | null): [number, number] {
+  if (job.hourly) {
+    const h = job.hourly;
+    return labourPrice(h.hours, h.fineness, h.consumables, h.byValue ? tier : null);
+  }
+  return [job.priceFrom, job.priceTo ?? job.priceFrom];
+}
 
 export type EstimateResult = {
   priceFrom: number;
   priceTo: number;
   etaHours: [number, number];
   needsDiagnosis: boolean;
+  /** At least one job bills parts on top. */
+  partsExtra: boolean;
 };
 
 /**
@@ -15,26 +27,30 @@ export type EstimateResult = {
  * - needsDiagnosis true if hasCustom or any job.needsDiagnosis
  * - Empty jobs -> zeros
  */
-export function estimate(jobs: Job[], hasCustom: boolean): EstimateResult {
+export function estimate(jobs: Job[], hasCustom: boolean, tier?: ValueTier | null): EstimateResult {
   if (jobs.length === 0) {
     return {
       priceFrom: 0,
       priceTo: 0,
       etaHours: [0, 0],
       needsDiagnosis: hasCustom,
+      partsExtra: false,
     };
   }
 
   let priceFrom = 0;
   let priceTo = 0;
   let needsDiagnosis = hasCustom;
+  let partsExtra = false;
 
   const shopJobs: Job[] = [];
   const mobileJobs: Job[] = [];
 
   for (const job of jobs) {
-    priceFrom += job.priceFrom;
-    priceTo += job.priceTo ?? job.priceFrom;
+    const [lo, hi] = jobPrice(job, tier);
+    priceFrom += lo;
+    priceTo += hi;
+    if (job.partsExtra) partsExtra = true;
     if (job.needsDiagnosis) {
       needsDiagnosis = true;
     }
@@ -69,6 +85,7 @@ export function estimate(jobs: Job[], hasCustom: boolean): EstimateResult {
     priceTo,
     etaHours,
     needsDiagnosis,
+    partsExtra,
   };
 }
 

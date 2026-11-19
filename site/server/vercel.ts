@@ -7,6 +7,7 @@
  */
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { createApp } from './app.ts'
+import { createPlatform } from './platform.ts'
 import { FileStore, MongoStore, DEFAULT_DB_NAME, type Store } from './store.ts'
 
 let ready: Promise<ReturnType<typeof createApp>> | null = null
@@ -18,7 +19,8 @@ function boot() {
     if (!uri) console.warn('[api] MONGODB_URI is unset: bookings live in /tmp and disappear when the instance recycles')
     await store.init()
     // Behind Vercel's proxy, trust X-Forwarded-For so the rate limit sees the client IP.
-    const app = createApp(store)
+    const platform = store instanceof MongoStore ? await createPlatform({ db: store.getDb(), storeKind: store.kind }) : undefined
+    const app = createApp(store, { platform })
     app.set('trust proxy', true)
     return app
   })().catch((err) => {

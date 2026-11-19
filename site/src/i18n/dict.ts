@@ -9,11 +9,11 @@ export type Dict = {
     services: string
     mobile: string
     process: string
-    workshop: string
     reviews: string
     faq: string
     book: string // short CTA in the header
     track: string // "track a repair"
+    workshop3d: string // link to the interactive 3D workshop page
     themeLight: string
     themeDark: string
     themeSystem: string
@@ -32,14 +32,6 @@ export type Dict = {
     ctaPrices: string
     scrollHint: string
   }
-  /** Captions shown next to each 3D camera stop while scrolling the hero tour. */
-  tour: {
-    overview: { title: string; body: string }
-    pcbWall: { title: string; body: string }
-    bench: { title: string; body: string }
-    counter: { title: string; body: string }
-    door: { title: string; body: string }
-  }
   /** Short labels (1-3 words) on clickable hotspots inside the 3D shop. */
   hotspots: {
     pcbWall: string // the wall of repaired boards
@@ -52,12 +44,18 @@ export type Dict = {
   services: {
     title: string
     lead: string
-    categories: Record<'laptop' | 'pc' | 'board' | 'coffee' | 'appliance' | 'it', { name: string; blurb: string }>
+    stageHint: string // under the device viewer: hover a row to light up the part
+    categories: Record<'laptop' | 'pc' | 'board' | 'coffee' | 'appliance' | 'it' | 'vintage', { name: string; blurb: string }>
     from: string // "from {price} lei"
     fixed: string // "{price} lei"
     range: string // "{from}–{to} lei"
     eta: string // "ready in {eta}"
     afterDiagnosis: string // "final price after diagnosis"
+    perHour: string // "{rate} lei/h"
+    perHourRange: string // "{from}–{to} lei/h"
+    plusParts: string // "+ parts"
+    byValue: string // "rate follows the device's value"
+    labour: string // one sentence on the labour model, shown under the lead
     bookThis: string
   }
   mobile: {
@@ -65,17 +63,13 @@ export type Dict = {
     lead: string
     area: string // where the van goes
     travelFee: string // e.g. "Travel inside the city is free; outside, {price} lei/km"
-    points: string[] // 3-5 concrete things done at the car
+    tabs: { auto: string; appliances: string }
+    points: { auto: string[]; appliances: string[] } // concrete things done on site
     bookThis: string
   }
   process: {
     title: string
     steps: { title: string; body: string }[] // exactly 5, real sequence
-  }
-  workshop: {
-    title: string
-    lead: string
-    photos: { lab: string; entrance: string; pcbWall: string } // alt texts / captions
   }
   eta: {
     title: string
@@ -106,7 +100,34 @@ export type Dict = {
     title: string
     lead: string
     steps: { where: string; what: string; when: string; who: string } // step names
-    where: { shop: string; shopHint: string; mobile: string; mobileHint: string }
+    where: { shop: string; shopHint: string; pickup: string; pickupHint: string; mobile: string; mobileHint: string }
+    /** Labels for the pickup map (see components/PickupMap.tsx). */
+    pickup: {
+      title: string
+      lead: string
+      search: string
+      searchPlaceholder: string
+      noResults: string
+      searchError: string
+      useMyLocation: string
+      dragHint: string
+      trips: Record<'both' | 'pickup' | 'dropoff', string>
+      distance: string // "{km} km one way, about {min} min"
+      fuel: string
+      time: string
+      total: string
+      perTrip: string // "{price} lei per trip"
+      insideIasi: string
+      outsideIasi: string
+      tooFar: string
+      estimated: string
+      quoteError: string
+      shop: string
+      required: string // error when no address is chosen
+      urgent: string // line label for the surcharge in the quote panel
+      urgentToggle: string // checkbox label
+      urgentHint: string // what urgent means
+    }
     what: {
       pickJobs: string
       custom: string // label for "something not in the list"
@@ -117,10 +138,32 @@ export type Dict = {
       year: string
       issue: string
       issuePlaceholder: string
+      value: string // "What is the device worth today?"
+      valueHint: string // why we ask
+      valueTiers: Record<'low' | 'mid' | 'high' | 'premium' | 'unknown', string>
     }
-    when: { pickDay: string; pickTime: string; noSlots: string; location: string; locationPlaceholder: string }
+    ai: {
+      title: string
+      lead: string
+      button: string
+      loading: string
+      unavailable: string
+      hours: string // "{from}–{to} h of work"
+      rate: string // "at {rate}"
+      labour: string
+      consumables: string // "Consumables: +{pct}%"
+      parts: string
+      total: string
+      confidence: Record<'low' | 'medium' | 'high', string>
+      questions: string // heading for the clarifying questions
+      disclaimer: string
+    }
+    when: { pickDay: string; pickTime: string; pickWindow: string; noSlots: string; location: string; locationPlaceholder: string }
     who: { name: string; phone: string; email: string; optional: string; consent: string }
-    summary: { title: string; price: string; eta: string; free: string; diagnosisNote: string }
+    summary: { title: string; price: string; eta: string; free: string; diagnosisNote: string; partsExtra: string; pickup: string; repair: string }
+    open: string // CTA that opens the booking popup
+    close: string // aria-label of the X
+    confirmClose: { title: string; leave: string; stay: string }
     back: string
     next: string
     submit: string // "Send booking"
@@ -134,6 +177,26 @@ export type Dict = {
       server: string
     }
   }
+  /** The interactive 3D workshop page. */
+  workshopPage: {
+    title: string
+    lead: string
+    explore: string // button on the hero card that opens the page
+    stations: string
+    parts: string // heading of the part list
+    partsHint: string
+    explode: string
+    assemble: string
+    tour: string
+    stopTour: string
+    back: string
+    controls: string // how to move the camera
+    stationNames: Record<'overview' | 'pcbWall' | 'bench' | 'laptop' | 'coffee' | 'counter' | 'door', string>
+  }
+  /** Shown once when a filled form holds the page scroll. */
+  scrollHold: string
+  /** Label of the 3D window when it shows the whole shop. */
+  windowOverview: string
   faq: { title: string; items: { q: string; a: string }[] } // 6-8 items
   contact: {
     title: string
@@ -142,6 +205,172 @@ export type Dict = {
     call: string
     whatsapp: string
     directions: string
+  }
+  account: {
+    nav: string // header button label
+    navSignedIn: string // aria-label of the header button when signed in
+    title: string
+    lead: string
+    google: string
+    or: string
+    methods: { code: string; password: string }
+    fields: { name: string; email: string; password: string; code: string; newPassword: string }
+    passwordHint: string
+    actions: {
+      sendCode: string
+      verify: string
+      resend: string
+      signIn: string
+      createAccount: string
+      forgot: string
+      backToSignIn: string
+      reset: string
+      signOut: string
+    }
+    toggles: { toSignUp: string; toSignIn: string }
+    msgs: { codeSent: string; confirmSent: string; resetSent: string; resetDone: string; unverified: string }
+    errors: {
+      email: string
+      passwordShort: string
+      name: string
+      code: string
+      invalidCode: string
+      locked: string
+      rateLimited: string
+      mailDown: string
+      badLogin: string
+      generic: string
+    }
+    profile: { title: string; name: string; email: string; role: string; verified: string; notVerified: string }
+    roles: Record<'customer' | 'owner' | 'dev', string>
+    dashboards: { title: string; owner: string; dev: string }
+    bookings: {
+      title: string
+      empty: string
+      bookNow: string
+      loading: string
+      error: string
+      code: string
+      when: string
+      where: Record<'shop' | 'mobile', string>
+      pickup: string
+      estimate: string
+      timeline: string
+    }
+    noAccess: { title: string; body: string; signIn: string; home: string }
+    unavailable: string
+    loading: string
+  }
+  owner: {
+    title: string
+    lead: string
+    refresh: string
+    tabs: { bookings: string; pickups: string; calendar: string; stats: string; settings: string }
+    bookings: {
+      search: string
+      searchPlaceholder: string
+      status: string
+      mode: string
+      from: string
+      to: string
+      all: string
+      reset: string
+      empty: string
+      total: string // "{n} bookings"
+      loadMore: string
+      columns: { code: string; when: string; customer: string; device: string; mode: string; status: string }
+      modes: Record<'shop' | 'mobile', string>
+    }
+    detail: {
+      close: string
+      contact: string
+      phone: string
+      email: string
+      address: string
+      map: string
+      issue: string
+      estimate: string // "{from}-{to} lei"
+      pickup: string
+      trips: Record<'both' | 'pickup' | 'dropoff', string>
+      urgent: string
+      history: string
+      noteLabel: string
+      notePlaceholder: string
+      newStatus: string
+      save: string
+      saved: string
+      error: string
+      custom: string
+    }
+    pickups: { title: string; today: string; tomorrow: string; none: string; urgent: string; window: string; call: string; map: string }
+    calendar: { title: string; prev: string; next: string; thisWeek: string; free: string }
+    stats: {
+      title: string
+      perWeek: string
+      byCategory: string
+      byStatus: string
+      revenue: string
+      done: string
+      pipeline: string
+      note: string
+      total: string
+      active: string
+      other: Record<'auto' | 'custom', string>
+    }
+    settings: {
+      title: string
+      lead: string
+      pickup: string
+      labour: string
+      save: string
+      saved: string
+      invalid: string
+      error: string
+      range: string // "Between {min} and {max}"
+      fields: Record<
+        | 'dieselLeiPerL'
+        | 'consumptionLPer100'
+        | 'driverLeiPerHour'
+        | 'stopMinutes'
+        | 'minTripLei'
+        | 'urgentFactor'
+        | 'maxKm'
+        | 'valueLow'
+        | 'valueMid'
+        | 'valueHigh'
+        | 'valuePremium'
+        | 'consumLow'
+        | 'consumMedium'
+        | 'consumHigh',
+        string
+      >
+      order: string
+    }
+  }
+  dev: {
+    title: string
+    lead: string
+    refresh: string
+    sections: { health: string; env: string; errors: string; audit: string; outbox: string; users: string; limits: string }
+    health: {
+      mongo: string
+      store: string
+      environment: string
+      mail: string
+      google: string
+      uptime: string
+      versions: string
+      ok: string
+      down: string
+      on: string
+      off: string
+    }
+    env: { name: string; status: string; set: string; unset: string; needed: string }
+    errors: { empty: string; when: string; where: string; message: string }
+    audit: { empty: string; when: string; action: string; who: string; target: string; detail: string }
+    outbox: { empty: string; devOnly: string; to: string; subject: string; kind: string; when: string }
+    users: { search: string; email: string; name: string; role: string; verified: string; created: string; saved: string; self: string; error: string }
+    limits: { name: string; window: string; max: string; allowed: string; blocked: string; tracked: string }
   }
   footer: { rights: string; made: string }
 }

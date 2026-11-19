@@ -1,12 +1,26 @@
-import { existsSync } from 'node:fs'
+import { existsSync, readFileSync } from 'node:fs'
 import path from 'node:path'
 import express from 'express'
 import type { Express, NextFunction, Request, Response } from 'express'
 import type { ZodError } from 'zod'
 import { generateCode } from './code.ts'
-import { bookingRequestSchema, statusUpdateSchema } from './schema.ts'
+import {
+  createEstimateService,
+  knownJobIds,
+  resolveAiConfig,
+  type AiConfigOverrides,
+} from './estimate.ts'
+import { createGeoService, inRomania } from './geo.ts'
+import { createPickupService, resolvePickupRates } from './pickup-service.ts'
+import { aiEstimateRequestSchema, bookingRequestSchema, statusUpdateSchema } from './schema.ts'
+import type { Platform } from './platform.ts'
+import { safeEqual } from './security/compare.ts'
+import { recordError } from './security/error-log.ts'
+import { securityHeadersMiddleware } from './security/headers.ts'
+import { inlineScriptHashes } from './security/policy.ts'
 import type { Store } from './store.ts'
-import type { Booking, ServiceMode } from '../src/types.ts'
+import type { PickupRates, Trips } from '../src/lib/pickup.ts'
+import type { AiEstimateRequest, Booking, ServiceMode } from '../src/types.ts'
 
 export type CreateAppOptions = {
   /** Explicit token, or null to force the admin endpoint off. Defaults to env ADMIN_TOKEN. */
@@ -14,12 +28,47 @@ export type CreateAppOptions = {
   /** Absolute path to a built frontend; only served when the folder has an index.html. */
   distDir?: string
   rateLimit?: { windowMs?: number; max?: number }
+  /** Separate limiter for POST /api/estimate. */
+  estimateRateLimit?: { windowMs?: number; max?: number }
+  /** AI provider overrides. apiKey null forces the estimate endpoint off; defaults to env. */
+  ai?: AiConfigOverrides
+  /** Injectable fetch for the AI provider; tests pass a mock so they never hit the network. */
+  aiFetch?: typeof fetch
+  /** Shared injected fetch for Photon/OSRM; tests pass a mock so they never hit the network. */
+  upstreamFetch?: typeof fetch
+  /** More specific injectable fetches for the geo and pickup services. */
+  geoFetch?: typeof fetch
+  pickupFetch?: typeof fetch
+  /** Universal fallback used by the upstream services when no specific fetch is given. */
+  fetchImpl?: typeof fetch
+  fetch?: typeof fetch
+  /** Separate limiter for /api/geo/* and /api/pickup/*. */
+  upstreamRateLimit?: { windowMs?: number; max?: number }
+  /** Pickup rate overrides (tests); env vars win over PICKUP_DEFAULTS, these win over env. */
+  pickupRates?: Partial<PickupRates>
+  /** Accounts, roles and dashboards. Without it the account routes answer 503. */
+  platform?: Platform
+  /** Force production-mode headers (HSTS). Defaults to NODE_ENV === 'production'. */
+  production?: boolean
 }
 
 const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000
 const RATE_LIMIT_MAX = 10
+const ESTIMATE_RATE_LIMIT_MAX = 20
+const UPSTREAM_RATE_LIMIT_MAX = 60
 const DAY_MS = 24 * 60 * 60 * 1000
 const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
+
+function parseCoord(value: unknown): number | null {
+  if (typeof value !== 'string' || value.trim() === '') return null
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function parseLang(value: unknown): 'ro' | 'en' | null {
+  if (value === undefined) return 'ro'
+  return value === 'ro' || value === 'en' ? value : null
+}
 
 function formatIssues(error: ZodError) {
   return error.issues.map((issue) => ({
@@ -48,37 +97,185 @@ export function createApp(store: Store, options: CreateAppOptions = {}): Express
     options.adminToken === undefined ? process.env.ADMIN_TOKEN : options.adminToken
   const rateWindowMs = options.rateLimit?.windowMs ?? RATE_LIMIT_WINDOW_MS
   const rateMax = options.rateLimit?.max ?? RATE_LIMIT_MAX
-  const rateHits = new Map<string, { count: number; resetAt: number }>()
+  const estimateWindowMs = options.estimateRateLimit?.windowMs ?? RATE_LIMIT_WINDOW_MS
+  const estimateMax = options.estimateRateLimit?.max ?? ESTIMATE_RATE_LIMIT_MAX
+  const upstreamWindowMs = options.upstreamRateLimit?.windowMs ?? RATE_LIMIT_WINDOW_MS
+  const upstreamMax = options.upstreamRateLimit?.max ?? UPSTREAM_RATE_LIMIT_MAX
+
+  const production = options.production ?? process.env.NODE_ENV === 'production'
+  const platform = options.platform
+  const distIndex = options.distDir ? path.join(options.distDir, 'index.html') : null
+  const scriptHashes = distIndex && existsSync(distIndex) ? inlineScriptHashes(readFileSync(distIndex, 'utf8')) : []
+  app.use(securityHeadersMiddleware({ production, scriptHashes }))
+
+  // Better Auth must see the raw request body, so it mounts before express.json().
+  if (platform) {
+    platform.mountEarly(app)
+  } else {
+    app.all('/api/auth/*splat', (_req, res) => {
+      res.status(503).json({ error: 'auth_unavailable' })
+    })
+  }
 
   app.use(express.json({ limit: '20kb' }))
 
-  /** Ten booking attempts per IP per ten minutes; the map lives for the app's lifetime. */
-  function bookingRateLimit(req: Request, res: Response, next: NextFunction) {
-    const now = Date.now()
-    const key = req.ip ?? req.socket.remoteAddress ?? 'unknown'
-    let entry = rateHits.get(key)
+  /** One counter map per limiter; maps live for the app's lifetime. */
+  function makeRateLimit(windowMs: number, max: number) {
+    const hits = new Map<string, { count: number; resetAt: number }>()
+    return function rateLimit(req: Request, res: Response, next: NextFunction) {
+      const now = Date.now()
+      const key = req.ip ?? req.socket.remoteAddress ?? 'unknown'
+      let entry = hits.get(key)
 
-    if (!entry || now >= entry.resetAt) {
-      entry = { count: 0, resetAt: now + rateWindowMs }
-      rateHits.set(key, entry)
-      if (rateHits.size > 5000) {
-        for (const [ip, hit] of rateHits) {
-          if (now >= hit.resetAt) rateHits.delete(ip)
+      if (!entry || now >= entry.resetAt) {
+        entry = { count: 0, resetAt: now + windowMs }
+        hits.set(key, entry)
+        if (hits.size > 5000) {
+          for (const [ip, hit] of hits) {
+            if (now >= hit.resetAt) hits.delete(ip)
+          }
         }
       }
-    }
 
-    entry.count += 1
-    if (entry.count > rateMax) {
-      res.setHeader('Retry-After', Math.max(1, Math.ceil((entry.resetAt - now) / 1000)))
-      res.status(429).json({ error: 'rate_limited' })
-      return
+      entry.count += 1
+      if (entry.count > max) {
+        res.setHeader('Retry-After', Math.max(1, Math.ceil((entry.resetAt - now) / 1000)))
+        res.status(429).json({ error: 'rate_limited' })
+        return
+      }
+      next()
     }
-    next()
   }
+
+  /** Ten booking attempts per IP per ten minutes. */
+  const bookingRateLimit = makeRateLimit(rateWindowMs, rateMax)
+  /** Twenty estimate attempts per IP per ten minutes, on its own map. */
+  const estimateRateLimit = makeRateLimit(estimateWindowMs, estimateMax)
+  /** Sixty geo/pickup attempts per IP per ten minutes, on its own map. */
+  const upstreamRateLimit = makeRateLimit(upstreamWindowMs, upstreamMax)
+
+  const aiConfig = resolveAiConfig(options.ai, options.aiFetch)
+  const estimateService = createEstimateService(aiConfig, platform ? () => platform.settings.labourRates() : undefined)
+
+  const fallbackFetch =
+    options.upstreamFetch ??
+    options.geoFetch ??
+    options.pickupFetch ??
+    options.fetchImpl ??
+    options.fetch ??
+    globalThis.fetch
+  const geoService = createGeoService(options.geoFetch ?? fallbackFetch)
+  const baseRates = resolvePickupRates(options.pickupRates)
+  const pickupService = createPickupService(
+    options.pickupFetch ?? fallbackFetch,
+    // Rates saved in the owner dashboard win over env and defaults.
+    platform ? async () => ({ ...baseRates, ...(await platform.settings.pickupRates()) }) : baseRates,
+    geoService,
+  )
 
   app.get('/api/health', (_req, res) => {
     res.json({ ok: true, store: store.kind })
+  })
+
+  app.get('/api/geo/search', upstreamRateLimit, async (req, res) => {
+    const q = typeof req.query.q === 'string' ? req.query.q.trim() : ''
+    if (q.length < 3 || q.length > 120) {
+      res.status(400).json({ error: 'invalid', message: 'q must be 3-120 characters' })
+      return
+    }
+
+    const lang = parseLang(req.query.lang)
+    if (!lang) {
+      res.status(400).json({ error: 'invalid', message: 'lang must be "ro" or "en"' })
+      return
+    }
+
+    const results = await geoService.search(q, lang)
+    if (results === null) {
+      res.status(502).json({ error: 'geo_unavailable' })
+      return
+    }
+    res.json({ results })
+  })
+
+  app.get('/api/geo/reverse', upstreamRateLimit, async (req, res) => {
+    const lat = parseCoord(req.query.lat)
+    const lon = parseCoord(req.query.lon)
+    if (lat === null || lon === null || !inRomania(lat, lon)) {
+      res.status(400).json({ error: 'invalid', message: 'lat and lon must be inside Romania' })
+      return
+    }
+
+    const lang = parseLang(req.query.lang)
+    if (!lang) {
+      res.status(400).json({ error: 'invalid', message: 'lang must be "ro" or "en"' })
+      return
+    }
+
+    const place = await geoService.reverse(lat, lon, lang)
+    if (!place) {
+      res.status(502).json({ error: 'geo_unavailable' })
+      return
+    }
+    res.json(place)
+  })
+
+  app.get('/api/pickup/quote', upstreamRateLimit, async (req, res) => {
+    const lat = parseCoord(req.query.lat)
+    const lon = parseCoord(req.query.lon)
+    if (lat === null || lon === null || !inRomania(lat, lon)) {
+      res.status(400).json({ error: 'invalid', message: 'lat and lon must be inside Romania' })
+      return
+    }
+
+    const trips = req.query.trips === undefined ? 'both' : req.query.trips
+    if (trips !== 'both' && trips !== 'pickup' && trips !== 'dropoff') {
+      res.status(400).json({ error: 'invalid', message: 'trips must be "both", "pickup" or "dropoff"' })
+      return
+    }
+
+    const urgent = req.query.urgent === '1'
+    const quote = await pickupService.quote(lat, lon, trips as Trips, urgent)
+    res.json(quote)
+  })
+
+  app.post('/api/estimate', estimateRateLimit, async (req, res) => {
+    const parsed = aiEstimateRequestSchema.safeParse(req.body)
+    if (!parsed.success) {
+      res.status(400).json({ error: 'invalid', issues: formatIssues(parsed.error) })
+      return
+    }
+
+    // Without a key the site keeps its own script estimate; never call the provider.
+    if (!aiConfig.apiKey) {
+      res.status(503).json({ error: 'ai_unavailable' })
+      return
+    }
+
+    const data = parsed.data
+    const request: AiEstimateRequest = {
+      lang: data.lang,
+      mode: data.mode,
+      jobIds: [...new Set(data.jobIds.filter((id) => knownJobIds.has(id)))],
+      device: data.device,
+      ...(data.deviceValue ? { deviceValue: data.deviceValue } : {}),
+      issue: data.issue,
+    }
+
+    let estimate
+    try {
+      estimate = await estimateService.estimate(request)
+    } catch {
+      // Provider failures are reported as unavailable; never log the request text.
+      res.status(503).json({ error: 'ai_unavailable' })
+      return
+    }
+
+    if (!estimate) {
+      res.status(503).json({ error: 'ai_unavailable' })
+      return
+    }
+    res.json(estimate)
   })
 
   app.post('/api/bookings', bookingRateLimit, async (req, res) => {
@@ -97,9 +294,12 @@ export function createApp(store: Store, options: CreateAppOptions = {}): Express
     }
 
     const now = new Date().toISOString()
+    const userId = platform ? await platform.userId(req) : null
     for (let attempt = 0; attempt < 25; attempt += 1) {
       const booking: Booking = {
         ...data,
+        ...(userId ? { userId } : {}),
+        statusHistory: [{ status: 'received', at: now, by: 'customer' }],
         slot,
         code: generateCode(),
         status: 'received',
@@ -180,7 +380,7 @@ export function createApp(store: Store, options: CreateAppOptions = {}): Express
       res.status(503).json({ error: 'admin_disabled' })
       return
     }
-    if (req.get('x-admin-token') !== adminToken) {
+    if (!safeEqual(req.get('x-admin-token'), adminToken)) {
       res.status(401).json({ error: 'unauthorized' })
       return
     }
@@ -198,6 +398,14 @@ export function createApp(store: Store, options: CreateAppOptions = {}): Express
     }
     res.json({ code: booking.code, status: booking.status, updatedAt: booking.updatedAt })
   })
+
+  if (platform) {
+    platform.mountApi(app)
+  } else {
+    app.use(['/api/me', '/api/admin', '/api/dev'], (_req, res) => {
+      res.status(503).json({ error: 'auth_unavailable' })
+    })
+  }
 
   // Unknown API routes stay JSON; they never fall through to the SPA shell.
   app.use('/api', (_req, res) => {
@@ -218,14 +426,15 @@ export function createApp(store: Store, options: CreateAppOptions = {}): Express
     })
   }
 
-  app.use((error: unknown, _req: Request, res: Response, next: NextFunction) => {
+  app.use((error: unknown, req: Request, res: Response, next: NextFunction) => {
     if (res.headersSent) {
       next(error)
       return
     }
     const status = errorStatus(error)
     if (status >= 500) {
-      console.error('[api] unhandled error:', error instanceof Error ? error.message : error)
+      console.error('[api] unhandled error:', error instanceof Error ? error.name : 'error')
+      recordError(error, { method: req.method, path: req.path, status })
     }
     const code = status === 413 ? 'payload_too_large' : status === 400 ? 'invalid' : 'server_error'
     res.status(status).json({ error: code })

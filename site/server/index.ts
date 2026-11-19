@@ -1,7 +1,8 @@
 import { existsSync } from 'node:fs'
 import path from 'node:path'
 import { createApp } from './app.ts'
-import { createStoreFromEnv } from './store.ts'
+import { createPlatform } from './platform.ts'
+import { MongoStore, createStoreFromEnv } from './store.ts'
 
 const rawPort = process.env.PORT ?? '8787'
 const port = Number(rawPort)
@@ -15,7 +16,16 @@ await store.init()
 const distDir = path.join(import.meta.dirname, '..', 'dist')
 const serveStatic = process.env.SERVE_STATIC === '1' && existsSync(path.join(distDir, 'index.html'))
 
-const app = createApp(store, { distDir: serveStatic ? distDir : undefined })
+// Accounts need MongoDB (sessions, roles, settings). With the JSON file store they stay off.
+const platform =
+  store instanceof MongoStore
+    ? await createPlatform({ db: store.getDb(), storeKind: store.kind })
+    : undefined
+if (!platform) console.log('[api] MONGODB_URI is unset: accounts and dashboards are disabled')
+
+const app = createApp(store, { distDir: serveStatic ? distDir : undefined, platform })
+const trustProxy = process.env.TRUST_PROXY?.trim()
+if (trustProxy) app.set('trust proxy', /^\d+$/.test(trustProxy) ? Number(trustProxy) : trustProxy)
 
 const server = app.listen(port, () => {
   console.log(`[api] listening on http://localhost:${port} (store: ${store.kind})`)

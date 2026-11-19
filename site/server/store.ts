@@ -1,7 +1,7 @@
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { MongoClient } from 'mongodb'
-import type { Collection } from 'mongodb'
+import type { Collection, Db } from 'mongodb'
 import type { Booking, BookingStatus, ServiceMode } from '../src/types.ts'
 
 /** Bookings that still occupy the queue. */
@@ -160,6 +160,11 @@ export class MongoStore implements Store {
 
   async close(): Promise<void> {
     await this.client.close()
+  }
+
+  /** The connected database, shared with the account and dashboard code. */
+  getDb(): Db {
+    return this.client.db(this.dbName)
   }
 
   async insertBooking(booking: Booking): Promise<boolean> {

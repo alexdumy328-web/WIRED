@@ -7,12 +7,13 @@ import { buildBenches, Pegboard } from './Bench'
 import { buildCoffee } from './Coffee'
 import { sceneState, type StopId, type Theme } from './contract'
 import { buildCounter } from './Counter'
-import { ExplodedLaptop } from './ExplodedLaptop'
 import { Hotspots } from './Hotspots'
+import { ReadySignal } from './runtime'
 import { STREET } from './layout'
 import { themeK, useBucketMaterials } from './materials'
 import { buildPcbFrame, PcbWall } from './PcbWall'
 import { buildRoom, CeilingLights, Floors, RightWall, shadowFlags } from './Room'
+import { ShopDevices } from './ShopDevices'
 import { buildStreet, StreetSurfaces } from './Street'
 
 export type SceneProps = {
@@ -22,6 +23,7 @@ export type SceneProps = {
   showHotspots: boolean
   labels?: Partial<Record<StopId, string>>
   onSelect?: (id: StopId) => void
+  partLabels?: Record<string, string>
 }
 
 /** All static geometry, merged into one mesh per material bucket. */
@@ -109,33 +111,7 @@ function ShadowBaker({ theme }: { theme: Theme }) {
   return null
 }
 
-/** Signals "first frames rendered" to the page (and the preview's screenshot script). */
-function ReadySignal() {
-  const n = useRef(0)
-  const invalidate = useThree((s) => s.invalidate)
-  useEffect(() => {
-    // Keep frames coming until the scene has settled (matters in on-demand mode).
-    let raf = 0
-    const tick = () => {
-      if (n.current < 8) {
-        invalidate()
-        raf = requestAnimationFrame(tick)
-      }
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [invalidate])
-  useFrame(() => {
-    n.current++
-    if (n.current === 6) {
-      document.documentElement.dataset.ntScene = 'ready'
-      window.dispatchEvent(new Event('nt-scene-ready'))
-    }
-  })
-  return null
-}
-
-export function Scene({ theme, reducedMotion, lite, showHotspots, labels, onSelect }: SceneProps) {
+export function Scene({ theme, reducedMotion, lite, showHotspots, labels, onSelect, partLabels }: SceneProps) {
   const k = themeK(theme)
   const mats = useBucketMaterials(theme)
   const cx = (STREET.baseX0 + STREET.baseX1) / 2
@@ -156,7 +132,7 @@ export function Scene({ theme, reducedMotion, lite, showHotspots, labels, onSele
       <Pegboard />
       <PcbWall theme={theme} reducedMotion={reducedMotion} />
       <StreetSurfaces theme={theme} />
-      <ExplodedLaptop mats={mats} reducedMotion={reducedMotion} />
+      <ShopDevices mats={mats} reducedMotion={reducedMotion} partLabels={partLabels} />
       {showHotspots && <Hotspots labels={labels} reducedMotion={reducedMotion} onSelect={onSelect} />}
       <ContactShadows
         position={[cx, -0.37, cz]}

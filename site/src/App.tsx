@@ -1,16 +1,19 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import Lenis from 'lenis'
 import { I18nProvider, useI18n } from './i18n'
 import { ThemeProvider, useReducedMotion } from './lib/theme'
 import { sceneState } from './three/contract'
 import { Header } from './components/Header'
-import { SceneLayer } from './components/SceneLayer'
+import { TraceField } from './components/TraceField'
+import { BookingCta } from './sections/BookingCta'
+import { setLenis } from './lib/scroll'
+import { pageOf, usePath } from './lib/router'
+import { WorkshopPage } from './pages/WorkshopPage'
 import { Hero } from './sections/Hero'
 import { Services } from './sections/Services'
 import { Mobile } from './sections/Mobile'
 import { Process } from './sections/Process'
 import { Status } from './sections/Status'
-import { Workshop } from './sections/Workshop'
 import { Reviews } from './sections/Reviews'
 import { Booking } from './sections/Booking'
 import { Faq } from './sections/Faq'
@@ -21,6 +24,7 @@ function useSmoothScroll() {
   useEffect(() => {
     if (reduced) return
     const lenis = new Lenis({ lerp: 0.1, anchors: { offset: -64 }, prevent: (n) => n.closest?.('[data-lenis-prevent]') != null })
+    setLenis(lenis)
     let raf = 0
     const loop = (time: number) => {
       lenis.raf(time)
@@ -29,6 +33,7 @@ function useSmoothScroll() {
     raf = requestAnimationFrame(loop)
     return () => {
       cancelAnimationFrame(raf)
+      setLenis(null)
       lenis.destroy()
     }
   }, [reduced])
@@ -43,30 +48,45 @@ function useSmoothScroll() {
   }, [reduced])
 }
 
-function Page() {
-  useSmoothScroll()
+function Home() {
   const { L } = useI18n()
   return (
     <>
       <a href="#servicii" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-full focus:bg-ink focus:px-4 focus:py-2 focus:text-bg">
         {L({ ro: 'Sari la conținut', en: 'Skip to content' })}
       </a>
-      <SceneLayer />
+      <TraceField />
       <Header />
-      <main className="relative">
+      <main className="relative z-10 mx-auto max-w-[1360px] px-4 sm:px-6 lg:px-10">
         <Hero />
         <Services />
         <Process />
         <Mobile />
         <Status />
-        <Workshop />
         <Reviews />
-        <Booking />
+        <BookingCta />
         <Faq />
         <Contact />
       </main>
       <Footer />
+      <Booking />
     </>
+  )
+}
+
+const AccountPage = lazy(() => import('./pages/AccountPage').then((m) => ({ default: m.AccountPage })))
+const OwnerPage = lazy(() => import('./pages/OwnerPage').then((m) => ({ default: m.OwnerPage })))
+const DevPage = lazy(() => import('./pages/DevPage').then((m) => ({ default: m.DevPage })))
+
+function Page() {
+  useSmoothScroll()
+  const page = pageOf(usePath())
+  if (page === '/atelier') return <WorkshopPage />
+  if (page === null) return <Home />
+  return (
+    <Suspense fallback={null}>
+      {page === '/cont' ? <AccountPage /> : page === '/admin' ? <OwnerPage /> : <DevPage />}
+    </Suspense>
   )
 }
 
