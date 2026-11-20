@@ -67,9 +67,9 @@ export function createDevRouter(deps: PlatformDeps): Router {
     res.set('Cache-Control', 'no-store')
     next()
   })
-  const use = (fn: Handler) => fn
+  const handle = (fn: Handler) => fn
 
-  router.get('/health', use(async (_req, res) => {
+  router.get('/health', handle(async (_req, res) => {
     const started = performance.now()
     let mongo: { ok: boolean; ms: number } = { ok: false, ms: 0 }
     try {
@@ -95,7 +95,7 @@ export function createDevRouter(deps: PlatformDeps): Router {
     })
   }))
 
-  router.get('/env', use(async (_req, res) => {
+  router.get('/env', handle(async (_req, res) => {
     res.json({
       variables: ENV_NAMES.map((name) => ({
         name,
@@ -105,16 +105,16 @@ export function createDevRouter(deps: PlatformDeps): Router {
     })
   }))
 
-  router.get('/errors', use(async (_req, res) => {
+  router.get('/errors', handle(async (_req, res) => {
     res.json({ errors: await recentErrors(200) })
   }))
 
-  router.get('/audit', use(async (req, res) => {
+  router.get('/audit', handle(async (req, res) => {
     const parsed = limitQuery.safeParse(req.query)
     res.json({ entries: await audit.list(parsed.success ? parsed.data.limit : 100) })
   }))
 
-  router.get('/outbox', use(async (_req, res) => {
+  router.get('/outbox', handle(async (_req, res) => {
     if (deps.production) {
       res.status(404).json({ error: 'not_found' })
       return
@@ -122,11 +122,11 @@ export function createDevRouter(deps: PlatformDeps): Router {
     res.json({ messages: await deps.mailer.list(50) })
   }))
 
-  router.get('/rate-limits', use(async (_req, res) => {
+  router.get('/rate-limits', handle(async (_req, res) => {
     res.json({ limiters: deps.limiters.snapshot() })
   }))
 
-  router.get('/users', use(async (req, res) => {
+  router.get('/users', handle(async (req, res) => {
     const parsed = listQuery.safeParse(req.query)
     if (!parsed.success) {
       res.status(400).json({ error: 'invalid' })
@@ -152,7 +152,7 @@ export function createDevRouter(deps: PlatformDeps): Router {
     })
   }))
 
-  router.patch('/users/:id/role', use(async (req, res) => {
+  router.patch('/users/:id/role', handle(async (req, res) => {
     const body = roleBody.safeParse(req.body)
     const id = z.string().trim().min(1).max(64).safeParse(req.params.id)
     if (!body.success || !id.success) {

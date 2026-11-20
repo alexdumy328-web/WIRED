@@ -13,6 +13,7 @@ import { createAdminRouter } from './admin/routes.ts'
 import { createSettingsService, type SettingsService } from './admin/settings.ts'
 import { createAuth, CLIENT_IP_HEADER, resolveAuthConfig, type Env } from './auth/auth.ts'
 import { createMailer, type Mailer } from './auth/outbox.ts'
+import { createNotifier, type Notifier } from './notify.ts'
 import { betterAuthSource, createSessionService, type SessionService, type SessionSource } from './auth/session.ts'
 import { createAuditLog, type AuditLog } from './security/audit.ts'
 import { attachErrorLog } from './security/error-log.ts'
@@ -24,6 +25,7 @@ export type Platform = {
   readonly sessions: SessionService
   readonly audit: AuditLog
   readonly mailer: Mailer
+  readonly notifier: Notifier
   readonly deps: PlatformDeps
   /** Before body parsing: the Better Auth handler at /api/auth/*. */
   mountEarly(app: Express): void
@@ -59,6 +61,7 @@ export async function createPlatform(options: PlatformOptions): Promise<Platform
   const sessions = createSessionService(options.sessionSource ?? betterAuthSource(auth), env, audit)
   const settings = createSettingsService(db, resolvePickupRates())
   const adminToken = env.ADMIN_TOKEN?.trim() || undefined
+  const notifier = createNotifier({ mailer, origin: config.baseURL, ownerEmails: env.OWNER_EMAILS, quiet: options.quiet })
 
   const deps: PlatformDeps = {
     db,
@@ -71,6 +74,7 @@ export async function createPlatform(options: PlatformOptions): Promise<Platform
     bookings: createBookingAdmin(db),
     audit,
     mailer,
+    notifier,
     limiters: new LimiterRegistry(),
     authConfig: { baseURL: config.baseURL, trustedOrigins: config.trustedOrigins },
     adminToken,
@@ -84,6 +88,7 @@ export async function createPlatform(options: PlatformOptions): Promise<Platform
     sessions,
     audit,
     mailer,
+    notifier,
     deps,
     mountEarly(app) {
       app.all('/api/auth/*splat', authLimit, (req, res) => {

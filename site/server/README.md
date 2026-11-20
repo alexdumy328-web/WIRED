@@ -314,7 +314,7 @@ Copy `.env.example` to `.env.local` for the variable names.
 | `APP_ORIGINS` | Extra trusted origins, comma separated. |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Enable Google sign-in. Redirect URI: `<BETTER_AUTH_URL>/api/auth/callback/google`. |
 | `RESEND_API_KEY` / `MAIL_FROM` | Email delivery. Without them development uses the `dev_outbox` collection; production answers 503. |
-| `OWNER_EMAILS` / `DEV_EMAILS` | Comma separated emails that get the role once their address is verified. |
+| `OWNER_EMAILS` / `DEV_EMAILS` | Comma separated emails that get the role once their address is verified. Every `OWNER_EMAILS` address also gets a mail for each new booking. |
 | `TRUST_PROXY` | Set behind a reverse proxy so `req.ip` is the client address. |
 
 Sign-in: Google, email and password (10+ characters, email confirmed by a 6-digit code)
@@ -326,12 +326,22 @@ Routes (all validated with zod, per-IP limiters, JSON errors):
 
 - `GET /api/me`, `GET /api/me/bookings`, `GET /api/settings/public`
 - Owner or dev: `GET /api/admin/bookings`, `GET /api/admin/bookings/:code`,
-  `PATCH /api/admin/bookings/:code/status` (status, optional note, history and audit),
+  `PATCH /api/admin/bookings/:code/status` (status, optional note, optional `finalLei`,
+  `notify`; history and audit),
   `GET /api/admin/calendar?week=`, `GET /api/admin/pickups?date=`, `GET /api/admin/stats`,
   `GET|PUT /api/admin/settings` (pickup and labour rates with bounds; the pickup quote and
   the AI estimate read them)
 - Dev only: `GET /api/dev/health|env|errors|audit|outbox|rate-limits|users`,
   `PATCH /api/dev/users/:id/role`
+
+Booking emails (`server/notify.ts`): the customer gets a confirmation when they leave an
+email, and a mail on every status change the owner saves with "Email the customer" ticked.
+These mails hold only text the server controls (code, time, job names from the price list,
+prices, a `/?cod=NT-XXXX#status` link), never what was typed into the form. Owners get the full
+booking with an `/admin?cod=` link. A failed mail never fails the booking or the status change.
+
+`finalLei` is what was charged for the repair (parts included, transport not). The stats count it
+for finished jobs and fall back to the estimate midpoint when it is missing.
 
 `PATCH /api/bookings/:code/status` with `x-admin-token` still works when `ADMIN_TOKEN` is set.
 Every response carries the headers from `server/security/policy.ts`; `scripts/vercel-build.mjs`

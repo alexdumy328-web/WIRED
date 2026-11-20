@@ -81,9 +81,8 @@ function Tracker() {
   const formRef = useRef<HTMLFormElement>(null)
   const hold = useScrollGuard(formRef, code.trim().length > 0)
 
-  const submit = async (e: FormEvent) => {
-    e.preventDefault()
-    const c = code.trim().toUpperCase()
+  const lookup = async (raw: string) => {
+    const c = raw.trim().toUpperCase()
     if (!c) return
     setState('loading')
     setResult(null)
@@ -97,6 +96,20 @@ function Tracker() {
       setState('error')
     }
   }
+
+  const submit = (e: FormEvent) => {
+    e.preventDefault()
+    void lookup(code)
+  }
+
+  // Booking emails link to /?cod=NT-XXXX#status: fill the code in and look it up straight away.
+  useEffect(() => {
+    const c = new URLSearchParams(window.location.search).get('cod')?.trim().toUpperCase() ?? ''
+    if (!/^NT-[A-Z0-9]{4}$/.test(c)) return
+    setCode(c)
+    void lookup(c)
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on arrival
+  }, [])
 
   const idx = result ? statusOrder.indexOf(result.status) : -1
   const when = result

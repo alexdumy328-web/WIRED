@@ -96,6 +96,8 @@ export type Booking = BookingRequest & {
   /** Set when a signed-in user made the booking. */
   userId?: string
   statusHistory?: StatusEntry[]
+  /** What the workshop charged for the repair, parts included, transport not. Set by the owner. */
+  finalLei?: number
 }
 
 /** POST /api/estimate request. */

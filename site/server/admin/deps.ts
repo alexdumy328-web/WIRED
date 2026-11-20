@@ -1,6 +1,7 @@
 import type { Db } from 'mongodb'
 import type { Auth, Env } from '../auth/auth.ts'
 import type { Mailer } from '../auth/outbox.ts'
+import type { Notifier } from '../notify.ts'
 import type { SessionService } from '../auth/session.ts'
 import type { AuditLog } from '../security/audit.ts'
 import type { LimiterRegistry } from '../security/limiter.ts'
@@ -18,6 +19,7 @@ export type PlatformDeps = {
   bookings: BookingAdmin
   audit: AuditLog
   mailer: Mailer
+  notifier: Notifier
   limiters: LimiterRegistry
   authConfig: { baseURL: string; trustedOrigins: string[] }
   /** Legacy ADMIN_TOKEN, when set. */

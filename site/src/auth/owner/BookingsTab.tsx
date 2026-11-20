@@ -21,6 +21,7 @@ export function BookingsTab({ initialCode, onCode }: { initialCode?: string | nu
   const [total, setTotal] = useState(0)
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
   const [open, setOpen] = useState<string | null>(initialCode ?? null)
+  const [showFilters, setShowFilters] = useState(false)
   const seq = useRef(0)
 
   const query = useCallback(
@@ -62,6 +63,7 @@ export function BookingsTab({ initialCode, onCode }: { initialCode?: string | nu
   }
 
   const dirty = q || status || mode || from || to
+  const activeFilters = [status, mode, from, to].filter(Boolean).length
   const select = (code: string | null) => {
     setOpen(code)
     onCode?.(code)
@@ -74,47 +76,59 @@ export function BookingsTab({ initialCode, onCode }: { initialCode?: string | nu
           {b.search}
           <input className="field font-normal" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={b.searchPlaceholder} maxLength={100} />
         </label>
-        <label className="grid gap-1 text-[13px] font-semibold">
-          {b.status}
-          <select className="field font-normal" value={status} onChange={(e) => setStatus(e.target.value)}>
-            <option value="">{b.all}</option>
-            {BOOKING_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {t.track.statuses[s]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="grid gap-1 text-[13px] font-semibold">
-          {b.mode}
-          <select className="field font-normal" value={mode} onChange={(e) => setMode(e.target.value)}>
-            <option value="">{b.all}</option>
-            <option value="shop">{b.modes.shop}</option>
-            <option value="mobile">{b.modes.mobile}</option>
-          </select>
-        </label>
-        <label className="grid gap-1 text-[13px] font-semibold">
-          {b.from}
-          <input className="field font-normal" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
-        </label>
-        <label className="grid gap-1 text-[13px] font-semibold">
-          {b.to}
-          <input className="field font-normal" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
-        </label>
+        {/* Phones: the other filters fold behind this button so the list starts on the first screen. */}
         <button
           type="button"
-          className="btn btn-ghost self-end"
-          disabled={!dirty}
-          onClick={() => {
-            setQ('')
-            setStatus('')
-            setMode('')
-            setFrom('')
-            setTo('')
-          }}
+          className="btn btn-ghost sm:hidden"
+          aria-expanded={showFilters}
+          aria-controls="booking-filters"
+          onClick={() => setShowFilters((v) => !v)}
         >
-          {b.reset}
+          {activeFilters ? fmt(b.filtersOn, { n: activeFilters }) : b.filters}
         </button>
+        <div id="booking-filters" className={`${showFilters ? 'grid gap-3' : 'hidden'} sm:contents`}>
+          <label className="grid gap-1 text-[13px] font-semibold">
+            {b.status}
+            <select className="field font-normal" value={status} onChange={(e) => setStatus(e.target.value)}>
+              <option value="">{b.all}</option>
+              {BOOKING_STATUSES.map((s) => (
+                <option key={s} value={s}>
+                  {t.track.statuses[s]}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="grid gap-1 text-[13px] font-semibold">
+            {b.mode}
+            <select className="field font-normal" value={mode} onChange={(e) => setMode(e.target.value)}>
+              <option value="">{b.all}</option>
+              <option value="shop">{b.modes.shop}</option>
+              <option value="mobile">{b.modes.mobile}</option>
+            </select>
+          </label>
+          <label className="grid gap-1 text-[13px] font-semibold">
+            {b.from}
+            <input className="field font-normal" type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
+          </label>
+          <label className="grid gap-1 text-[13px] font-semibold">
+            {b.to}
+            <input className="field font-normal" type="date" value={to} onChange={(e) => setTo(e.target.value)} />
+          </label>
+          <button
+            type="button"
+            className="btn btn-ghost self-end"
+            disabled={!dirty}
+            onClick={() => {
+              setQ('')
+              setStatus('')
+              setMode('')
+              setFrom('')
+              setTo('')
+            }}
+          >
+            {b.reset}
+          </button>
+        </div>
       </form>
 
       <p className="mt-4 text-[14px] text-muted" aria-live="polite">
@@ -122,7 +136,7 @@ export function BookingsTab({ initialCode, onCode }: { initialCode?: string | nu
       </p>
 
       {state === 'loading' && items.length === 0 && <Loading label={t.account.loading} />}
-      {state === 'error' && <Notice tone="error">{t.owner.detail.error}</Notice>}
+      {state === 'error' && <Notice tone="error">{t.account.bookings.error}</Notice>}
       {state === 'ready' && items.length === 0 && <p className="py-10 text-center text-muted">{b.empty}</p>}
 
       {items.length > 0 && (

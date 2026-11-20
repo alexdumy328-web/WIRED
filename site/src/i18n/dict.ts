@@ -257,6 +257,7 @@ export type Dict = {
       where: Record<'shop' | 'mobile', string>
       pickup: string
       estimate: string
+      final: string
       timeline: string
     }
     noAccess: { title: string; body: string; signIn: string; home: string }
@@ -267,6 +268,7 @@ export type Dict = {
     title: string
     lead: string
     refresh: string
+    loadError: string
     tabs: { bookings: string; pickups: string; calendar: string; stats: string; settings: string }
     bookings: {
       search: string
@@ -277,6 +279,9 @@ export type Dict = {
       to: string
       all: string
       reset: string
+      /** Phone-only toggle for the filters: "Filters" and "Filters ({n})" when some are set. */
+      filters: string
+      filtersOn: string
       empty: string
       total: string // "{n} bookings"
       loadMore: string
@@ -304,7 +309,15 @@ export type Dict = {
       save: string
       saved: string
       error: string
+      loadError: string
       custom: string
+      finalLabel: string
+      finalHint: string
+      final: string // "{n} lei"
+      notify: string
+      noEmail: string
+      savedMailed: string
+      savedMailFailed: string
     }
     pickups: { title: string; today: string; tomorrow: string; none: string; urgent: string; window: string; call: string; map: string }
     calendar: { title: string; prev: string; next: string; thisWeek: string; free: string }

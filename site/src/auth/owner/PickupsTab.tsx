@@ -30,7 +30,7 @@ function Day({ label, date }: { label: string; date: string }) {
         {label} <span className="text-[15px] font-normal text-muted">{fmtDate.weekday(date)}</span>
       </h3>
       <div className="mt-3 grid gap-3">
-        {error && <Notice tone="error">{t.owner.detail.error}</Notice>}
+        {error && <Notice tone="error">{t.owner.loadError}</Notice>}
         {!jobs && !error && <Loading label={t.account.loading} />}
         {jobs?.length === 0 && <p className="text-muted">{p.none}</p>}
         {jobs?.map((job) => (

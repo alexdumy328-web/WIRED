@@ -147,6 +147,12 @@ function MyBookings() {
                 <dt className="text-muted">{a.bookings.estimate}</dt>
                 <dd className="font-semibold">{fmt(t.owner.detail.estimate, { from: b.estimate.priceFrom, to: b.estimate.priceTo })}</dd>
               </div>
+              {b.finalLei != null && (
+                <div>
+                  <dt className="text-muted">{a.bookings.final}</dt>
+                  <dd className="font-semibold">{fmt(t.owner.detail.final, { n: b.finalLei })}</dd>
+                </div>
+              )}
             </dl>
             <p className="mt-4 text-[13px] font-semibold text-muted">{a.bookings.timeline}</p>
             <ol className="mt-2 grid gap-2" lang={lang}>

@@ -44,7 +44,7 @@ export function CalendarTab({ onOpen }: { onOpen: (code: string) => void }) {
         </div>
       </div>
 
-      {error && <Notice tone="error">{t.owner.detail.error}</Notice>}
+      {error && <Notice tone="error">{t.owner.loadError}</Notice>}
       {!week && !error && <Loading label={t.account.loading} />}
       {week && (
         <ol className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-7" aria-live="polite">

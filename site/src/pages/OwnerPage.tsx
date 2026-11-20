@@ -24,6 +24,11 @@ export function OwnerPage() {
 function Dashboard() {
   const { t } = useI18n()
   const [tab, setTab] = useState<Tab>('bookings')
+  // The new-booking email links to /admin?cod=NT-XXXX; open that booking once.
+  const [linked] = useState(() => {
+    const c = new URLSearchParams(window.location.search).get('cod')?.trim().toUpperCase() ?? ''
+    return /^NT-[A-Z0-9]{4}$/.test(c) ? c : null
+  })
   const [calendarCode, setCalendarCode] = useState<string | null>(null)
 
   const onKey = (e: React.KeyboardEvent, index: number) => {
@@ -58,7 +63,7 @@ function Dashboard() {
       </div>
 
       <div role="tabpanel" id={`owner-panel-${tab}`} aria-labelledby={`owner-tab-${tab}`} className="mt-6">
-        {tab === 'bookings' && <BookingsTab />}
+        {tab === 'bookings' && <BookingsTab initialCode={linked} />}
         {tab === 'pickups' && <PickupsTab />}
         {tab === 'calendar' && <CalendarTab onOpen={setCalendarCode} />}
         {tab === 'stats' && <StatsTab />}

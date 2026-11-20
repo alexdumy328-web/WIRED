@@ -281,6 +281,63 @@ describe('bookings for owners and customers', () => {
     assert.equal(detail.body.contact.email, 'history-customer@example.com')
   })
 
+  test('booking and status emails go out, and a final price feeds the numbers', async () => {
+    const outbox = () => store.getDb().collection('dev_outbox')
+    const email = 'mail-customer@example.com'
+    // A guest booking with a name and device that must never reach the customer's mail.
+    const body = { ...bookingBody(email, slot(7)), contact: { name: 'Visit http://spam.example', phone: '+40 721 123 456', email }, device: { brand: 'http://spam.example' } }
+    const created = await call('/api/bookings', { method: 'POST', body })
+    assert.equal(created.status, 201)
+    const code = created.body.code as string
+
+    const confirmation = await outbox().findOne({ to: email, kind: 'booking:received' })
+    assert.ok(confirmation, 'the customer got a confirmation')
+    assert.match(String(confirmation.subject), new RegExp(code))
+    assert.match(String(confirmation.text), new RegExp(`/\\?cod=${code}#status`))
+    assert.doesNotMatch(String(confirmation.text), /spam\.example/)
+    const heads = await outbox().findOne({ to: OWNER, kind: 'booking:owner', subject: new RegExp(code) })
+    assert.ok(heads, 'the owner got a heads-up')
+    assert.match(String(heads.text), new RegExp(`/admin\\?cod=${code}`))
+
+    const owner = await signIn(OWNER)
+    const patch = (b: unknown) => call(`/api/admin/bookings/${code}/status`, { method: 'PATCH', cookie: owner, body: b })
+
+    // A note on its own: saved, no mail.
+    const noted = await patch({ status: 'received', note: 'Checked in' })
+    assert.equal(noted.body.notified, 'skipped')
+    // A new status with the box unticked: no mail.
+    assert.equal((await patch({ status: 'diagnosis', notify: false })).body.notified, 'skipped')
+    assert.equal(await outbox().countDocuments({ to: email, kind: 'booking:diagnosis' }), 0)
+
+    // A price on its own: stored, no history line, no mail, audited.
+    const priced = await patch({ status: 'diagnosis', finalLei: 350 })
+    assert.equal(priced.body.finalLei, 350)
+    assert.equal(priced.body.notified, 'skipped')
+    assert.equal(priced.body.statusHistory.length, 3)
+    assert.equal((await patch({ status: 'diagnosis', finalLei: 350 })).body.statusHistory.length, 3)
+    assert.equal((await patch({ status: 'diagnosis', finalLei: 1.5 })).status, 400)
+
+    // Ready: the customer is told, with the price.
+    const ready = await patch({ status: 'ready' })
+    assert.equal(ready.body.notified, 'sent')
+    const readyMail = await outbox().findOne({ to: email, kind: 'booking:ready' })
+    assert.ok(readyMail)
+    assert.match(String(readyMail.text), /350 lei/)
+
+    // Done counts the final price, not the estimate midpoint.
+    const before = (await call('/api/admin/stats', { cookie: owner })).body.revenue.doneLei as number
+    await patch({ status: 'done' })
+    const after = (await call('/api/admin/stats', { cookie: owner })).body.revenue.doneLei as number
+    assert.equal(after - before, 350)
+
+    // Clearing the price falls back to the estimate.
+    const cleared = await patch({ status: 'done', finalLei: null })
+    assert.equal(cleared.body.finalLei, undefined)
+
+    const audits = (await platform.audit.list(50)).filter((e) => e.action === 'booking_status' && e.target === code)
+    assert.ok(audits.some((e) => JSON.stringify(e.detail.finalLei) === '[null,350]'))
+  })
+
   test('a customer sees only their own bookings, without internal notes', async () => {
     const a = await signIn('alice@example.com')
     const b = await signIn('bob@example.com')

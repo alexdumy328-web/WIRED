@@ -128,30 +128,43 @@ export function createBookingAdmin(db: Db) {
       return doc ? ownerView(doc) : null
     },
 
-    /** Sets the status and appends to the history. Returns null for an unknown code. */
-    async changeStatus(code: string, status: BookingStatus, actor: { id?: string; name: string }, note?: string) {
+    /**
+     * Sets the status, the final price, or both. A status change or a note adds a history line; a
+     * price on its own does not. Returns null for an unknown code, and `changed: false` when the
+     * request matches what is already stored.
+     */
+    async update(code: string, change: { status: BookingStatus; note?: string; finalLei?: number | null }, actor: { id?: string; name: string }) {
       const wanted = code.trim().toUpperCase()
       const before = await col.findOne({ code: wanted })
       if (!before) return null
-      // Same status and no note: nothing happened, so the history gets no new line.
-      if (before.status === status && !note) return { booking: ownerView(before), from: before.status, unchanged: true }
+      const { status, note } = change
+      const statusChanged = before.status !== status
+      const priceChanged = change.finalLei !== undefined && change.finalLei !== (before.finalLei ?? null)
+      if (!statusChanged && !note && !priceChanged) return { booking: ownerView(before), from: before.status, changed: false, statusChanged: false, priceChanged: false }
       const now = new Date().toISOString()
-      const entry: StatusEntry = {
-        status,
-        at: now,
-        by: actor.name,
-        ...(actor.id ? { byId: actor.id } : {}),
-        ...(note ? { note } : {}),
+      const set: Partial<Doc> = { status, updatedAt: now }
+      const unset: Record<string, ''> = {}
+      if (priceChanged) {
+        if (change.finalLei === null) unset.finalLei = ''
+        else set.finalLei = change.finalLei
       }
-      const seed: StatusEntry[] = before.statusHistory ? [] : [{ status: 'received', at: before.createdAt, by: 'customer' }]
-      const after = await col.findOneAndUpdate(
-        { code: wanted },
-        before.statusHistory
-          ? { $set: { status, updatedAt: now }, $push: { statusHistory: entry } }
-          : { $set: { status, updatedAt: now, statusHistory: [...seed, entry] } },
-        { returnDocument: 'after' },
-      )
-      return after ? { booking: ownerView(after), from: before.status } : null
+      const update: Record<string, unknown> = { $set: set }
+      if (Object.keys(unset).length) update.$unset = unset
+      if (statusChanged || note) {
+        const entry: StatusEntry = {
+          status,
+          at: now,
+          by: actor.name,
+          ...(actor.id ? { byId: actor.id } : {}),
+          ...(note ? { note } : {}),
+        }
+        if (before.statusHistory) update.$push = { statusHistory: entry }
+        else set.statusHistory = [{ status: 'received', at: before.createdAt, by: 'customer' }, entry]
+      }
+      const after = await col.findOneAndUpdate({ code: wanted }, update, { returnDocument: 'after' })
+      return after
+        ? { booking: ownerView(after), from: before.status, fromLei: before.finalLei ?? null, changed: true, statusChanged, priceChanged }
+        : null
     },
 
     /** Booked slots for the 7 days starting on the Monday of the given date. */
@@ -208,11 +221,11 @@ export function createBookingAdmin(db: Db) {
       const firstMonday = addDays(thisMonday, -77) // 12 weeks including this one
       const weeks = Array.from({ length: 12 }, (_, i) => ({ weekStart: addDays(firstMonday, i * 7), count: 0 }))
       // Trend points, one per week (12) and per month (12): new bookings and their value by the day they
-      // came in, finished jobs and their income (repair estimate midpoint + transport) by the day they were done.
+      // came in, finished jobs and their income (final price, else the estimate midpoint, plus transport) by the day they were done.
       const weekly: TrendPoint[] = weeks.map((w) => ({ start: w.weekStart, created: 0, done: 0, bookedLei: 0, doneLei: 0, transportLei: 0 }))
       const monthly: TrendPoint[] = Array.from({ length: 12 }, (_, i) => ({ start: addMonths(`${today.slice(0, 7)}-01`, i - 11), created: 0, done: 0, bookedLei: 0, doneLei: 0, transportLei: 0 }))
       const docs = await col
-        .find({}, { projection: { createdAt: 1, status: 1, jobIds: 1, estimate: 1, statusHistory: 1, updatedAt: 1, pickup: 1 } })
+        .find({}, { projection: { createdAt: 1, status: 1, jobIds: 1, estimate: 1, statusHistory: 1, updatedAt: 1, pickup: 1, finalLei: 1 } })
         .toArray()
 
       const byStatus: Record<string, number> = {}
@@ -233,8 +246,10 @@ export function createBookingAdmin(db: Db) {
         if (week) week.count += 1
 
         const mid = ((doc.estimate?.priceFrom ?? 0) + (doc.estimate?.priceTo ?? 0)) / 2
+        // A finished job counts what was actually charged when the owner wrote it down.
+        const charged = doc.finalLei ?? mid
         const transport = doc.pickup?.quote?.totalLei ?? 0
-        if (doc.status === 'done') doneLei += mid
+        if (doc.status === 'done') doneLei += charged
         else pipelineLei += mid
 
         for (const series of [weekly, monthly]) {
@@ -251,7 +266,7 @@ export function createBookingAdmin(db: Db) {
             const d = bucketOf(series, day)
             if (d) {
               d.done += 1
-              d.doneLei += mid
+              d.doneLei += charged
               d.transportLei += transport
             }
           }

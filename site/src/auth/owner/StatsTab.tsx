@@ -28,7 +28,7 @@ export function StatsTab() {
     }
   }, [])
 
-  if (error) return <Notice tone="error">{t.owner.detail.error}</Notice>
+  if (error) return <Notice tone="error">{t.owner.loadError}</Notice>
   if (!stats) return <Loading label={t.account.loading} />
 
   const locale = lang === 'ro' ? 'ro-RO' : 'en-GB'

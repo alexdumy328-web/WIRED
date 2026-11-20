@@ -333,6 +333,9 @@ export function createApp(store: Store, options: CreateAppOptions = {}): Express
         updatedAt: now,
       }
       if (await store.insertBooking(booking)) {
+        // Mail before answering: a serverless function may stop as soon as the response is sent.
+        // The notifier never throws, so a mail problem never loses a booking.
+        if (platform) await platform.notifier.bookingCreated(booking)
         res.status(201).json({ code: booking.code, status: booking.status, slot: booking.slot })
         return
       }

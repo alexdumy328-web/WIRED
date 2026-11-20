@@ -16,6 +16,8 @@ export function BookingDrawer({ code, onClose, onChanged }: { code: string; onCl
   const [loadError, setLoadError] = useState(false)
   const [status, setStatus] = useState<OwnerBooking['status']>('received')
   const [note, setNote] = useState('')
+  const [finalLei, setFinalLei] = useState('')
+  const [notify, setNotify] = useState(true)
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
@@ -44,6 +46,7 @@ export function BookingDrawer({ code, onClose, onChanged }: { code: string; onCl
       if (result.ok) {
         setBooking(result.data)
         setStatus(result.data.status)
+        setFinalLei(result.data.finalLei != null ? String(result.data.finalLei) : '')
         setNote('')
       } else setLoadError(true)
     })
@@ -58,16 +61,27 @@ export function BookingDrawer({ code, onClose, onChanged }: { code: string; onCl
     setMessage(null)
     const result = await api<OwnerBooking>(`/api/admin/bookings/${encodeURIComponent(code)}/status`, {
       method: 'PATCH',
-      body: { status, ...(note.trim() ? { note: note.trim() } : {}) },
+      body: { status, notify, ...(note.trim() ? { note: note.trim() } : {}), ...(priceDirty ? { finalLei: price } : {}) },
     })
     setSaving(false)
     if (result.ok) {
-      setBooking(result.data)
+      const { notified, ...saved } = result.data
+      setBooking(saved)
       setNote('')
-      setMessage({ tone: 'ok', text: d.saved })
-      onChanged(result.data)
+      setMessage(
+        notified === 'failed'
+          ? { tone: 'error', text: d.savedMailFailed }
+          : { tone: 'ok', text: notified === 'sent' ? d.savedMailed : d.saved },
+      )
+      onChanged(saved)
     } else setMessage({ tone: 'error', text: d.error })
   }
+
+  // The price box: empty clears the final price, anything else must be a whole number of lei.
+  const price = finalLei.trim() === '' ? null : Number(finalLei)
+  const priceValid = price === null || (Number.isInteger(price) && price >= 0 && price <= 1_000_000)
+  const priceDirty = booking != null && priceValid && price !== (booking.finalLei ?? null)
+  const statusDirty = booking != null && status !== booking.status
 
   const jobs = booking?.jobIds.map((id) => catalog.find((job) => job.id === id)?.name).filter((n): n is NonNullable<typeof n> => Boolean(n)).map((n) => L(n)) ?? []
 
@@ -94,7 +108,7 @@ export function BookingDrawer({ code, onClose, onChanged }: { code: string; onCl
         </div>
 
         {!booking && !loadError && <Loading label={t.account.loading} />}
-        {loadError && <Notice tone="error">{d.error}</Notice>}
+        {loadError && <Notice tone="error">{d.loadError}</Notice>}
 
         {booking && (
           <div className="mt-6 grid gap-6">
@@ -143,6 +157,12 @@ export function BookingDrawer({ code, onClose, onChanged }: { code: string; onCl
                   <dt className="text-muted">{t.account.bookings.estimate}</dt>
                   <dd className="font-semibold">{fmt(d.estimate, { from: booking.estimate.priceFrom, to: booking.estimate.priceTo })}</dd>
                 </div>
+                {booking.finalLei != null && (
+                  <div>
+                    <dt className="text-muted">{t.account.bookings.final}</dt>
+                    <dd className="font-semibold">{fmt(d.final, { n: booking.finalLei })}</dd>
+                  </div>
+                )}
                 {booking.location && (
                   <div className="sm:col-span-2">
                     <dt className="text-muted">{d.address}</dt>
@@ -205,11 +225,36 @@ export function BookingDrawer({ code, onClose, onChanged }: { code: string; onCl
                   </select>
                 )}
               </Field>
+              <Field label={d.finalLabel} hint={d.finalHint}>
+                {(p) => (
+                  <input
+                    {...p}
+                    className="field"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={1_000_000}
+                    step={1}
+                    value={finalLei}
+                    onChange={(e) => setFinalLei(e.target.value)}
+                    aria-invalid={!priceValid || undefined}
+                  />
+                )}
+              </Field>
               <Field label={d.noteLabel}>
                 {(p) => <textarea {...p} className="field min-h-24" value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} placeholder={d.notePlaceholder} />}
               </Field>
+              {statusDirty &&
+                (booking.contact.email ? (
+                  <label className="flex items-center gap-3 text-[15px]">
+                    <input type="checkbox" className="size-5 accent-[var(--gold)]" checked={notify} onChange={(e) => setNotify(e.target.checked)} />
+                    {d.notify}
+                  </label>
+                ) : (
+                  <p className="text-[14px] text-muted">{d.noEmail}</p>
+                ))}
               {message && <Notice tone={message.tone}>{message.text}</Notice>}
-              <button type="submit" className="btn btn-gold" disabled={saving || (status === booking.status && !note.trim())} aria-busy={saving}>
+              <button type="submit" className="btn btn-gold" disabled={saving || !priceValid || (!statusDirty && !priceDirty && !note.trim())} aria-busy={saving}>
                 {d.save}
               </button>
             </form>

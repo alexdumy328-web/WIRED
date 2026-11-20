@@ -1,6 +1,11 @@
 import type { Booking, BookingStatus, StatusEntry } from '../../types'
 
-export type OwnerBooking = Booking & { statusHistory: StatusEntry[]; mapLink?: string }
+export type OwnerBooking = Booking & {
+  statusHistory: StatusEntry[]
+  mapLink?: string
+  /** Only on the answer to a save: whether the customer was emailed about the new status. */
+  notified?: 'sent' | 'failed' | 'skipped'
+}
 
 export type PickupJob = {
   code: string

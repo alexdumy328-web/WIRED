@@ -25,6 +25,10 @@ const searchQuerySchema = z.object({
 const statusBodySchema = z.object({
   status: bookingStatusSchema,
   note: z.string().trim().max(500).optional(),
+  /** What was charged for the repair, in whole lei. null clears it; leaving it out keeps it. */
+  finalLei: z.number().int().min(0).max(1_000_000).nullable().optional(),
+  /** Email the customer about a status change. On unless the owner unticks it. */
+  notify: z.boolean().default(true),
 })
 
 const codeParam = z.string().trim().regex(/^NT-[A-Z0-9]{4}$/i)
@@ -43,22 +47,22 @@ export function createAdminRouter(deps: PlatformDeps): Router {
   const meLimit = deps.limiters.create('me', 60_000, 120)
   const statusLimit = deps.limiters.create('admin-status', 60_000, 60)
   const ownerOrDev = sessions.requireRole('owner', 'dev')
-  const use = (fn: Handler) => fn
+  const handle = (fn: Handler) => fn
 
   // ---- the signed-in user ---------------------------------------------------------------
-  router.get('/me', meLimit, use(async (req, res) => {
+  router.get('/me', meLimit, handle(async (req, res) => {
     const viewer = await sessions.viewer(req)
     res.set('Cache-Control', 'no-store')
     res.json({ user: viewer, providers: { google: Boolean(deps.env.GOOGLE_CLIENT_ID && deps.env.GOOGLE_CLIENT_SECRET) } })
   }))
 
-  router.get('/me/bookings', meLimit, sessions.requireAuth, use(async (_req, res) => {
+  router.get('/me/bookings', meLimit, sessions.requireAuth, handle(async (_req, res) => {
     const viewer = res.locals.viewer!
     res.set('Cache-Control', 'no-store')
     res.json({ bookings: await bookings.forUser(viewer) })
   }))
 
-  router.get('/settings/public', use(async (_req, res) => {
+  router.get('/settings/public', handle(async (_req, res) => {
     res.set('Cache-Control', 'public, max-age=60')
     res.json(await settings.publicView())
   }))
@@ -71,7 +75,7 @@ export function createAdminRouter(deps: PlatformDeps): Router {
     next()
   })
 
-  admin.get('/bookings', use(async (req, res) => {
+  admin.get('/bookings', handle(async (req, res) => {
     const parsed = searchQuerySchema.safeParse(req.query)
     if (!parsed.success) {
       res.status(400).json({ error: 'invalid', issues: issues(parsed.error) })
@@ -80,7 +84,7 @@ export function createAdminRouter(deps: PlatformDeps): Router {
     res.json(await bookings.search(parsed.data))
   }))
 
-  admin.get('/bookings/:code', use(async (req, res) => {
+  admin.get('/bookings/:code', handle(async (req, res) => {
     const code = codeParam.safeParse(req.params.code)
     const found = code.success ? await bookings.detail(code.data) : null
     if (!found) {
@@ -90,7 +94,7 @@ export function createAdminRouter(deps: PlatformDeps): Router {
     res.json(found)
   }))
 
-  admin.patch('/bookings/:code/status', statusLimit, use(async (req, res) => {
+  admin.patch('/bookings/:code/status', statusLimit, handle(async (req, res) => {
     const code = codeParam.safeParse(req.params.code)
     const body = statusBodySchema.safeParse(req.body)
     if (!code.success || !body.success) {
@@ -98,22 +102,30 @@ export function createAdminRouter(deps: PlatformDeps): Router {
       return
     }
     const viewer = res.locals.viewer!
-    const result = await bookings.changeStatus(code.data, body.data.status, { id: viewer.id, name: viewer.name || viewer.email }, body.data.note)
+    const { status, note, finalLei, notify } = body.data
+    const result = await bookings.update(code.data, { status, note, finalLei }, { id: viewer.id, name: viewer.name || viewer.email })
     if (!result) {
       res.status(404).json({ error: 'not_found' })
       return
     }
-    if (!('unchanged' in result)) await audit.record({
+    if (result.changed) await audit.record({
       action: 'booking_status',
       actor: { id: viewer.id, email: viewer.email, role: viewer.role },
       target: result.booking.code,
-      detail: { from: result.from, to: body.data.status, note: Boolean(body.data.note) },
+      detail: {
+        from: result.from,
+        to: status,
+        note: Boolean(note),
+        ...(result.priceChanged ? { finalLei: [result.fromLei, finalLei ?? null] } : {}),
+      },
       ip: clientIp(req),
     })
-    res.json(result.booking)
+    // The customer hears about a new status, never about a note or a price edit on its own.
+    const notified = result.statusChanged && notify ? await deps.notifier.statusChanged(result.booking) : 'skipped'
+    res.json({ ...result.booking, notified })
   }))
 
-  admin.get('/calendar', use(async (req, res) => {
+  admin.get('/calendar', handle(async (req, res) => {
     const parsed = z.object({ week: dateParam.optional() }).safeParse(req.query)
     if (!parsed.success) {
       res.status(400).json({ error: 'invalid', issues: issues(parsed.error) })
@@ -122,7 +134,7 @@ export function createAdminRouter(deps: PlatformDeps): Router {
     res.json(await bookings.calendar(parsed.data.week ?? localDate(new Date())))
   }))
 
-  admin.get('/pickups', use(async (req, res) => {
+  admin.get('/pickups', handle(async (req, res) => {
     const parsed = z.object({ date: dateParam.optional() }).safeParse(req.query)
     if (!parsed.success) {
       res.status(400).json({ error: 'invalid', issues: issues(parsed.error) })
@@ -132,15 +144,15 @@ export function createAdminRouter(deps: PlatformDeps): Router {
     res.json({ date, jobs: await bookings.pickups(date) })
   }))
 
-  admin.get('/stats', use(async (_req, res) => {
+  admin.get('/stats', handle(async (_req, res) => {
     res.json(await bookings.stats())
   }))
 
-  admin.get('/settings', use(async (_req, res) => {
+  admin.get('/settings', handle(async (_req, res) => {
     res.json(await settings.get())
   }))
 
-  admin.put('/settings', use(async (req, res) => {
+  admin.put('/settings', handle(async (req, res) => {
     const result = await settings.update(req.body)
     if (!result.ok) {
       res.status(400).json({ error: 'invalid', issues: result.issues })
