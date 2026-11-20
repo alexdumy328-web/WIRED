@@ -256,7 +256,7 @@ function BookingModal() {
         return
       }
       if (r.status === 400) {
-        const d = (await r.json().catch(() => null)) as { issues?: { path?: string | string[]; message?: string }[] } | null
+        const d = (await r.json().catch(() => null)) as { issues?: { path?: string | string[]; code?: string; message?: string }[] } | null
         const issues = d?.issues ?? []
         const paths = issues.map((i) => (Array.isArray(i.path) ? i.path[0] : i.path))
         if (paths.includes('slot')) {
@@ -268,7 +268,7 @@ function BookingModal() {
         }
         if (paths.includes('pickup')) {
           setStep(2)
-          const far = issues.some((i) => /too far/i.test(i.message ?? ''))
+          const far = issues.some((i) => i.code === 'too_far')
           setErrors({ pickup: far ? t.booking.pickup.tooFar : t.booking.pickup.required })
           return
         }

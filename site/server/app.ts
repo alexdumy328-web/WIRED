@@ -314,7 +314,7 @@ export function createApp(store: Store, options: CreateAppOptions = {}): Express
     if (data.pickup) {
       const quote = await pickupService.quote(data.pickup.lat, data.pickup.lon, data.pickup.trips, data.pickup.urgent === true)
       if (quote.tooFar) {
-        res.status(400).json({ error: 'invalid', issues: [{ path: 'pickup', message: 'Too far for pickup' }] })
+        res.status(400).json({ error: 'invalid', issues: [{ path: 'pickup', code: 'too_far', message: 'Too far for pickup' }] })
         return
       }
       data.pickup.quote = { totalLei: quote.totalLei, oneWayKm: quote.oneWayKm, ...(quote.urgentLei ? { urgentLei: quote.urgentLei } : {}) }

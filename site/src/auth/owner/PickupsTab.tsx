@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useI18n } from '../../i18n'
 import { api } from '../api'
 import { Card, Loading, Notice, StatusBadge, useDateFormat } from '../ui'
@@ -11,9 +11,13 @@ function Day({ label, date, onOpen, version }: { label: string; date: string; on
   const [jobs, setJobs] = useState<PickupJob[] | null>(null)
   const [error, setError] = useState(false)
 
+  const shown = useRef(date)
   useEffect(() => {
     let live = true
-    setJobs(null)
+    // A reload after a save keeps the list on screen; only a new day starts empty.
+    if (shown.current !== date) setJobs(null)
+    shown.current = date
+    setError(false)
     void api<{ jobs: PickupJob[] }>(`/api/admin/pickups?date=${date}`).then((result) => {
       if (!live) return
       if (result.ok) setJobs(result.data.jobs)

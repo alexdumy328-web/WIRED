@@ -4,6 +4,12 @@ import { api } from '../api'
 import { Loading, Notice, useDateFormat } from '../ui'
 import { addDays, shopDate, type CalendarWeek } from './types'
 
+/** Monday (YYYY-MM-DD) of the week holding the date, matching the server's weekStart. */
+function mondayOfAnchor(date: string): string {
+  const day = new Date(`${date}T12:00:00Z`).getUTCDay()
+  return addDays(date, -((day + 6) % 7))
+}
+
 /** Capitalise the first letter only: Romanian keeps month names lower case ("Lun., 16 nov."). */
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
@@ -25,7 +31,8 @@ export function CalendarTab({ onOpen, version = 0 }: { onOpen: (code: string) =>
 
   useEffect(() => {
     let live = true
-    setWeek(null)
+    // A reload after a save keeps the current grid on screen, so focus can return to it.
+    setWeek((w) => (w && w.weekStart === mondayOfAnchor(anchor) ? w : null))
     setError(false)
     void api<CalendarWeek>(`/api/admin/calendar?week=${anchor}`).then((result) => {
       if (!live) return

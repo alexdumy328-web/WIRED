@@ -141,7 +141,7 @@ export function createNotifier(options: { mailer: Mailer; origin: string; ownerE
     const device = [b.device.brand, b.device.model, b.device.year].filter(Boolean).join(' ')
     const lines = [
       `${b.contact.name}, ${b.contact.phone}${b.contact.email ? `, ${b.contact.email}` : ''}`,
-      `${when(b.slot, 'ro')}, ${b.mode === 'mobile' ? `la client: ${b.location ?? ''}` : b.pickup ? `ridicare: ${b.pickup.address}` : 'la atelier'}`,
+      `${when(b.slot, 'ro')}, ${b.mode === 'mobile' ? `la client: ${b.location ?? ''}` : b.pickup ? `${{ both: 'ridicare și livrare', pickup: 'ridicare', dropoff: 'livrare' }[b.pickup.trips]}: ${b.pickup.address}` : 'la atelier'}`,
       `Aparat: ${device || '-'}`,
       `Lucrări: ${jobNames(b, 'ro') || '-'}`,
       `Estimare: ${b.estimate.priceFrom}–${b.estimate.priceTo} lei${b.pickup ? `, transport ${b.pickup.quote.totalLei} lei` : ''}`,

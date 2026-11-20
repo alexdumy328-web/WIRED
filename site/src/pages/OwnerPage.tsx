@@ -29,7 +29,7 @@ function Dashboard() {
     const c = new URLSearchParams(window.location.search).get('cod')?.trim().toUpperCase() ?? ''
     return /^NT-[A-Z0-9]{4}$/.test(c) ? c : null
   })
-  const [calendarCode, setCalendarCode] = useState<string | null>(null)
+  const [drawerCode, setDrawerCode] = useState<string | null>(null)
   // Bumped when the drawer saves, so the calendar and pickups reload what changed.
   const [version, setVersion] = useState(0)
 
@@ -66,12 +66,12 @@ function Dashboard() {
 
       <div role="tabpanel" id={`owner-panel-${tab}`} aria-labelledby={`owner-tab-${tab}`} className="mt-6">
         {tab === 'bookings' && <BookingsTab initialCode={linked} />}
-        {tab === 'pickups' && <PickupsTab onOpen={setCalendarCode} version={version} />}
-        {tab === 'calendar' && <CalendarTab onOpen={setCalendarCode} version={version} />}
+        {tab === 'pickups' && <PickupsTab onOpen={setDrawerCode} version={version} />}
+        {tab === 'calendar' && <CalendarTab onOpen={setDrawerCode} version={version} />}
         {tab === 'stats' && <StatsTab />}
         {tab === 'settings' && <SettingsTab />}
       </div>
-      {calendarCode && <BookingDrawer code={calendarCode} onClose={() => setCalendarCode(null)} onChanged={() => setVersion((v) => v + 1)} />}
+      {drawerCode && <BookingDrawer code={drawerCode} onClose={() => setDrawerCode(null)} onChanged={() => setVersion((v) => v + 1)} />}
     </PageShell>
   )
 }
