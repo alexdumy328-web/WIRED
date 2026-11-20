@@ -84,6 +84,11 @@ export function createDevRouter(deps: PlatformDeps): Router {
       store: deps.storeKind,
       environment: deps.production ? 'production' : 'development',
       mail: deps.mailer.provider,
+      // The unique index that stops two open bookings sharing a slot. Missing means no race protection.
+      slotIndex: await db
+        .collection('bookings')
+        .indexExists('mode_slot_open_unique')
+        .catch(() => false),
       google: Boolean(deps.env.GOOGLE_CLIENT_ID && deps.env.GOOGLE_CLIENT_SECRET),
       uptimeSeconds: Math.round((Date.now() - startedAt) / 1000),
       versions: {

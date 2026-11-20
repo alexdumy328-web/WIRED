@@ -310,6 +310,7 @@ export type Dict = {
       saved: string
       error: string
       loadError: string
+      slotTaken: string
       custom: string
       finalLabel: string
       finalHint: string
@@ -387,6 +388,7 @@ export type Dict = {
       environment: string
       mail: string
       google: string
+      slotIndex: string
       uptime: string
       versions: string
       ok: string

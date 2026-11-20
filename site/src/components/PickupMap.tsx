@@ -624,7 +624,7 @@ export default function PickupMap(props: {
                 setDropdownOpen(false)
               }}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted transition-colors hover:text-ink"
-              aria-label="Clear address"
+              aria-label={lang === 'ro' ? 'Șterge adresa' : 'Clear address'}
             >
               <svg className="size-4" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" fill="none">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -736,7 +736,7 @@ export default function PickupMap(props: {
       <div
         className="grid grid-cols-3 gap-1 rounded-xl border border-line bg-surface-2/60 p-1"
         role="radiogroup"
-        aria-label="Trips"
+        aria-label={lang === 'ro' ? 'Drumuri' : 'Trips'}
       >
         {(['both', 'pickup', 'dropoff'] as const).map((t) => {
           const active = trips === t

@@ -4,7 +4,7 @@ import { api } from '../api'
 import { Card, Loading, Notice, StatusBadge, useDateFormat } from '../ui'
 import { addDays, shopDate, type PickupJob } from './types'
 
-function Day({ label, date }: { label: string; date: string }) {
+function Day({ label, date, onOpen, version }: { label: string; date: string; onOpen: (code: string) => void; version: number }) {
   const { t } = useI18n()
   const p = t.owner.pickups
   const fmtDate = useDateFormat()
@@ -22,7 +22,7 @@ function Day({ label, date }: { label: string; date: string }) {
     return () => {
       live = false
     }
-  }, [date])
+  }, [date, version])
 
   return (
     <section aria-labelledby={`pk-${date}`}>
@@ -37,7 +37,10 @@ function Day({ label, date }: { label: string; date: string }) {
           <Card key={job.code} className="!p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="font-mono font-bold">
-                {fmtDate.time(job.window.from)}–{fmtDate.time(job.window.to)}
+                {fmtDate.time(job.window.from)}–{fmtDate.time(job.window.to)}{' '}
+                <button type="button" className="text-gold underline-offset-4 hover:underline" onClick={() => onOpen(job.code)}>
+                  {job.code}
+                </button>
               </p>
               <div className="flex items-center gap-2">
                 {job.urgent && <span className="rounded-full bg-gold px-2.5 py-0.5 text-[12px] font-bold text-on-gold">{p.urgent}</span>}
@@ -64,15 +67,15 @@ function Day({ label, date }: { label: string; date: string }) {
   )
 }
 
-export function PickupsTab() {
+export function PickupsTab({ onOpen, version = 0 }: { onOpen: (code: string) => void; version?: number }) {
   const { t } = useI18n()
   const today = shopDate()
   return (
     <div>
       <h2 className="display-2 text-2xl">{t.owner.pickups.title}</h2>
       <div className="mt-5 grid gap-8 lg:grid-cols-2">
-        <Day label={t.owner.pickups.today} date={today} />
-        <Day label={t.owner.pickups.tomorrow} date={addDays(today, 1)} />
+        <Day label={t.owner.pickups.today} date={today} onOpen={onOpen} version={version} />
+        <Day label={t.owner.pickups.tomorrow} date={addDays(today, 1)} onOpen={onOpen} version={version} />
       </div>
     </div>
   )

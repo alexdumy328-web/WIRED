@@ -250,8 +250,9 @@ export function createBookingAdmin(db: Db) {
         const charged = doc.finalLei ?? mid
         const transport = doc.pickup?.quote?.totalLei ?? 0
         const cancelled = doc.status === 'cancelled'
-        if (doc.status === 'done') doneLei += charged
-        else if (!cancelled) pipelineLei += mid
+        // Same basis as the income chart: repair plus transport.
+        if (doc.status === 'done') doneLei += charged + transport
+        else if (!cancelled) pipelineLei += mid + transport
 
         for (const series of [weekly, monthly]) {
           const c = bucketOf(series, created)

@@ -9,6 +9,7 @@ import { focus, pauseStations } from '../lib/stations'
 import { modelFor } from '../lib/models'
 import { setModalOpen } from '../lib/scene-view'
 import { lockPage } from '../lib/scroll'
+import { inertOutside } from '../lib/inert'
 import { Logo } from '../components/Logo'
 import { DevicePanel } from '../components/Scene3D'
 import type { AiEstimate, BookingRequest, ServiceMode } from '../types'
@@ -98,11 +99,10 @@ function BookingModal() {
     setModalOpen(true)
     // Everything beside the dialog goes inert, so Tab cannot reach the page hidden behind it.
     const node = dialog.current
-    const behind = node?.parentElement ? [...node.parentElement.children].filter((el) => el !== node && !el.hasAttribute('inert')) : []
-    for (const el of behind) el.setAttribute('inert', '')
+    const undoInert = inertOutside(node)
     node?.querySelector<HTMLElement>('button, input, textarea')?.focus()
     return () => {
-      for (const el of behind) el.removeAttribute('inert')
+      undoInert()
       lockPage(false)
       setModalOpen(false)
       pauseStations(false)
@@ -256,8 +256,9 @@ function BookingModal() {
         return
       }
       if (r.status === 400) {
-        const d = (await r.json().catch(() => null)) as { issues?: { path?: string | string[] }[] } | null
-        const paths = (d?.issues ?? []).map((i) => (Array.isArray(i.path) ? i.path[0] : i.path))
+        const d = (await r.json().catch(() => null)) as { issues?: { path?: string | string[]; message?: string }[] } | null
+        const issues = d?.issues ?? []
+        const paths = issues.map((i) => (Array.isArray(i.path) ? i.path[0] : i.path))
         if (paths.includes('slot')) {
           // The window passed its cutoff while the form was open.
           setSlot('')
@@ -267,7 +268,8 @@ function BookingModal() {
         }
         if (paths.includes('pickup')) {
           setStep(2)
-          setErrors({ pickup: t.booking.pickup.tooFar })
+          const far = issues.some((i) => /too far/i.test(i.message ?? ''))
+          setErrors({ pickup: far ? t.booking.pickup.tooFar : t.booking.pickup.required })
           return
         }
       }

@@ -30,6 +30,8 @@ function Dashboard() {
     return /^NT-[A-Z0-9]{4}$/.test(c) ? c : null
   })
   const [calendarCode, setCalendarCode] = useState<string | null>(null)
+  // Bumped when the drawer saves, so the calendar and pickups reload what changed.
+  const [version, setVersion] = useState(0)
 
   const onKey = (e: React.KeyboardEvent, index: number) => {
     if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return
@@ -64,12 +66,12 @@ function Dashboard() {
 
       <div role="tabpanel" id={`owner-panel-${tab}`} aria-labelledby={`owner-tab-${tab}`} className="mt-6">
         {tab === 'bookings' && <BookingsTab initialCode={linked} />}
-        {tab === 'pickups' && <PickupsTab />}
-        {tab === 'calendar' && <CalendarTab onOpen={setCalendarCode} />}
+        {tab === 'pickups' && <PickupsTab onOpen={setCalendarCode} version={version} />}
+        {tab === 'calendar' && <CalendarTab onOpen={setCalendarCode} version={version} />}
         {tab === 'stats' && <StatsTab />}
         {tab === 'settings' && <SettingsTab />}
       </div>
-      {calendarCode && <BookingDrawer code={calendarCode} onClose={() => setCalendarCode(null)} onChanged={() => undefined} />}
+      {calendarCode && <BookingDrawer code={calendarCode} onClose={() => setCalendarCode(null)} onChanged={() => setVersion((v) => v + 1)} />}
     </PageShell>
   )
 }

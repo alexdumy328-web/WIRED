@@ -147,6 +147,12 @@ function MyBookings() {
                 <dt className="text-muted">{a.bookings.estimate}</dt>
                 <dd className="font-semibold">{fmt(t.owner.detail.estimate, { from: b.estimate.priceFrom, to: b.estimate.priceTo })}</dd>
               </div>
+              {b.pickup && (
+                <div>
+                  <dt className="text-muted">{t.booking.summary.pickup}</dt>
+                  <dd className="font-semibold">{fmt(t.owner.detail.final, { n: b.pickup.quote.totalLei })}</dd>
+                </div>
+              )}
               {b.finalLei != null && (
                 <div>
                   <dt className="text-muted">{a.bookings.final}</dt>

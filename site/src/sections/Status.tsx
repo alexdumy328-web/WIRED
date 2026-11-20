@@ -146,6 +146,7 @@ function Tracker() {
             </motion.p>
           )}
         </AnimatePresence>
+        {state === 'loading' && <p className="mt-3 text-[15px] text-muted">{t.account.loading}</p>}
         {state === 'notFound' && <p className="mt-3 text-[15px] text-muted">{t.track.notFound}</p>}
         {state === 'error' && <p className="mt-3 text-[15px] text-muted">{t.track.error}</p>}
         <AnimatePresence>

@@ -37,6 +37,7 @@ function statusLine(b: Booking, lang: Lang): string {
       return ro ? 'Aparatul tău e gata. Poți veni să-l ridici în programul atelierului.' : 'Your device is ready. You can pick it up during workshop hours.'
     case 'done':
       if (onSite) return ro ? 'Lucrarea s-a încheiat. Mulțumim că ne-ai chemat.' : 'The job is finished. Thank you for calling us.'
+      if (delivered) return ro ? 'Aparatul a fost predat. Mulțumim!' : 'Your device has been handed back. Thank you!'
       return ro ? 'Aparatul a fost predat. Mulțumim că ai venit la noi.' : 'Your device has been handed back. Thank you for coming to us.'
     case 'cancelled':
       return ro
@@ -91,12 +92,18 @@ export function createNotifier(options: { mailer: Mailer; origin: string; ownerE
 
   function customerConfirmation(b: Booking): Mail {
     const lang: Lang = b.lang
+    const ro = lang === 'ro'
+    const trips = b.pickup?.trips
     const place =
       b.mode === 'mobile'
-        ? lang === 'ro' ? 'la adresa ta' : 'at your address'
-        : b.pickup
-          ? lang === 'ro' ? 'ridicăm aparatul de la adresa ta' : 'we collect the device from your address'
-          : lang === 'ro' ? 'la atelier' : 'at the workshop'
+        ? ro ? 'la adresa ta' : 'at your address'
+        : trips === 'both'
+          ? ro ? 'ridicăm aparatul de la adresa ta și ți-l aducem înapoi' : 'we collect the device from your address and bring it back'
+          : trips === 'pickup'
+            ? ro ? 'ridicăm aparatul de la adresa ta' : 'we collect the device from your address'
+            : trips === 'dropoff'
+              ? ro ? 'aduci aparatul la atelier, iar noi ți-l aducem înapoi' : 'you bring the device to the workshop and we deliver it back'
+              : ro ? 'la atelier' : 'at the workshop'
     const transport = b.pickup ? `\nTransport: ${b.pickup.quote.totalLei} lei` : ''
     const lines =
       lang === 'ro'

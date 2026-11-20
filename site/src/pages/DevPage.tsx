@@ -12,6 +12,7 @@ type Health = {
   store: string
   environment: string
   mail: string
+  slotIndex?: boolean
   google: boolean
   uptimeSeconds: number
   versions: Record<string, string>
@@ -115,6 +116,7 @@ function HealthSection({ tick }: { tick: number }) {
               [h.environment, data.environment, true],
               [h.mail, data.mail, data.mail !== 'none'],
               [h.google, data.google ? h.on : h.off, data.google],
+              [h.slotIndex, data.slotIndex ? h.on : h.off, data.slotIndex === true],
               [h.uptime, uptime(data.uptimeSeconds), true],
             ].map(([label, value, good]) => (
               <Card key={String(label)} className="!p-4">

@@ -7,7 +7,7 @@ import { addDays, shopDate, type CalendarWeek } from './types'
 /** Capitalise the first letter only: Romanian keeps month names lower case ("Lun., 16 nov."). */
 const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
-export function CalendarTab({ onOpen }: { onOpen: (code: string) => void }) {
+export function CalendarTab({ onOpen, version = 0 }: { onOpen: (code: string) => void; version?: number }) {
   const { t, lang } = useI18n()
   const c = t.owner.calendar
   const fmtDate = useDateFormat()
@@ -35,7 +35,7 @@ export function CalendarTab({ onOpen }: { onOpen: (code: string) => void }) {
     return () => {
       live = false
     }
-  }, [anchor])
+  }, [anchor, version])
 
   return (
     <div>

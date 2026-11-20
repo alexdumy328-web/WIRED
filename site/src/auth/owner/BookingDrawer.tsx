@@ -5,6 +5,7 @@ import { Close } from '../../components/Icons'
 import { api } from '../api'
 import { Field, Loading, Notice, StatusBadge, useDateFormat } from '../ui'
 import { BOOKING_STATUSES } from './constants'
+import { inertOutside } from '../../lib/inert'
 import type { OwnerBooking } from './types'
 
 /** Side sheet with one booking: contact, pickup, history and the status form. */
@@ -21,10 +22,12 @@ export function BookingDrawer({ code, onClose, onChanged }: { code: string; onCl
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ tone: 'ok' | 'error'; text: string } | null>(null)
   const closeRef = useRef<HTMLButtonElement>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
   const returnTo = useRef<HTMLElement | null>(null)
 
   useEffect(() => {
     returnTo.current = document.activeElement as HTMLElement | null
+    const undoInert = inertOutside(rootRef.current)
     closeRef.current?.focus()
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -32,6 +35,7 @@ export function BookingDrawer({ code, onClose, onChanged }: { code: string; onCl
     window.addEventListener('keydown', onKey)
     return () => {
       window.removeEventListener('keydown', onKey)
+      undoInert()
       returnTo.current?.focus?.()
     }
   }, [onClose])
@@ -74,7 +78,7 @@ export function BookingDrawer({ code, onClose, onChanged }: { code: string; onCl
           : { tone: 'ok', text: notified === 'sent' ? d.savedMailed : d.saved },
       )
       onChanged(saved)
-    } else setMessage({ tone: 'error', text: d.error })
+    } else setMessage({ tone: 'error', text: result.status === 409 ? d.slotTaken : d.error })
   }
 
   // The price box: empty clears the final price, anything else must be a whole number of lei.
@@ -86,7 +90,7 @@ export function BookingDrawer({ code, onClose, onChanged }: { code: string; onCl
   const jobs = booking?.jobIds.map((id) => catalog.find((job) => job.id === id)?.name).filter((n): n is NonNullable<typeof n> => Boolean(n)).map((n) => L(n)) ?? []
 
   return (
-    <div className="fixed inset-0 z-[60]">
+    <div ref={rootRef} className="fixed inset-0 z-[60]">
       <button type="button" className="absolute inset-0 bg-black/50" onClick={onClose} aria-label={d.close} tabIndex={-1} />
       <aside
         role="dialog"
