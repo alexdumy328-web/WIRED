@@ -1,3 +1,4 @@
+// @refresh reset
 import { useFrame } from '@react-three/fiber'
 import { useCallback, useRef, useState } from 'react'
 import type { Material } from 'three'

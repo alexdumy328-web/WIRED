@@ -1,3 +1,4 @@
+// @refresh reset
 import { ContactShadows, Environment, Lightformer } from '@react-three/drei'
 import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef } from 'react'

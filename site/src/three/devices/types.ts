@@ -16,8 +16,16 @@ export type PartSpec = {
   rot?: V3
   xpos?: V3
   xrot?: V3
+  /**
+   * Waypoints between the assembled and exploded pose (parent space), so a part can
+   * leave its shell before it heads to its exploded spot. A bare V3 is a position;
+   * the rotation is then shared out evenly along the path.
+   */
+  via?: (V3 | { pos: V3; rot?: V3 })[]
   /** Grows in while exploding (e.g. thermal paste); hidden when assembled. */
   appear?: boolean
+  /** Light up with this part instead of on its own (for a `_` piece that is not nested in it). */
+  group?: string
   /** Nest inside another part's pivot (pos/rot are then relative to it). */
   parent?: string
 }
@@ -32,6 +40,11 @@ export type ModelSpec = {
   frontYaw?: number
   /** Camera direction relative to the front: azimuth / elevation in degrees, plus fov. */
   view: { az: number; el: number; fov?: number }
+  /**
+   * Share of the explode timeline each part spends moving (default 0.5). Lower means
+   * the ranks follow each other more strictly: outer parts are clear before inner ones move.
+   */
+  span?: number
   /** Placement in the workshop (world). The yaw turns the model's front. */
   place: { pos: V3; yaw: number }
   /** Workshop-only props that never move (trolley, dolly...). Not shown on the device stage. */

@@ -1,3 +1,4 @@
+// @refresh reset
 import { OrbitControls } from '@react-three/drei'
 import { Canvas } from '@react-three/fiber'
 import { Suspense, useCallback, useMemo, useRef } from 'react'

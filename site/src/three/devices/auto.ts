@@ -53,13 +53,20 @@ function headlightShell(): Shape {
 
 function headlight(b: GeoBuilder) {
   const shape = headlightShell()
-  // Black housing (deep), chrome bezel face, reflector bowls, DRL light guide.
-  extrude(b, 'satin', '#141517', shape, 0.16, [0, 0, -0.085], 0, 0.006)
-  extrude(b, 'satin', '#202226', shape, 0.006, [0, 0, -0.002], 0, 0)
+  // Black housing: hollow shell (walls + back), so the LED module can come out the front once the lens is off.
+  const pts = shape.getPoints(24)
+  const walls = new Shape(pts)
+  walls.holes.push(new Path(pts.map((p) => p.clone().multiplyScalar(0.93)).reverse()))
+  b.add('satin', extrudeGeo(walls, 0.16), '#141517', [0, 0, -0.085])
+  b.add('satin', extrudeGeo(shape, 0.006), '#141517', [0, 0, -0.162])
+  // Inner bezel face with the projector opening (left) and the high-beam reflector (right), chrome trim.
+  const face = headlightShell()
+  face.holes.push(new Path().absarc(-0.09, 0.005, 0.052, 0, Math.PI * 2, true))
+  face.holes.push(new Path().absarc(0.06, 0.005, 0.04, 0, Math.PI * 2, true))
+  b.add('satin', extrudeGeo(face, 0.006), '#202226', [0, 0, -0.002])
   b.add('metal', extrudeOutline(shape), '#bfc4c9', [0, 0, 0.0005])
-  for (const x of [-0.09, 0.06]) {
-    lathe(b, 'metal', K.chrome, [[0.0, -0.03], [0.012, -0.028], [0.03, -0.015], [0.04, 0.0]], [x, 0.005, 0.0], [-Math.PI / 2, 0, 0], 28)
-  }
+  b.torus('metal', K.chrome, 0.052, 0.0025, [-0.09, 0.005, 0.001], 0, 40)
+  lathe(b, 'metal', K.chrome, [[0.0, -0.03], [0.012, -0.028], [0.03, -0.015], [0.04, 0.0]], [0.06, 0.005, 0.0], [Math.PI / 2, 0, 0], 28)
   tube(b, 'glow', '#f4f8ff', [[-0.16, -0.035, 0.004], [-0.02, -0.045, 0.004], [0.12, -0.04, 0.004], [0.165, -0.015, 0.004]], 0.0035, { radial: 6, seg: 40 })
   b.box('glow', '#ffb028', [0.05, 0.008, 0.002], [0.13, 0.04, 0.003], [0, 0, -0.2])
   // Mounting tabs, adjuster screws, back cap + connector socket.
@@ -83,8 +90,9 @@ function lens(b: GeoBuilder) {
   // Clear polycarbonate outer lens, domed, with a thin black seal bead.
   const s = headlightShell()
   const g = new ExtrudeGeometry(s, { depth: 0.006, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.004, bevelSegments: 4, curveSegments: 24 })
-  b.add('glass', g, '#dfe9f2', [0, 0, 0.004])
-  b.add('satin', extrudeOutline(s), '#0f1011', [0, 0, 0.002])
+  // Sits just proud of the DRL guide and the chrome trim, so it lifts straight off.
+  b.add('glass', g, '#dfe9f2', [0, 0, 0.022])
+  b.add('satin', extrudeOutline(s), '#0f1011', [0, 0, 0.008])
 }
 
 function ledModule(b: GeoBuilder) {
@@ -227,8 +235,9 @@ export const AUTO: ModelSpec = {
   shopBase: trolley,
   parts: [
     { id: 'headlight', rank: 0, build: headlight, pos: [-0.13, 0.075, -0.06], rot: [-0.25, 0.2, 0], xpos: [-0.16, 0.25, -0.1], xrot: [-0.1, 0.25, 0] },
-    { id: '_lens', rank: 0, parent: 'headlight', build: lens, xpos: [0, 0, 0.16] },
-    { id: 'ledModule', rank: 1, parent: 'headlight', build: ledModule, pos: [-0.09, 0.005, -0.03], xpos: [-0.06, 0.15, -0.1], xrot: [0.5, 0.3, 0] },
+    // Lens off first (forward, then up out of the way), then the projector slides out the front opening.
+    { id: '_lens', rank: 0, parent: 'headlight', build: lens, via: [[0, 0, 0.07]], xpos: [0, 0.2, 0.13] },
+    { id: 'ledModule', rank: 1, parent: 'headlight', build: ledModule, pos: [-0.09, 0.005, -0.068], via: [[-0.09, 0.005, 0.1]], xpos: [-0.13, 0.04, 0.15], xrot: [0.3, 0.4, 0] },
     { id: 'ecu', rank: 1, build: ecu, pos: [0.17, 0.0, -0.09], rot: [0, -0.3, 0], xpos: [0.2, 0.08, -0.08], xrot: [0, -0.4, 0] },
     { id: '_ecuLid', rank: 1, parent: 'ecu', build: ecuLid, pos: [0, 0.026, 0], xpos: [0, 0.1, -0.05], xrot: [0.55, 0, 0] },
     { id: 'wiring', rank: 2, build: wiring, xpos: [0, 0.035, 0.0] },

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState, type CSSProperties } from 'react'
 import { AnimatePresence, motion } from 'motion/react'
 import { useI18n } from '../i18n'
 import { partLabels } from '../i18n/parts'
@@ -28,6 +28,26 @@ export function WorkshopPage() {
   const [exploded, setExploded] = useState(true)
   const [tour, setTour] = useState(false)
   const labels = partLabels(lang)
+  const aside = useRef<HTMLElement>(null)
+  // Tell the 3D view which parts of it the panel and top bar cover, so part labels stay in the open.
+  const [safe, setSafe] = useState({ l: 0, b: 0 })
+  useEffect(() => {
+    const el = aside.current
+    if (!el) return
+    const measure = () => {
+      const r = el.getBoundingClientRect()
+      const wide = window.innerWidth >= 640
+      setSafe(wide ? { l: Math.round(r.right + 8), b: 0 } : { l: 0, b: Math.round(window.innerHeight - r.top + 8) })
+    }
+    measure()
+    const ro = new ResizeObserver(measure)
+    ro.observe(el)
+    window.addEventListener('resize', measure)
+    return () => {
+      ro.disconnect()
+      window.removeEventListener('resize', measure)
+    }
+  }, [])
 
   useEffect(() => {
     focus('overview')
@@ -59,7 +79,7 @@ export function WorkshopPage() {
   }
 
   return (
-    <div className="fixed inset-0 bg-bg">
+    <div className="fixed inset-0 bg-bg" style={{ '--nt-safe-l': `${safe.l}px`, '--nt-safe-b': `${safe.b}px`, '--nt-safe-t': '64px' } as CSSProperties}>
       <ShopPanel className="absolute inset-0" interactive onSelect={go} />
 
       {/* Top bar */}
@@ -74,7 +94,7 @@ export function WorkshopPage() {
       </div>
 
       {/* Panel: stations and parts. Left column on desktop, bottom sheet on phones. */}
-      <aside className="absolute inset-x-3 bottom-3 max-h-[46svh] overflow-y-auto rounded-[24px] border border-line bg-bg/90 p-4 backdrop-blur sm:inset-x-auto sm:bottom-5 sm:left-5 sm:top-20 sm:max-h-none sm:w-[22rem] sm:p-5" data-lenis-prevent>
+      <aside ref={aside} className="absolute inset-x-3 bottom-3 max-h-[46svh] overflow-y-auto rounded-[24px] border border-line bg-bg/90 p-4 backdrop-blur sm:inset-x-auto sm:bottom-5 sm:left-5 sm:top-20 sm:max-h-none sm:w-[22rem] sm:p-5" data-lenis-prevent>
         <h1 className="display-2 text-2xl sm:text-3xl">{t.workshopPage.title}</h1>
         <p className="mt-2 text-[14px] text-muted">{t.workshopPage.lead}</p>
 

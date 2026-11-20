@@ -15,13 +15,41 @@ const WHITE = '#f1f2f1'
 const PORT = { y: 0.46, r: 0.2 } as const
 
 function cabinet(b: GeoBuilder) {
-  // Side + back panels, worktop, front panel with the porthole, control fascia, plinth.
+  // What stays on the floor: side + back panels, base frame and feet, the grey outer tub
+  // with its counterweight, springs and dampers, inlet valve and hoses.
   for (const s of [-1, 1]) b.box('satin', WHITE, [0.008, H - 0.02, D], [s * (W / 2 - 0.004), (H - 0.02) / 2, 0], 0, 0.002)
   b.box('satin', '#e3e5e4', [W - 0.016, H - 0.03, 0.006], [0, (H - 0.03) / 2, -D / 2 + 0.003])
+  b.box('metal', '#9da2a7', [W - 0.016, 0.012, D - 0.02], [0, 0.006, 0])
+  for (const s of [-1, 1]) b.cyl('matte', '#2a2b2d', 0.02, 0.024, 0.02, [s * 0.25, -0.006, s * 0.2], 0, 14)
+  // Tub: open at the front, a bearing hole at the back for the drum shaft.
+  lathe(b, 'satin', '#8b9196', [[0.255, -0.2], [0.262, -0.18], [0.262, 0.14], [0.24, 0.17], [0.03, 0.17]], [0, PORT.y, -0.02], [-Math.PI / 2, 0, 0], 40)
+  b.box('matte', '#9a9890', [0.36, 0.07, 0.07], [0, PORT.y + 0.27, 0.11], 0, 0.006)
+  for (const s of [-1, 1]) {
+    const pts: [number, number, number][] = []
+    for (let i = 0; i <= 60; i++) {
+      const t = i / 60
+      pts.push([s * 0.17 + Math.cos(t * Math.PI * 18) * 0.012, PORT.y + 0.23 + t * 0.12, -0.05 + Math.sin(t * Math.PI * 18) * 0.012])
+    }
+    tube(b, 'metal', '#b9bdc1', pts, 0.0022, { radial: 5, seg: 240 })
+    b.cyl('satin', '#2b2d30', 0.016, 0.016, 0.16, [s * 0.19, 0.13, 0.0], [0, 0, s * 0.25], 12)
+    b.cyl('metal', '#c9cdd1', 0.008, 0.008, 0.08, [s * 0.21, 0.21, 0.0], [0, 0, s * 0.25], 10)
+  }
+  b.box('gloss', '#e7e7e2', [0.06, 0.04, 0.03], [0.2, H - 0.06, -D / 2 + 0.02])
+  tube(b, 'satin', '#9ea3a8', [[0.2, H - 0.06, -D / 2], [0.25, H - 0.2, -D / 2 - 0.03], [0.22, 0.05, -D / 2 - 0.05]], 0.009, { radial: 8 })
+  tube(b, 'gloss', '#d6d8d9', [[-0.22, 0.12, -D / 2], [-0.24, 0.05, -D / 2 - 0.05], [-0.1, 0.01, -D / 2 - 0.12]], 0.004, { radial: 6 })
+}
+
+function worktop(b: GeoBuilder) {
   b.box('satin', WHITE, [W + 0.004, 0.02, D + 0.02], [0, H - 0.01, 0.005], 0, 0.004)
+  b.box('satin', '#dfe1e0', [W - 0.06, 0.012, D - 0.06], [0, H - 0.026, 0.005])
+}
+
+function frontPanel(b: GeoBuilder) {
+  // Front panel with the porthole and the rubber bellows, control fascia, plinth.
   const front = roundRect(W, H - 0.2, 0.004)
   front.holes.push(circlePath(PORT.r + 0.012, 0, PORT.y - (H - 0.2) / 2 - 0.09))
   extrude(b, 'satin', WHITE, front, 0.012, [0, (H - 0.2) / 2 + 0.09, D / 2 - 0.006], 0, 0.002, 48)
+  lathe(b, 'satin', '#9fa4a8', [[PORT.r + 0.014, 0.0], [PORT.r + 0.02, -0.02], [PORT.r - 0.004, -0.05], [PORT.r - 0.01, -0.07]], [0, PORT.y, D / 2 - 0.004], [Math.PI / 2, 0, 0], 48)
   // Control fascia: detergent drawer, program dial with markings, display, buttons.
   b.box('satin', '#e9ebea', [W, 0.11, 0.03], [0, H - 0.075, D / 2 - 0.012], 0, 0.004)
   b.box('satin', '#f6f7f6', [0.15, 0.075, 0.02], [-0.205, H - 0.075, D / 2 + 0.004], 0, 0.004)
@@ -41,25 +69,6 @@ function cabinet(b: GeoBuilder) {
   // Plinth with the drain-filter flap.
   b.box('satin', '#e6e8e7', [W - 0.01, 0.085, 0.012], [0, 0.045, D / 2 - 0.006])
   b.box('satin', '#dadcdb', [0.11, 0.06, 0.004], [0.2, 0.045, D / 2 + 0.002], 0, 0.004)
-  for (const s of [-1, 1]) b.cyl('matte', '#2a2b2d', 0.02, 0.024, 0.02, [s * 0.25, -0.006, s * 0.2], 0, 14)
-  // Rubber door bellows and the grey outer tub with counterweight, springs, dampers.
-  lathe(b, 'satin', '#9fa4a8', [[PORT.r + 0.014, 0.0], [PORT.r + 0.02, -0.02], [PORT.r - 0.004, -0.05], [PORT.r - 0.01, -0.08]], [0, PORT.y, D / 2 - 0.004], [Math.PI / 2, 0, 0], 48)
-  lathe(b, 'satin', '#8b9196', [[0.255, -0.2], [0.262, -0.18], [0.262, 0.14], [0.24, 0.17], [0.0, 0.17]], [0, PORT.y, -0.02], [-Math.PI / 2, 0, 0], 40)
-  b.box('matte', '#9a9890', [0.36, 0.07, 0.07], [0, PORT.y + 0.27, 0.11], 0, 0.006)
-  for (const s of [-1, 1]) {
-    const pts: [number, number, number][] = []
-    for (let i = 0; i <= 60; i++) {
-      const t = i / 60
-      pts.push([s * 0.17 + Math.cos(t * Math.PI * 18) * 0.012, PORT.y + 0.23 + t * 0.12, -0.05 + Math.sin(t * Math.PI * 18) * 0.012])
-    }
-    tube(b, 'metal', '#b9bdc1', pts, 0.0022, { radial: 5, seg: 240 })
-    b.cyl('satin', '#2b2d30', 0.016, 0.016, 0.16, [s * 0.16, 0.13, 0.0], [0, 0, s * 0.25], 12)
-    b.cyl('metal', '#c9cdd1', 0.008, 0.008, 0.08, [s * 0.18, 0.21, 0.0], [0, 0, s * 0.25], 10)
-  }
-  // Inlet valve + hoses on the back, power cord.
-  b.box('gloss', '#e7e7e2', [0.06, 0.04, 0.03], [0.2, H - 0.06, -D / 2 + 0.02])
-  tube(b, 'satin', '#9ea3a8', [[0.2, H - 0.06, -D / 2], [0.25, H - 0.2, -D / 2 - 0.03], [0.22, 0.05, -D / 2 - 0.05]], 0.009, { radial: 8 })
-  tube(b, 'gloss', '#d6d8d9', [[-0.22, 0.12, -D / 2], [-0.24, 0.05, -D / 2 - 0.05], [-0.1, 0.01, -D / 2 - 0.12]], 0.004, { radial: 6 })
 }
 
 function door(b: GeoBuilder) {
@@ -95,29 +104,52 @@ function drum(b: GeoBuilder) {
     b.box('metal', '#8e9398', [0.03, r * 1.8 * 0.5, 0.02], [Math.cos(a) * r * 0.45, Math.sin(a) * r * 0.45, -len / 2 - 0.012], [0, 0, a - Math.PI / 2], 0.006)
   }
   b.cyl('metal', '#8e9398', 0.04, 0.04, 0.03, [0, 0, -len / 2 - 0.015], [Math.PI / 2, 0, 0], 20)
-  b.cyl('metal', '#c3c7cb', 0.012, 0.012, 0.12, [0, 0, -len / 2 - 0.08], [Math.PI / 2, 0, 0], 12)
-  lathe(b, 'metal', '#a9aeb3', [[0.02, 0.0], [0.14, 0.0], [0.14, 0.02], [0.13, 0.022], [0.13, 0.004], [0.02, 0.004]], [0, 0, -len / 2 - 0.13], [Math.PI / 2, 0, 0], 48)
-  for (let i = 0; i < 5; i++) {
-    const a = (i / 5) * Math.PI * 2
-    b.box('metal', '#a9aeb3', [0.12, 0.012, 0.004], [Math.cos(a) * 0.075, Math.sin(a) * 0.075, -len / 2 - 0.128], [0, 0, a])
-  }
+  b.cyl('metal', '#c3c7cb', 0.012, 0.012, 0.075, [0, 0, -len / 2 - 0.06], [Math.PI / 2, 0, 0], 12)
 }
 
+/** Motor axis along z (parallel to the drum), pulley at the back. */
 function motor(b: GeoBuilder) {
-  // Universal motor along x with cooling vents, brush holders, tacho, pulley and the poly-V belt.
-  b.cyl('satin', '#2c2e31', 0.05, 0.05, 0.15, [0, 0, 0], [0, 0, Math.PI / 2], 24)
+  b.cyl('satin', '#2c2e31', 0.05, 0.05, 0.15, [0, 0, 0], [Math.PI / 2, 0, 0], 24)
   for (let i = 0; i < 16; i++) {
     const a = (i / 16) * Math.PI * 2
-    b.box('metal', K.copper, [0.03, 0.003, 0.008], [0.05, Math.cos(a) * 0.044, Math.sin(a) * 0.044], [a, 0, 0])
+    b.box('metal', K.copper, [0.003, 0.008, 0.03], [Math.cos(a) * 0.044, Math.sin(a) * 0.044, 0.05], [0, 0, a])
   }
-  for (const s of [-1, 1]) b.cyl('metal', '#8e9398', 0.052, 0.052, 0.012, [s * 0.075, 0, 0], [0, 0, Math.PI / 2], 24)
-  for (const s of [-1, 1]) b.box('satin', '#1b1c1e', [0.02, 0.025, 0.02], [-0.02, 0.0, s * 0.055], 0, 0.003)
-  b.cyl('metal', '#c3c7cb', 0.006, 0.006, 0.06, [0.1, 0, 0], [0, 0, Math.PI / 2], 10)
-  b.cyl('metal', '#a9aeb3', 0.016, 0.016, 0.02, [0.12, 0, 0], [0, 0, Math.PI / 2], 16)
-  for (let i = 0; i < 5; i++) b.torus('metal', '#8e9398', 0.016, 0.0012, [0.112 + i * 0.004, 0, 0], [0, Math.PI / 2, 0], 16)
-  tube(b, 'satin', '#161617', [[0.12, 0.018, 0], [0.12, 0.2, 0.06], [0.12, 0.36, 0.12], [0.12, 0.4, 0.0], [0.12, 0.36, -0.12], [0.12, 0.2, -0.06], [0.12, -0.018, 0], [0.12, -0.0, -0.016]], 0.004, { radial: 6, seg: 120, closed: true, scale: [1, 1, 1] })
-  b.box('satin', '#2b2d30', [0.04, 0.03, 0.06], [-0.04, -0.05, 0], 0, 0.004)
-  jst(b, 6, [-0.075, 0.03, 0], Math.PI / 2, '#f0ead9', ['#c8262b', '#1f54c4', '#ececec', '#3a8a3a', '#e6c02c', '#141414'], 0.04)
+  for (const s of [-1, 1]) b.cyl('metal', '#8e9398', 0.052, 0.052, 0.012, [0, 0, s * 0.075], [Math.PI / 2, 0, 0], 24)
+  for (const s of [-1, 1]) b.box('satin', '#1b1c1e', [0.02, 0.025, 0.02], [s * 0.055, 0.0, 0.02], 0, 0.003)
+  b.cyl('metal', '#c3c7cb', 0.006, 0.006, 0.05, [0, 0, -0.1], [Math.PI / 2, 0, 0], 10)
+  b.cyl('metal', '#a9aeb3', 0.016, 0.016, 0.02, [0, 0, -0.115], [Math.PI / 2, 0, 0], 16)
+  for (let i = 0; i < 5; i++) b.torus('metal', '#8e9398', 0.016, 0.0012, [0, 0, -0.107 - i * 0.004], 0, 16)
+  b.box('satin', '#2b2d30', [0.06, 0.03, 0.04], [0, -0.05, 0.04], 0, 0.004)
+  jst(b, 6, [0, 0.03, 0.075], 0, '#f0ead9', ['#c8262b', '#1f54c4', '#ececec', '#3a8a3a', '#e6c02c', '#141414'], 0.04)
+}
+
+/**
+ * Belt drive behind the tub: the big drum pulley and the poly-V belt down to the motor pulley.
+ * Local origin = drum pulley centre; the belt runs in the z = 0 plane.
+ */
+function drive(b: GeoBuilder, motorAt: readonly [number, number]) {
+  lathe(b, 'metal', '#a9aeb3', [[0.02, -0.011], [0.14, -0.011], [0.14, 0.009], [0.13, 0.011], [0.13, -0.007], [0.02, -0.007]], [0, 0, 0], [Math.PI / 2, 0, 0], 48)
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * Math.PI * 2
+    b.box('metal', '#a9aeb3', [0.12, 0.012, 0.004], [Math.cos(a) * 0.075, Math.sin(a) * 0.075, -0.009], [0, 0, a])
+  }
+  b.cyl('metal', '#8e9398', 0.022, 0.022, 0.024, [0, 0, 0], [Math.PI / 2, 0, 0], 16)
+  // Belt: around the top of the big pulley, down both sides to the small one.
+  const [mx, my] = motorAt
+  const pts: [number, number, number][] = []
+  const R = 0.141
+  const r = 0.017
+  const ang = Math.atan2(my, mx)
+  // Big pulley: everything except the stretch facing the motor; small pulley: the far half. Counter-clockwise.
+  for (let i = 0; i <= 28; i++) {
+    const a = ang + 0.35 + (i / 28) * (Math.PI * 2 - 0.7)
+    pts.push([Math.cos(a) * R, Math.sin(a) * R, 0])
+  }
+  for (let i = 1; i < 8; i++) {
+    const a = ang - Math.PI / 2 + (i / 8) * Math.PI
+    pts.push([mx + Math.cos(a) * r, my + Math.sin(a) * r, 0])
+  }
+  tube(b, 'satin', '#161617', pts, 0.004, { radial: 6, seg: 160, closed: true })
 }
 
 function pump(b: GeoBuilder) {
@@ -189,18 +221,26 @@ function sackTruck(b: GeoBuilder) {
   })
 }
 
+const MOTOR = [-0.06, 0.11, -0.13] as const
+const PULLEY = [0, PORT.y, -0.245] as const
+
 export const WASHER: ModelSpec = {
   id: 'largeAppliance',
-  place: { pos: [5.05, 0, 2.6], yaw: 0.7 },
+  // Right end of the pavement, turned so the exploded parts spread along it (clear of the bollard and the kerb).
+  place: { pos: [4.88, 0, 2.42], yaw: 1.2 },
   view: { az: -14, el: 16 },
+  span: 0.3,
   shopBase: sackTruck,
   parts: [
-    { id: 'cabinet', rank: 5, build: cabinet },
-    { id: 'drum', rank: 2, build: drum, pos: [0, PORT.y, -0.02], xpos: [-0.05, PORT.y + 0.04, 0.42] },
-    { id: 'motor', rank: 3, build: motor, pos: [-0.05, 0.12, -0.17], xpos: [-0.5, 0.12, 0.06] },
-    { id: 'heater', rank: 3, build: heater, pos: [0, 0.2, 0.15], xpos: [0.0, 0.08, 0.72] },
-    { id: 'pump', rank: 3, build: pump, pos: [0.2, 0.05, 0.19], xpos: [0.42, 0.08, 0.5] },
-    { id: 'controlBoard', rank: 1, build: controlBoard, pos: [0.0, H - 0.08, 0.16], xpos: [0.06, H + 0.2, 0.32], xrot: [0.45, 0, 0] },
-    { id: 'door', rank: 0, build: door, pos: [-PORT.r - 0.03, PORT.y, D / 2 + 0.006], xpos: [0.24, PORT.y + 0.02, D / 2 + 0.5], xrot: [0, -0.4, 0] },
+    { id: 'cabinet', rank: 6, build: cabinet },
+    { id: '_top', rank: 0, parent: 'cabinet', build: worktop, xpos: [0, 0.72, -0.04], xrot: [-0.1, 0, 0] },
+    { id: '_front', rank: 1, parent: 'cabinet', build: frontPanel, via: [[0, 0, 0.16]], xpos: [0.78, 0, 0.42], xrot: [0, -0.35, 0] },
+    { id: 'door', rank: 0, build: door, pos: [-PORT.r - 0.03, PORT.y, D / 2 + 0.006], via: [[-PORT.r - 0.03, PORT.y, D / 2 + 0.45]], xpos: [0.8, PORT.y + 0.06, D / 2 + 0.3], xrot: [0, -0.6, 0] },
+    { id: 'controlBoard', rank: 2, build: controlBoard, pos: [0.0, H - 0.08, 0.16], via: [[0.0, H + 0.08, 0.16]], xpos: [0.05, H + 0.24, 0.3], xrot: [0.6, 0, 0] },
+    { id: 'drum', rank: 3, build: drum, pos: [0, PORT.y, -0.02], via: [[0, PORT.y, 0.42]], xpos: [-0.2, PORT.y + 0.06, 0.74] },
+    { id: 'heater', rank: 4, build: heater, pos: [0, 0.2, 0.15], via: [[0, 0.2, 0.5]], xpos: [0.06, 0.05, 0.86] },
+    { id: 'pump', rank: 4, build: pump, pos: [0.2, 0.05, 0.19], via: [[0.2, 0.06, 0.4]], xpos: [0.36, 0.06, 0.66], xrot: [0, -0.4, 0] },
+    { id: 'motor', rank: 5, build: motor, pos: MOTOR, via: [[MOTOR[0], MOTOR[1], 0.42]], xpos: [-0.5, 0.1, 0.42], xrot: [0, 0.5, 0] },
+    { id: '_drive', rank: 5, group: 'motor', build: (b) => drive(b, [MOTOR[0] - PULLEY[0], MOTOR[1] - PULLEY[1]]), pos: PULLEY, via: [[0, H + 0.4, PULLEY[2]], [-0.56, H + 0.4, -0.16]], xpos: [-0.58, 0.8, -0.1], xrot: [0, 0.5, 0] },
   ],
 }

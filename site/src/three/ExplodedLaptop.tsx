@@ -245,7 +245,7 @@ export const LAPTOP: ModelSpec = {
   parts: [
     { id: 'bottom', rank: 6, build: bottom },
     { id: '_screws', rank: 5, build: screws, xpos: [0, -0.05, 0] },
-    { id: 'battery', rank: 5, build: battery, pos: [0.055, 0.0015, 0], xpos: [0.03, 0.0015 + GAP, 0] },
+    { id: 'battery', rank: 5, build: battery, pos: [0.055, 0.0015, 0], via: [[0.055, 0.0015 + 0.025, 0]], xpos: [0.03, 0.0015 + GAP, 0] },
     { id: 'board', rank: 4, build: board, pos: [-0.055, 0.0027, 0], xpos: [-0.08, 0.0027 + GAP * 2, 0] },
     { id: 'fan', rank: 3, build: fan, pos: [0, 0.0045, 0], xpos: [-0.03, 0.0045 + GAP * 2.75, 0] },
     { id: 'dcJack', rank: 3, build: dcJack, pos: [-0.09, 0.0015, -0.152], xpos: [-0.07, 0.0015 + GAP * 2, -0.25] },
@@ -256,9 +256,20 @@ export const LAPTOP: ModelSpec = {
       build: lid,
       pos: [-D / 2, 0.0205, 0],
       rot: [0, 0, OPEN],
-      xpos: [-D / 2 - 0.16, 0.0205 + GAP * 5.4 + 0.05, 0],
+      xpos: [-D / 2 - 0.16, 0.0205 + GAP * 5.4 + 0.13, 0],
       xrot: [0, 0, -0.22],
     },
-    { id: 'screen', rank: 1, parent: 'lid', build: screen, pos: [D / 2, -0.0035, 0], xpos: [D / 2, -0.0035 - GAP * 1.05, 0], xrot: [Math.PI, 0, 0] },
+    {
+      id: 'screen',
+      rank: 1,
+      parent: 'lid',
+      build: screen,
+      pos: [D / 2, -0.0035, 0],
+      // Lift the panel well clear of the lid before it turns over, so it never cuts through it.
+      via: [
+        { pos: [D / 2, -0.0035 - 0.06, 0], rot: [0, 0, 0] },
+        { pos: [D / 2, -0.0035 - 0.13, 0], rot: [0, 0, Math.PI / 2] },
+      ],
+      xpos: [D / 2, -0.0035 - GAP * 1.05, 0], xrot: [0, 0, Math.PI] },
   ],
 }

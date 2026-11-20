@@ -153,7 +153,8 @@ function pump(b: GeoBuilder) {
 
 function groupHead(b: GeoBuilder) {
   // E61-style chrome group: bell body, mushroom cap, lever, neck into the fascia. Pivot = bottom of bayonet ring.
-  lathe(b, 'metal', CHROME, [[0.03, 0], [0.043, 0], [0.044, 0.012], [0.038, 0.016], [0.034, 0.04], [0.03, 0.07], [0.028, 0.078], [0, 0.078]], [0, 0, 0], 0, 32)
+  // Open bottom (radius 0.04) so the gasket stack can drop out once the portafilter is off.
+  lathe(b, 'metal', CHROME, [[0.04, 0], [0.043, 0], [0.044, 0.012], [0.038, 0.016], [0.034, 0.04], [0.03, 0.07], [0.028, 0.078], [0, 0.078]], [0, 0, 0], 0, 32)
   lathe(b, 'metal', CHROME, [[0, 0.078], [0.022, 0.078], [0.026, 0.086], [0.024, 0.094], [0.012, 0.1], [0, 0.101]], [0, 0, 0], 0, 28)
   b.cyl('metal', CHROME, 0.022, 0.026, 0.05, [0, 0.05, -0.04], [Math.PI / 2, 0, 0], 22)
   // Lever with a black ball on the right.
@@ -161,8 +162,8 @@ function groupHead(b: GeoBuilder) {
   tube(b, 'metal', CHROME, [[0.036, 0.05, 0], [0.05, 0.065, 0.004], [0.062, 0.1, 0.008]], 0.0035, { seg: 16 })
   sphere(b, 'gloss', '#151515', 0.011, [0.064, 0.106, 0.008], 1, 16, 12)
   // Underside: dark cavity + bayonet lugs.
-  b.cyl('matte', '#1a1a1b', 0.03, 0.03, 0.002, [0, 0.0012, 0], 0, 28)
-  for (const a of [0, Math.PI]) b.box('metal', CHROME, [0.012, 0.004, 0.006], [Math.cos(a) * 0.04, 0.002, Math.sin(a) * 0.04], -a)
+  b.cyl('matte', '#1a1a1b', 0.034, 0.034, 0.002, [0, 0.036, 0], 0, 28)
+  for (const a of [0, Math.PI]) b.box('metal', CHROME, [0.008, 0.004, 0.006], [Math.cos(a) * 0.042, 0.002, Math.sin(a) * 0.042], -a)
 }
 
 function portafilter(b: GeoBuilder) {
@@ -179,16 +180,16 @@ function portafilter(b: GeoBuilder) {
 
 function gaskets(b: GeoBuilder) {
   // Group gasket, shower screen, two O-rings, spaced like a parts diagram. Pivot = top ring.
-  b.torus('satin', '#121213', 0.0305, 0.0045, [0, 0, 0], [Math.PI / 2, 0, 0], 32)
-  b.cyl('metal', '#d6d9dc', 0.0295, 0.0295, 0.0012, [0, -0.01, 0], 0, 32)
+  b.torus('satin', '#121213', 0.024, 0.003, [0, 0, 0], [Math.PI / 2, 0, 0], 32)
+  b.cyl('metal', '#d6d9dc', 0.023, 0.023, 0.0012, [0, -0.01, 0], 0, 32)
   const r = rng(4)
   for (let i = 0; i < 40; i++) {
     const a = r() * Math.PI * 2
-    const d = Math.sqrt(r()) * 0.024
+    const d = Math.sqrt(r()) * 0.02
     b.cyl('matte', '#55585c', 0.0007, 0.0007, 0.0014, [Math.cos(a) * d, -0.0098, Math.sin(a) * d], 0, 6)
   }
   b.cyl('metal', '#a9aeb3', 0.003, 0.003, 0.002, [0, -0.0085, 0], 0, 10)
-  b.torus('satin', '#121213', 0.022, 0.0022, [0, -0.019, 0], [Math.PI / 2, 0, 0], 28)
+  b.torus('satin', '#121213', 0.02, 0.0022, [0, -0.019, 0], [Math.PI / 2, 0, 0], 28)
   b.torus('satin', '#121213', 0.012, 0.0018, [0, -0.026, 0], [Math.PI / 2, 0, 0], 24)
 }
 
@@ -262,6 +263,7 @@ export const COFFEE_MACHINE: ModelSpec = {
   idle: true,
   place: { pos: [0.31, 0.76, -4.77], yaw: Math.PI / 2 },
   view: { az: 30, el: 22 },
+  span: 0.35,
   parts: [
     { id: '_frame', rank: 7, build: frame },
     { id: 'housing', rank: 0, build: housing, xpos: [0, 0.42, -0.04] },
@@ -269,9 +271,10 @@ export const COFFEE_MACHINE: ModelSpec = {
     { id: 'boiler', rank: 2, build: boiler, pos: [0, 0.27, -0.01], xpos: [-0.01, 0.38, -0.05] },
     { id: 'pump', rank: 2, build: pump, pos: [0.06, BASE + 0.035, -0.035], xpos: [0.22, BASE + 0.035, -0.01], xrot: [0, 0.6, 0] },
     { id: 'controlBoard', rank: 3, build: controlBoard, pos: [W / 2 - 0.012, 0.18, -0.03], rot: [0, 0, Math.PI / 2], xpos: [0.215, 0.2, 0.02], xrot: [Math.PI / 2, 0, -0.5] },
-    { id: 'groupHead', rank: 3, build: groupHead, pos: [GROUP.x, GROUP.y, GROUP.z], xpos: [GROUP.x, GROUP.y + 0.02, GROUP.z + 0.09] },
-    { id: '_portafilter', rank: 4, parent: 'groupHead', build: portafilter, xpos: [0, -0.115, 0.01] },
-    { id: 'gaskets', rank: 4, build: gaskets, pos: [GROUP.x, GROUP.y + 0.026, GROUP.z], xpos: [GROUP.x, GROUP.y - 0.025, GROUP.z + 0.1] },
+    // Portafilter off first, then the gasket stack drops out of the group, then the group comes off.
+    { id: 'groupHead', rank: 4, build: groupHead, pos: [GROUP.x, GROUP.y, GROUP.z], xpos: [GROUP.x, GROUP.y + 0.02, GROUP.z + 0.09] },
+    { id: '_portafilter', rank: 2, parent: 'groupHead', build: portafilter, via: [[0, -0.035, 0.02]], xpos: [0, -0.06, 0.13] },
+    { id: 'gaskets', rank: 3, build: gaskets, pos: [GROUP.x, GROUP.y + 0.026, GROUP.z], via: [[GROUP.x, GROUP.y - 0.012, GROUP.z]], xpos: [GROUP.x, GROUP.y - 0.025, GROUP.z + 0.1] },
     { id: 'grinder', rank: 1, build: grinder, pos: [GRINDER.x, 0, GRINDER.z], xpos: [GRINDER.x - 0.05, 0, GRINDER.z] },
     { id: '_burr', rank: 2, parent: 'grinder', build: burr, pos: [0, 0.178, 0], xpos: [0, 0.27, 0] },
     { id: '_hopper', rank: 1, parent: 'grinder', build: hopper, pos: [0, 0.196, 0], xpos: [0, 0.34, 0] },

@@ -1,3 +1,4 @@
+// @refresh reset
 import { ContactShadows, Environment, Lightformer, OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Suspense, useCallback, useMemo, useRef, useState } from 'react'
@@ -71,7 +72,8 @@ function Plinth({ theme, radius }: { theme: Theme; radius: { current: number } }
   )
 }
 
-const _pts = Array.from({ length: 10 }, () => new Vector3())
+const RIM = 16
+const _pts = Array.from({ length: RIM }, () => new Vector3())
 const _corners: Vector3[] = []
 const _fit: Vector3[] = []
 const _out = { pos: new Vector3(), target: new Vector3() }
@@ -114,9 +116,9 @@ function StageContent({ theme, reducedMotion, partLabels, controls }: { theme: T
     _fit.length = 0
     for (const c of corners) _fit.push(c.set(c.x - frame.cx, c.y + oy, c.z - frame.cz))
     const pr = radius.current
-    for (let i = 0; i < 10; i++) {
-      const a = (i / 10) * Math.PI * 2
-      _fit.push(_pts[i].set(Math.cos(a) * pr * 0.85, -PLINTH_H * pr, Math.sin(a) * pr * 0.85))
+    for (let i = 0; i < RIM; i++) {
+      const a = (i / RIM) * Math.PI * 2
+      _fit.push(_pts[i].set(Math.cos(a) * pr, -PLINTH_H * pr, Math.sin(a) * pr))
     }
     const ctl = controls.current
     _dir.copy(camera.position).sub(ctl ? ctl.target : _out.target)

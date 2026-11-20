@@ -1,10 +1,10 @@
-import { Html } from '@react-three/drei'
-import { useFrame } from '@react-three/fiber'
+// @refresh reset
+import { useFrame, useThree } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
-import { Color, MeshBasicMaterial, MeshStandardMaterial, Vector3, type Camera, type Group, type Material, type Object3D } from 'three'
+import { Color, MeshBasicMaterial, MeshStandardMaterial, Vector3, type Camera, type Group, type Material } from 'three'
 import type { Bucket } from './builder'
 import { MODEL_PARTS, sceneState, type ModelId } from './contract'
-import { ASSEMBLE_TIME, EXPLODE_TIME, getMerged, getModel, partProgress, type PartAsset } from './devices'
+import { ASSEMBLE_TIME, EXPLODE_TIME, getMerged, getModel, partPose, partProgress, type PartAsset } from './devices'
 import { shadowFlags } from './Room'
 
 const GOLD = new Color('#D9A93F')
@@ -60,7 +60,19 @@ export function DeviceModel({
   const asset = useMemo(() => getModel(id), [id])
   const root = useRef<Group>(null)
   const refs = useRef<(Group | null)[]>([])
-  const labelEl = useRef<HTMLSpanElement>(null)
+  const labelUi = useRef<LabelUi>({ wrap: null, label: null, line: null, dot: null })
+  const labelLay = useRef<LabelLayout>({ side: -1, x: 0, y: 0, init: false })
+  const gl = useThree((s) => s.gl)
+  useEffect(() => {
+    if (idle) return
+    const ui = createLabelUi(gl.domElement.parentElement)
+    if (!ui) return
+    labelUi.current = ui
+    return () => {
+      ui.wrap?.remove()
+      labelUi.current = { wrap: null, label: null, line: null, dot: null }
+    }
+  }, [gl, idle])
   const st = useRef({ g: enter === 'scatter' && !idle ? 1 : 0, presence: enter === 'scatter' ? 0 : 1, left: false, h: new Float32Array(asset.parts.length), dim: new Float32Array(asset.parts.length), init: false })
   const [label, setLabel] = useState<string | null>(null)
 
@@ -107,9 +119,8 @@ export function DeviceModel({
       for (const p of asset.parts) {
         const o = refs.current[p.index]
         if (!o) continue
-        const t = partProgress(p.start, s.g)
-        o.position.lerpVectors(p.posA, p.posE, t)
-        o.rotation.set(p.rotA.x + (p.rotE.x - p.rotA.x) * t, p.rotA.y + (p.rotE.y - p.rotA.y) * t, p.rotA.z + (p.rotE.z - p.rotA.z) * t)
+        const t = partProgress(p.start, s.g, p.span)
+        partPose(p, t, o.position, o.rotation)
         if (p.spec.appear) {
           o.scale.setScalar(Math.max(1e-4, t))
           o.visible = t > 0.01
@@ -136,9 +147,16 @@ export function DeviceModel({
       }
     }
     const want = hl
-    if (want !== label) setLabel(want)
-    const el = labelEl.current
-    if (el) el.style.opacity = String(clamp01((s.presence - 0.6) / 0.4))
+    if (want !== label) {
+      setLabel(want)
+      labelLay.current.init = false
+    }
+    const ui = labelUi.current
+    if (ui.wrap) ui.wrap.style.opacity = want ? String(clamp01((s.presence - 0.6) / 0.4)) : '0'
+    if (ui.wrap && want && root.current) {
+      const part = asset.parts.find((p) => p.spec.id === want)
+      if (part) layoutLabel(root.current, asset.parts, refs.current, part, state.camera, state.size, ui, labelLay.current, reducedMotion ? 1 : 1 - Math.exp(-dt / 0.12))
+    }
 
     if (runtime) {
       runtime.id = id
@@ -157,8 +175,11 @@ export function DeviceModel({
     return kids
   }, [asset])
 
-  const labelPart = label ? asset.parts.find((p) => p.spec.id === label) : undefined
   const labelText = label ? (partLabels?.[`${id}.${label}`] ?? label) : ''
+  useEffect(() => {
+    const el = labelUi.current.label
+    if (el) el.textContent = labelText
+  }, [labelText])
 
   const renderPart = (p: PartAsset): ReactNode => (
     <group
@@ -182,14 +203,6 @@ export function DeviceModel({
         />
       ))}
       {(children2.get(p.index) ?? []).map(renderPart)}
-      {labelPart === p && (
-        <PartLabel
-          key={`label-${label}`}
-          anchor={[(p.box.min.x + p.box.max.x) / 2, p.box.max.y, (p.box.min.z + p.box.max.z) / 2]}
-          text={labelText}
-          spanRef={labelEl}
-        />
-      )}
     </group>
   )
 
@@ -224,37 +237,157 @@ function applyTint(e: MatEntry, h: number, d: number, pulse: number) {
   }
 }
 
-const _w = new Vector3()
+type LabelUi = {
+  wrap: HTMLDivElement | null
+  label: HTMLSpanElement | null
+  line: SVGLineElement | null
+  dot: SVGCircleElement | null
+  /** Margins the page keeps covered (panels over the canvas), from --nt-safe-l/r/t/b. Re-read now and then. */
+  safe?: { l: number; r: number; t: number; b: number; at: number }
+}
+/** side: 0 left, 1 right, 2 above, 3 below, 4 pinned to the top of the canvas. */
+type LabelLayout = { side: number; x: number; y: number; init: boolean }
 
-/** Label next to the highlighted part, clamped inside the canvas. */
-function PartLabel({ anchor, text, spanRef }: { anchor: [number, number, number]; text: string; spanRef: React.RefObject<HTMLSpanElement | null> }) {
-  const calc = useMemo(
-    () => (obj: Object3D, camera: Camera, size: { width: number; height: number }) => {
-      obj.updateWorldMatrix(true, false)
-      _w.setFromMatrixPosition(obj.matrixWorld).project(camera)
-      let x = (_w.x * 0.5 + 0.5) * size.width
-      let y = (-_w.y * 0.5 + 0.5) * size.height
-      const el = spanRef.current
-      const w = el?.offsetWidth ?? 120
-      const h = el?.offsetHeight ?? 28
-      const pad = 10
-      x = Math.min(Math.max(x, w / 2 + pad), size.width - w / 2 - pad)
-      y = Math.min(Math.max(y, h + 12 + pad), size.height - pad)
-      return [x, y]
-    },
-    [spanRef],
-  )
-  return (
-    <group position={anchor}>
-      <Html calculatePosition={calc} zIndexRange={[30, 0]} style={{ pointerEvents: 'none' }}>
-        <span
-          ref={spanRef}
-          className="nt-part-label"
-          style={{ pointerEvents: 'none', whiteSpace: 'nowrap', position: 'absolute', left: 0, top: 0, transform: 'translate(-50%, calc(-100% - 12px))' }}
-        >
-          {text}
-        </span>
-      </Html>
-    </group>
-  )
+const _w = new Vector3()
+const _c = new Vector3()
+
+function toScreen(v: Vector3, camera: Camera, W: number, H: number): boolean {
+  v.project(camera)
+  const ok = v.z < 1
+  v.set((v.x * 0.5 + 0.5) * W, (-v.y * 0.5 + 0.5) * H, 0)
+  return ok
+}
+
+/**
+ * Places the part label outside the device's outline, on the side of the part, with a
+ * leader line back to it, so the label never sits on top of another part.
+ */
+function layoutLabel(
+  root: Group,
+  parts: PartAsset[],
+  objs: (Group | null)[],
+  part: PartAsset,
+  camera: Camera,
+  size: { width: number; height: number },
+  ui: LabelUi,
+  lay: LabelLayout,
+  k: number,
+) {
+  const { width: W, height: H } = size
+  const el = ui.label
+  if (!el || !ui.line || !ui.dot || !ui.wrap || W < 2 || H < 2) return
+  const now = performance.now()
+  if (!ui.safe || now - ui.safe.at > 500) {
+    const cs = getComputedStyle(ui.wrap)
+    const v = (n: string) => parseFloat(cs.getPropertyValue(n)) || 0
+    ui.safe = { l: v('--nt-safe-l'), r: v('--nt-safe-r'), t: v('--nt-safe-t'), b: v('--nt-safe-b'), at: now }
+  }
+  // Usable area: the canvas minus whatever the page lays over it.
+  const L = ui.safe.l
+  const R = W - ui.safe.r
+  const T = ui.safe.t
+  const B = H - ui.safe.b
+  root.updateWorldMatrix(true, true)
+  // Screen outline of the device: projected corners of every visible part's box.
+  let x0 = Infinity
+  let x1 = -Infinity
+  let y0 = Infinity
+  let y1 = -Infinity
+  for (const p of parts) {
+    const o = objs[p.index]
+    if (!o || !o.visible || p.box.isEmpty()) continue
+    for (let c = 0; c < 8; c++) {
+      _w.set(c & 1 ? p.box.max.x : p.box.min.x, c & 2 ? p.box.max.y : p.box.min.y, c & 4 ? p.box.max.z : p.box.min.z).applyMatrix4(o.matrixWorld)
+      if (!toScreen(_w, camera, W, H)) continue
+      x0 = Math.min(x0, _w.x)
+      x1 = Math.max(x1, _w.x)
+      y0 = Math.min(y0, _w.y)
+      y1 = Math.max(y1, _w.y)
+    }
+  }
+  const o = objs[part.index]
+  if (!o || !Number.isFinite(x0)) return
+  part.box.getCenter(_c).applyMatrix4(o.matrixWorld)
+  toScreen(_c, camera, W, H)
+  const ax = _c.x
+  const ay = _c.y
+  const w = el.offsetWidth || 110
+  const h = el.offsetHeight || 26
+  const pad = 10
+  const gap = 24
+  x0 = Math.max(x0, L)
+  x1 = Math.min(x1, R)
+  y0 = Math.max(y0, T)
+  y1 = Math.min(y1, B)
+  const fits = [x0 - gap - w >= L + pad, x1 + gap + w <= R - pad, y0 - gap - h >= T + pad, y1 + gap + h <= B - pad]
+  // Prefer the side of the device the part is on; keep the current side while it still works (no flicker on the turntable).
+  const cx = (x0 + x1) / 2
+  const cy = (y0 + y1) / 2
+  const pref = [ax < cx ? 0 : 1, ax < cx ? 1 : 0, ay < cy ? 2 : 3, ay < cy ? 3 : 2]
+  // Best side that fits; left and right only swap once the part is clearly past the middle (no flicker on the turntable).
+  let side = pref.find((v) => fits[v]) ?? 4
+  const hyst = (x1 - x0) * 0.12
+  if ((side === 0 || side === 1) && (lay.side === 0 || lay.side === 1) && side !== lay.side && fits[lay.side] && Math.abs(ax - cx) < hyst) side = lay.side
+  let x: number
+  let y: number
+  if (side === 0 || side === 1) {
+    x = side === 0 ? x0 - gap - w : x1 + gap
+    y = Math.min(Math.max(ay - h / 2, T + pad), B - pad - h)
+  } else if (side === 2 || side === 3) {
+    x = Math.min(Math.max(ax - w / 2, L + pad), R - pad - w)
+    y = side === 2 ? y0 - gap - h : y1 + gap
+  } else {
+    // No room around the device: pin the label to the top corner away from the part.
+    x = ax < (L + R) / 2 ? R - pad - w : L + pad
+    y = T + pad
+  }
+  if (!lay.init || side !== lay.side) {
+    if (!lay.init) {
+      lay.x = x
+      lay.y = y
+    }
+    lay.side = side
+    lay.init = true
+  }
+  lay.x += (x - lay.x) * k
+  lay.y += (y - lay.y) * k
+  el.style.transform = `translate3d(${lay.x.toFixed(1)}px, ${lay.y.toFixed(1)}px, 0)`
+  // Leader from the part to the nearest point of the label.
+  const lx = Math.min(Math.max(ax, lay.x), lay.x + w)
+  const ly = Math.min(Math.max(ay, lay.y), lay.y + h)
+  ui.line.setAttribute('x1', ax.toFixed(1))
+  ui.line.setAttribute('y1', ay.toFixed(1))
+  ui.line.setAttribute('x2', lx.toFixed(1))
+  ui.line.setAttribute('y2', ly.toFixed(1))
+  ui.dot.setAttribute('cx', ax.toFixed(1))
+  ui.dot.setAttribute('cy', ay.toFixed(1))
+}
+
+const SVG = 'http://www.w3.org/2000/svg'
+
+/** Overlay over the canvas (plain DOM, no React root): label, leader line and a dot on the part. */
+function createLabelUi(host: HTMLElement | null): LabelUi | null {
+  if (!host) return null
+  const wrap = document.createElement('div')
+  wrap.setAttribute('aria-hidden', 'true')
+  wrap.style.cssText = 'position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity 120ms linear;z-index:3;overflow:hidden'
+  const svg = document.createElementNS(SVG, 'svg')
+  svg.setAttribute('width', '100%')
+  svg.setAttribute('height', '100%')
+  svg.style.cssText = 'position:absolute;inset:0'
+  const line = document.createElementNS(SVG, 'line')
+  line.setAttribute('stroke', '#D9A93F')
+  line.setAttribute('stroke-width', '1.5')
+  line.setAttribute('stroke-linecap', 'round')
+  const dot = document.createElementNS(SVG, 'circle')
+  dot.setAttribute('r', '3.5')
+  dot.setAttribute('fill', '#D9A93F')
+  dot.setAttribute('stroke', 'rgba(0,0,0,.35)')
+  svg.append(line, dot)
+  const label = document.createElement('span')
+  label.className = 'nt-part-label'
+  label.style.cssText = 'position:absolute;left:0;top:0;white-space:nowrap;will-change:transform'
+  wrap.append(svg, label)
+  host.appendChild(wrap)
+  return { wrap, label, line, dot }
 }

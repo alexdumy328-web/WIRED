@@ -1,5 +1,5 @@
 import type { GeoBuilder, V3 } from '../builder'
-import { elcap, extrude, header, K, knob, lathe, pcb, roundRect, roundRectPath, screw, shade, slots, tube } from './kit'
+import { circlePath, elcap, extrude, header, K, knob, lathe, pcb, roundRect, roundRectPath, screw, shade, slots, tube } from './kit'
 import type { ModelSpec } from './types'
 import { C, rng } from '../materials'
 
@@ -91,8 +91,23 @@ function faceplate(b: GeoBuilder) {
   const dx = -0.125
   const plate = roundRect(W - 0.004, H - 0.004, 0.003, 0, H / 2)
   plate.holes.push(roundRectPath(0.13, 0.058, 0.003, dx, 0.072))
+  // Clearance holes for the level pots' shafts (hidden under the knobs).
+  for (const x of POTS) plate.holes.push(circlePath(0.0105, x, 0.032))
   extrude(b, 'metal', ALU, plate, FP, [0, 0, FP / 2], 0, 0.0012, 8)
-  for (let i = 0; i < 26; i++) b.box('metal', shade(ALU, 0.93 + (i % 3) * 0.03), [W - 0.17, 0.0006, 0.0002], [0.083, 0.006 + i * 0.0043, FP + 0.0001])
+  // Brushed lines; the rows level with the pots stop short of their shafts (the knobs cover the gaps).
+  for (let i = 0; i < 26; i++) {
+    const y = 0.006 + i * 0.0043
+    const col = shade(ALU, 0.93 + (i % 3) * 0.03)
+    const x0 = 0.083 - (W - 0.17) / 2
+    const x1 = 0.083 + (W - 0.17) / 2
+    const cuts = Math.abs(y - 0.032) < 0.011 ? POTS : []
+    let from = x0
+    for (const px of [...cuts, x1 + 0.011]) {
+      const to = Math.min(px - 0.011, x1)
+      if (to > from) b.box('metal', col, [to - from, 0.0006, 0.0002], [(from + to) / 2, y, FP + 0.0001])
+      from = px + 0.011
+    }
+  }
   // Cassette door: black frame around a smoked window (the cassette shows through), eject recess.
   for (const s of [-1, 1]) {
     b.box('gloss', '#121314', [0.15, 0.012, 0.004], [dx, 0.072 + s * 0.035, FP + 0.002], 0, 0.0015)
@@ -173,11 +188,11 @@ function tapeMechanism(b: GeoBuilder) {
   b.cyl('metal', '#9aa0a5', 0.006, 0.006, 0.002, [0.038, 0.022, -0.0062], [Math.PI / 2, 0, 0], 12)
   // Reel spindles, flywheel, motor behind the plate.
   for (const s of [-1, 1]) b.cyl('satin', '#eeeeea', 0.004, 0.004, 0.012, [s * 0.021, 0.056, -0.006], [Math.PI / 2, 0, 0], 8)
-  b.cyl('metal', '#b9bec3', 0.03, 0.03, 0.008, [0.022, 0.04, -0.03], [Math.PI / 2, 0, 0], 32)
-  b.cyl('metal', '#868c92', 0.012, 0.012, 0.009, [0.022, 0.04, -0.03], [Math.PI / 2, 0, 0], 20)
-  b.cyl('metal', '#3a3d41', 0.016, 0.016, 0.03, [-0.035, 0.065, -0.045], [Math.PI / 2, 0, 0], 22)
-  b.cyl('metal', '#c9cdd1', 0.0045, 0.0045, 0.008, [-0.035, 0.065, -0.026], [Math.PI / 2, 0, 0], 12)
-  b.box('satin', '#f0ead9', [0.008, 0.004, 0.006], [-0.035, 0.084, -0.05])
+  b.cyl('metal', '#b9bec3', 0.03, 0.03, 0.008, [0.022, 0.04, -0.04], [Math.PI / 2, 0, 0], 32)
+  b.cyl('metal', '#868c92', 0.012, 0.012, 0.009, [0.022, 0.04, -0.04], [Math.PI / 2, 0, 0], 20)
+  b.cyl('metal', '#3a3d41', 0.016, 0.016, 0.03, [-0.035, 0.065, -0.058], [Math.PI / 2, 0, 0], 22)
+  b.cyl('metal', '#c9cdd1', 0.0045, 0.0045, 0.008, [-0.035, 0.065, -0.039], [Math.PI / 2, 0, 0], 12)
+  b.box('satin', '#f0ead9', [0.008, 0.004, 0.006], [-0.035, 0.084, -0.062])
   // Solenoid and its leads.
   b.box('gloss', '#1d1e21', [0.018, 0.016, 0.022], [-0.045, 0.018, -0.035], 0, 0.002)
   b.box('satin', '#b8712f', [0.012, 0.014, 0.018], [-0.045, 0.018, -0.035])
@@ -191,7 +206,7 @@ function headBlock(b: GeoBuilder) {
   b.box('matte', '#1b1b1c', [0.0006, 0.0005, 0.007], [0.004, 0.0172, 0.0])
   b.box('metal', '#b9bec3', [0.007, 0.01, 0.007], [-0.012, 0.0065, 0.0], 0, 0.0015)
   for (const x of [-0.019, 0.016]) b.cyl('metal', K.chrome, 0.0012, 0.0012, 0.012, [x, 0.0075, 0.0], 0, 8)
-  for (let i = 0; i < 4; i++) tube(b, 'gloss', ['#c3262b', '#e6e6e6', '#1d4fbf', '#141414'][i], [[0.0, 0.002, -0.004 - i * 0.0008], [0.004, -0.004, -0.02], [0.02, -0.006, -0.035]], 0.0005, { radial: 4 })
+  for (let i = 0; i < 4; i++) tube(b, 'gloss', ['#c3262b', '#e6e6e6', '#1d4fbf', '#141414'][i], [[0.0, 0.002, -0.004 - i * 0.0008], [0.006, -0.003, -0.0055], [0.02, -0.006, -0.006 - i * 0.0004]], 0.0005, { radial: 4 })
   screw(b, [-0.016, 0.0015, 0.005], 0.0018)
   screw(b, [0.016, 0.0015, 0.005], 0.0018)
 }
@@ -212,7 +227,7 @@ function belts(b: GeoBuilder) {
     return pts
   }
   tube(b, 'satin', K.rubber, loop(0, 0, 0.0305, -0.057, 0.025, 0.0055), 0.0013, { closed: true, seg: 90, radial: 6 })
-  tube(b, 'satin', '#1c1c1d', loop(-0.02, 0.0, 0.012, -0.075, 0.03, 0.006), 0.0008, { closed: true, seg: 60, radial: 5, pos: [0, 0, -0.008] })
+  tube(b, 'satin', '#1c1c1d', loop(-0.02, 0.0, 0.012, -0.075, 0.03, 0.006), 0.0008, { closed: true, seg: 60, radial: 5, pos: [0, 0, 0.004] })
   b.torus('satin', K.rubber, 0.007, 0.0012, [-0.057, -0.03, -0.004], 0, 20)
 }
 
@@ -257,9 +272,13 @@ function pots(b: GeoBuilder) {
     b.box('satin', K.phenolic, [0.017, 0.012, 0.0016], [x, 0.03, -0.016])
     for (let k = -1; k <= 1; k++) b.box('metal', K.solder, [0.0018, 0.008, 0.0006], [x + k * 0.005, 0.02, -0.016])
     b.cyl('metal', K.brass, 0.0045, 0.0045, 0.006, [x, 0.032, 0.001], [Math.PI / 2, 0, 0], 12)
-    b.cyl('metal', '#c9cdd1', 0.003, 0.003, 0.03, [x, 0.032, 0.012], [Math.PI / 2, 0, 0], 10)
-    knob(b, 0.0105, 0.014, [x, 0.032, FP + 0.0055], { color: '#d8dbde', skirt: '#141516', line: '#141516' })
+    b.cyl('metal', '#c9cdd1', 0.0022, 0.0022, 0.03, [x, 0.032, 0.012], [Math.PI / 2, 0, 0], 10)
   }
+}
+
+/** The level pots' knobs, pulled off their shafts before the faceplate can come away. Same pivot as the pots. */
+function potKnobs(b: GeoBuilder) {
+  for (const x of POTS) knob(b, 0.0105, 0.014, [x, 0.032, FP + 0.0055], { color: '#d8dbde', skirt: '#141516', line: '#141516' })
 }
 
 export const VINTAGE: ModelSpec = {
@@ -268,15 +287,31 @@ export const VINTAGE: ModelSpec = {
   replaces: ['board'],
   place: { pos: [0.48, 0.904, -1.6], yaw: Math.PI / 2 },
   view: { az: 25, el: 24 },
+  span: 0.32,
   parts: [
     { id: '_chassis', rank: 6, build: chassis },
     { id: 'case', rank: 0, build: cover, xpos: [0, 0.3, -0.02] },
-    { id: 'faceplate', rank: 1, build: faceplate, pos: [0, 0, ZF], xpos: [0, 0, ZF + 0.17] },
-    { id: 'tapeMechanism', rank: 2, build: tapeMechanism, pos: MECH, xpos: [MECH[0] - 0.01, MECH[1] + 0.13, MECH[2] - 0.02] },
-    { id: 'heads', rank: 3, parent: 'tapeMechanism', build: headBlock, pos: [-0.004, 0.016, -0.002], xpos: [-0.004, 0.0, 0.07] },
-    { id: 'belts', rank: 3, parent: 'tapeMechanism', build: belts, pos: [0.022, 0.04, -0.035], xpos: [0.03, 0.135, -0.05] },
-    { id: 'capacitors', rank: 3, build: capacitors, pos: [0.075, 0.0196, -0.02], xpos: [0.075, 0.1, -0.02] },
-    { id: 'transistors', rank: 2, build: transistors, pos: SINK, xpos: [SINK[0], SINK[1] + 0.15, SINK[2] - 0.03] },
-    { id: 'pots', rank: 2, build: pots, pos: [0, 0, ZF], xpos: [0, 0.1, ZF + 0.06] },
+    { id: 'faceplate', rank: 2, build: faceplate, pos: [0, 0, ZF], xpos: [0, 0, ZF + 0.17] },
+    { id: 'tapeMechanism', rank: 3, build: tapeMechanism, pos: MECH, xpos: [MECH[0] - 0.01, MECH[1] + 0.13, MECH[2] - 0.02] },
+    { id: 'heads', rank: 4, parent: 'tapeMechanism', build: headBlock, pos: [-0.004, 0.016, -0.002], xpos: [-0.004, 0.0, 0.07] },
+    // Belts slip forward off the pulleys into the gap behind the plate, rise out, then settle behind.
+    {
+      id: 'belts',
+      rank: 4,
+      parent: 'tapeMechanism',
+      build: belts,
+      pos: [0.022, 0.04, -0.04],
+      via: [
+        [0.022, 0.04, -0.027],
+        [0.022, 0.15, -0.027],
+      ],
+      xpos: [0.03, 0.135, -0.05],
+    },
+    { id: 'capacitors', rank: 4, build: capacitors, pos: [0.075, 0.0196, -0.02], xpos: [0.075, 0.1, -0.02] },
+    // Heatsink rises clear of the back panel before it leans back.
+    { id: 'transistors', rank: 3, build: transistors, pos: SINK, via: [[SINK[0], SINK[1] + 0.12, SINK[2]]], xpos: [SINK[0], SINK[1] + 0.15, SINK[2] - 0.03] },
+    { id: 'pots', rank: 3, build: pots, pos: [0, 0, ZF], xpos: [0, 0.11, ZF + 0.06] },
+    // Knobs come off their shafts first, then wait above the pots' exploded spot.
+    { id: '_knobs', rank: 0, group: 'pots', build: potKnobs, pos: [0, 0, ZF], via: [[0, 0, ZF + 0.03]], xpos: [0, 0.11, ZF + 0.095] },
   ],
 }

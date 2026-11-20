@@ -41,6 +41,11 @@ export type PartAsset = {
   /** Geometry bounds in the part's pivot space. */
   box: Box3
   start: number
+  /** Share of the timeline this part spends moving. */
+  span: number
+  /** Pose keys along the path: assembled, waypoints, exploded. */
+  keysP: Vector3[]
+  keysR: Euler[]
   posA: Vector3
   posE: Vector3
   rotA: Euler
@@ -87,6 +92,7 @@ export function getModel(id: ModelId): ModelAsset {
   const spec = SPECS[id]
   const ids = spec.parts.map((p) => p.id)
   const maxRank = Math.max(1, ...spec.parts.map((p) => p.rank))
+  const span = spec.span ?? SPAN
   const parts: PartAsset[] = spec.parts.map((ps, index) => {
     const geos = build(ps.build)
     const box = new Box3()
@@ -94,6 +100,24 @@ export function getModel(id: ModelId): ModelAsset {
       if (!g.boundingBox) g.computeBoundingBox()
       box.union(g.boundingBox!)
     }
+    const posA = v3(ps.pos)
+    const posE = v3(ps.xpos ?? ps.pos)
+    const rotA = new Euler(ps.rot?.[0] ?? 0, ps.rot?.[1] ?? 0, ps.rot?.[2] ?? 0)
+    const rotE = new Euler(ps.xrot?.[0] ?? ps.rot?.[0] ?? 0, ps.xrot?.[1] ?? ps.rot?.[1] ?? 0, ps.xrot?.[2] ?? ps.rot?.[2] ?? 0)
+    const via = ps.via ?? []
+    const n = via.length + 1
+    const keysP = [posA, ...via.map((w) => v3('pos' in w ? w.pos : w)), posE]
+    const keysR = [
+      rotA,
+      ...via.map((w, i) => {
+        const r = 'pos' in w ? w.rot : undefined
+        if (r) return new Euler(r[0], r[1], r[2])
+        const k = (i + 1) / n
+        return new Euler(rotA.x + (rotE.x - rotA.x) * k, rotA.y + (rotE.y - rotA.y) * k, rotA.z + (rotE.z - rotA.z) * k)
+      }),
+      rotE,
+    ]
+    const ownSpan = Math.min(1, span * (1 + 0.35 * via.length))
     return {
       spec: ps,
       index,
@@ -101,17 +125,20 @@ export function getModel(id: ModelId): ModelAsset {
       hi: null,
       geos,
       box,
-      start: (ps.rank / maxRank) * (1 - SPAN),
-      posA: v3(ps.pos),
-      posE: v3(ps.xpos ?? ps.pos),
-      rotA: new Euler(ps.rot?.[0] ?? 0, ps.rot?.[1] ?? 0, ps.rot?.[2] ?? 0),
-      rotE: new Euler(ps.xrot?.[0] ?? ps.rot?.[0] ?? 0, ps.xrot?.[1] ?? ps.rot?.[1] ?? 0, ps.xrot?.[2] ?? ps.rot?.[2] ?? 0),
+      start: (ps.rank / maxRank) * (1 - span),
+      span: ownSpan,
+      keysP,
+      keysR,
+      posA,
+      posE,
+      rotA,
+      rotE,
     }
   })
   for (const p of parts) {
     let q: PartAsset | undefined = p
-    while (q && q.spec.id.startsWith('_')) q = q.parent >= 0 ? parts[q.parent] : undefined
-    p.hi = q ? q.spec.id : null
+    while (q && q.spec.id.startsWith('_') && !q.spec.group) q = q.parent >= 0 ? parts[q.parent] : undefined
+    p.hi = q ? (q.spec.group ?? q.spec.id) : null
   }
   if (import.meta.env.DEV) {
     const missing = (MODEL_PARTS[id] as readonly string[]).filter((pid) => !ids.includes(pid))
@@ -166,9 +193,63 @@ export function getMerged(id: ModelId): [Bucket, BufferGeometry][] {
 }
 
 /** Per-part eased progress on the shared timeline g (0 assembled .. 1 exploded). */
-export function partProgress(start: number, g: number): number {
-  const t = Math.min(1, Math.max(0, (g - start) / SPAN))
+export function partProgress(start: number, g: number, span = SPAN): number {
+  // Parts that start late still finish by g = 1.
+  const t = Math.min(1, Math.max(0, (g - start) / Math.min(span, 1 - start)))
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+}
+
+const _a = new Vector3()
+const _b = new Vector3()
+
+function mono(d0: number, d1: number): number {
+  if (d0 * d1 <= 0) return 0
+  const m = 0.5 * (d0 + d1)
+  const cap = 3 * Math.min(Math.abs(d0), Math.abs(d1))
+  return Math.sign(m) * Math.min(Math.abs(m), cap)
+}
+
+/** Tangent at `b` between neighbours `a` and `c` (an end key passes itself as its missing neighbour). */
+function tangent(a: Vector3, b: Vector3, c: Vector3, out: Vector3): Vector3 {
+  if (a === b) return out.subVectors(c, b).multiplyScalar(0.5)
+  if (b === c) return out.subVectors(b, a).multiplyScalar(0.5)
+  return out.set(mono(b.x - a.x, c.x - b.x), mono(b.y - a.y, c.y - b.y), mono(b.z - a.z, c.z - b.z))
+}
+
+/**
+ * A part's local pose at its own progress t (0..1): a smooth path through its
+ * keys for the position, piecewise linear for the rotation.
+ */
+export function partPose(p: PartAsset, t: number, pos: Vector3, rot: Euler): void {
+  const P = p.keysP
+  const R = p.keysR
+  const n = P.length - 1
+  if (n === 1) {
+    pos.lerpVectors(P[0], P[1], t)
+    rot.set(R[0].x + (R[1].x - R[0].x) * t, R[0].y + (R[1].y - R[0].y) * t, R[0].z + (R[1].z - R[0].z) * t)
+    return
+  }
+  const u = Math.min(n - 1e-6, Math.max(0, t * n))
+  const i = Math.floor(u)
+  const f = u - i
+  const p0 = P[Math.max(0, i - 1)]
+  const p1 = P[i]
+  const p2 = P[i + 1]
+  const p3 = P[Math.min(n, i + 2)]
+  // Hermite segment with monotone tangents: no axis swings back past a key (no overshoot through a shell).
+  const f2 = f * f
+  const f3 = f2 * f
+  tangent(p0, p1, p2, _a)
+  tangent(p1, p2, p3, _b)
+  pos
+    .copy(p1)
+    .multiplyScalar(2 * f3 - 3 * f2 + 1)
+    .addScaledVector(p2, -2 * f3 + 3 * f2)
+    .addScaledVector(_a, f3 - 2 * f2 + f)
+    .addScaledVector(_b, f3 - f2)
+  const r1 = R[i]
+  const r2 = R[i + 1]
+  rot.set(r1.x + (r2.x - r1.x) * f, r1.y + (r2.y - r1.y) * f, r1.z + (r2.z - r1.z) * f)
 }
 
 const _pts: Vector3[] = []
@@ -184,14 +265,19 @@ export function modelPoints(a: ModelAsset, e: number, pts: Vector3[] = _pts): Ve
 }
 
 /** Camera pose framing a device at its workshop spot, exploded by e, for the given aspect. */
-export function shopModelPose(id: ModelId, e: number, aspect: number, out: FitOut): { fov: number } {
+/**
+ * `fitV` (0..1] is the share of the canvas height the device may use (the rest is covered by
+ * page panels); `aspect` is then the aspect of that visible area.
+ */
+export function shopModelPose(id: ModelId, e: number, aspect: number, out: FitOut, fitV = 1): { fov: number } {
   const a = getModel(id)
   const { place, view } = a.spec
   const pts = modelPoints(a, e)
   _place.makeRotationY(place.yaw).setPosition(place.pos[0], place.pos[1], place.pos[2])
   for (const p of pts) p.applyMatrix4(_place)
   const fov = view.fov ?? 34
+  const fitFov = fitV >= 1 ? fov : (2 * Math.atan(Math.tan((fov * Math.PI) / 360) * fitV) * 180) / Math.PI
   const portrait = aspect < 1
-  fitView(pts, place.yaw + (view.az * Math.PI) / 180, (view.el * Math.PI) / 180, fov, aspect, out, portrait ? 1.16 : 1.3, portrait ? 1.24 : 1.16)
+  fitView(pts, place.yaw + (view.az * Math.PI) / 180, (view.el * Math.PI) / 180, fitFov, aspect, out, portrait ? 1.16 : 1.3, portrait ? 1.24 : 1.16)
   return { fov }
 }

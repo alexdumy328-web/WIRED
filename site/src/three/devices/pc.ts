@@ -43,7 +43,7 @@ function chassis(b: GeoBuilder) {
   rear.holes.push(roundRectPath(0.046, 0.162, 0.001, 0.071, 0.358))
   rear.holes.push(circlePath(0.056, -0.03, 0.365))
   rear.holes.push(roundRectPath(0.112, 0.142, 0.001, 0.02, 0.193))
-  rear.holes.push(roundRectPath(0.152, 0.088, 0.001, 0.0, 0.062))
+  rear.holes.push(roundRectPath(0.168, 0.102, 0.001, 0.0, 0.062))
   extrude(b, 'satin', BODY, rear, 0.0016, [0, 0, Z0 + 0.0008], 0, 0, 16)
   for (let i = 0; i < 7; i++) {
     const y = 0.13 + i * 0.0203
@@ -296,15 +296,59 @@ export const PC: ModelSpec = {
   frontYaw: Math.PI / 2,
   place: { pos: [0.52, 0.9, -2.83], yaw: Math.PI / 2 },
   view: { az: 30, el: 20 },
+  span: 0.3,
   parts: [
-    { id: '_chassis', rank: 7, build: chassis },
-    { id: 'sidePanel', rank: 0, build: glass, pos: [X0 - 0.002, H / 2, 0], xpos: [X0 - 0.17, H / 2 + 0.03, -0.25], xrot: [0, -0.55, 0] },
-    { id: 'fans', rank: 1, build: frontFans, pos: [0, 0.215, Z1 - 0.025], xpos: [-0.12, 0.23, Z1 + 0.13], xrot: [0, -0.75, 0] },
-    { id: 'gpu', rank: 2, build: gpu, pos: [0.016, onBoard(-0.015, 0, 0)[1], -0.218 + 0.1425], xpos: [-0.25, 0.09, 0.05], xrot: [0, 0.45, -Math.PI / 2] },
-    { id: 'psu', rank: 2, build: psu, pos: [0.0, 0.016 + 0.043 + 0.002, Z0 + 0.0035 + 0.075], xpos: [-0.1, 0.08, -0.36], xrot: [0, 0.45, -Math.PI / 2] },
-    { id: 'motherboard', rank: 3, build: motherboard, pos: MB, rot: [0, 0, Math.PI / 2], xpos: [MB[0] - 0.12, MB[1] + 0.08, MB[2]], xrot: [0, 0.45, Math.PI / 2] },
-    { id: 'ram', rank: 4, parent: 'motherboard', build: ram, pos: [0.07, MB_T + 0.0025, 0], xpos: [0.07, MB_T + 0.07, 0.075] },
-    { id: 'cpuCooler', rank: 4, parent: 'motherboard', build: cooler, pos: [0.075, MB_T + 0.0095, -0.035], xpos: [0.085, MB_T + 0.13, -0.03], xrot: [-0.45, 0, 0] },
-    { id: 'ssd', rank: 5, parent: 'motherboard', build: ssd, pos: [0.02, MB_T + 0.003, -0.03], xpos: [0.02, MB_T + 0.045, -0.03] },
+    { id: '_chassis', rank: 6, build: chassis },
+    // Glass comes off first and goes round the back, out of the way of everything leaving through the open side.
+    { id: 'sidePanel', rank: 0, build: glass, pos: [X0 - 0.002, H / 2, 0], via: [{ pos: [X0 - 0.07, H / 2, 0], rot: [0, 0, 0] }], xpos: [X0 - 0.12, H / 2 + 0.03, -0.42], xrot: [0, -0.25, 0] },
+    // Front fans: back off the bezel, out through the open side, round to the front.
+    {
+      id: 'fans',
+      rank: 1,
+      build: frontFans,
+      pos: [0, 0.215, Z1 - 0.025],
+      via: [
+        { pos: [0, 0.225, Z1 - 0.045], rot: [0, 0, 0] },
+        { pos: [X0 - 0.08, 0.225, Z1 - 0.045], rot: [0, 0, 0] },
+      ],
+      xpos: [-0.15, 0.23, Z1 + 0.13],
+      xrot: [0, -0.75, 0],
+    },
+    {
+      id: 'gpu',
+      rank: 2,
+      build: gpu,
+      pos: [0.016, onBoard(-0.015, 0, 0)[1], -0.218 + 0.1425],
+      via: [{ pos: [X0 - 0.09, onBoard(-0.015, 0, 0)[1], -0.218 + 0.1425], rot: [0, 0, 0] }],
+      xpos: [-0.25, 0.09, 0.05],
+      xrot: [0, 0.45, -Math.PI / 2],
+    },
+    // PSU: slides out through its opening in the rear panel, then stands up behind the case.
+    {
+      id: 'psu',
+      rank: 2,
+      build: psu,
+      pos: [0.0, 0.016 + 0.043 + 0.002, Z0 + 0.0035 + 0.075],
+      via: [{ pos: [0.0, 0.061, -0.4], rot: [0, 0, 0] }],
+      xpos: [-0.05, 0.09, -0.45],
+      xrot: [0, 0.45, -Math.PI / 2],
+    },
+    // Board: off the standoffs and the I/O out of the rear panel, straight out the side, then turn a little to the camera.
+    {
+      id: 'motherboard',
+      rank: 3,
+      build: motherboard,
+      pos: MB,
+      rot: [0, 0, Math.PI / 2],
+      via: [
+        { pos: [MB[0] - 0.012, MB[1], MB[2] + 0.035], rot: [0, 0, Math.PI / 2] },
+        { pos: [X0 - 0.12, MB[1] + 0.02, MB[2] + 0.035], rot: [0, 0, Math.PI / 2] },
+      ],
+      xpos: [X0 - 0.16, MB[1] + 0.04, MB[2] + 0.04],
+      xrot: [0, 0.35, Math.PI / 2],
+    },
+    { id: 'ram', rank: 6, parent: 'motherboard', build: ram, pos: [0.07, MB_T + 0.0025, 0], xpos: [0.07, MB_T + 0.07, 0.075] },
+    { id: 'cpuCooler', rank: 6, parent: 'motherboard', build: cooler, pos: [0.075, MB_T + 0.0095, -0.035], xpos: [0.085, MB_T + 0.13, -0.03], xrot: [-0.45, 0, 0] },
+    { id: 'ssd', rank: 6, parent: 'motherboard', build: ssd, pos: [0.02, MB_T + 0.003, -0.03], xpos: [0.02, MB_T + 0.045, -0.03] },
   ],
 }
