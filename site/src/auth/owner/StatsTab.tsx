@@ -7,7 +7,7 @@ import { TrendChart, type TrendRow } from './TrendChart'
 import { BOOKING_STATUSES } from './constants'
 import type { Stats } from './types'
 
-const tone = { received: 'bg-muted', diagnosis: 'bg-blue', 'waiting-parts': 'bg-gold', repairing: 'bg-gold', ready: 'bg-ok', done: 'bg-ok' } as const
+const tone = { received: 'bg-muted', diagnosis: 'bg-blue', 'waiting-parts': 'bg-gold', repairing: 'bg-gold', ready: 'bg-ok', done: 'bg-ok', cancelled: 'bg-line' } as const
 
 export function StatsTab() {
   const { t, lang } = useI18n()

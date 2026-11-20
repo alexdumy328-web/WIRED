@@ -10,6 +10,7 @@ export const BOOKING_STATUSES = [
   'repairing',
   'ready',
   'done',
+  'cancelled',
 ] as const
 
 export const bookingStatusSchema = z.enum(BOOKING_STATUSES)

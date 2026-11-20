@@ -224,6 +224,8 @@ case-insensitive) or, when the city is unknown, when the point is within
 
 ### Public status
 
+Limited to 30 lookups per IP per 10 minutes, so nobody can walk the code space.
+
 ```bash
 curl -s localhost:8787/api/bookings/nt-4k7q
 # { "code": "NT-4K7Q", "status": "received", "mode": "shop",
@@ -263,7 +265,8 @@ curl -s -X PATCH localhost:8787/api/bookings/NT-4K7Q/status \
 # { "code": "NT-4K7Q", "status": "diagnosis", "updatedAt": "..." }
 ```
 
-Valid statuses: `received`, `diagnosis`, `waiting-parts`, `repairing`, `ready`, `done`.
+Valid statuses: `received`, `diagnosis`, `waiting-parts`, `repairing`, `ready`, `done`, `cancelled`.
+`done` and `cancelled` free the slot; a unique index keeps one open booking per mode and slot.
 
 ### Health
 

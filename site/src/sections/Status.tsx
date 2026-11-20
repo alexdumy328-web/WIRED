@@ -155,11 +155,14 @@ function Tracker() {
               <p className="font-semibold" style={{ fontStretch: '110%' }}>
                 {t.track.statuses[result.status]}
               </p>
-              <ol className="mt-3 flex gap-1.5" aria-label={t.track.title}>
-                {statusOrder.map((s, i) => (
-                  <li key={s} className={`h-1.5 flex-1 rounded-full ${i <= idx ? 'bg-ok' : 'bg-line'}`} title={t.track.statuses[s]} />
-                ))}
-              </ol>
+              {/* A cancelled booking has no place on the progress bar. */}
+              {idx >= 0 && (
+                <ol className="mt-3 flex gap-1.5" aria-label={t.track.title}>
+                  {statusOrder.map((s, i) => (
+                    <li key={s} className={`h-1.5 flex-1 rounded-full ${i <= idx ? 'bg-ok' : 'bg-line'}`} title={t.track.statuses[s]} />
+                  ))}
+                </ol>
+              )}
               <p className="mt-2 text-[13px] text-muted">{fmt(t.track.updated, { when })}</p>
             </motion.div>
           )}

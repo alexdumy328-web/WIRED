@@ -646,7 +646,7 @@ export default function PickupMap(props: {
                 <span>{labels.search}...</span>
               </li>
             ) : searchError ? (
-              <li className="px-3.5 py-2.5 text-xs text-[#c4443b]">{labels.searchError}</li>
+              <li className="px-3.5 py-2.5 text-xs text-danger">{labels.searchError}</li>
             ) : searchResults.length === 0 ? (
               <li className="px-3.5 py-2.5 text-xs text-muted">{labels.noResults}</li>
             ) : (
@@ -771,7 +771,7 @@ export default function PickupMap(props: {
             <span>{labels.search}...</span>
           </div>
         ) : quoteError ? (
-          <div className="rounded-xl border border-[#c4443b]/30 bg-[#c4443b]/10 p-3 text-sm text-[#c4443b]">
+          <div className="rounded-xl border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
             {labels.quoteError}
           </div>
         ) : quote ? (

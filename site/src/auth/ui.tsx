@@ -29,7 +29,7 @@ export function Field({ label, error, hint, children }: { label: string; error?:
       </label>
       {children({ id, 'aria-describedby': note, 'aria-invalid': error ? true : undefined })}
       {error ? (
-        <p id={`${id}-error`} className="text-[13px] text-[#c4443b]">
+        <p id={`${id}-error`} className="text-[13px] text-danger">
           {error}
         </p>
       ) : hint ? (
@@ -42,7 +42,7 @@ export function Field({ label, error, hint, children }: { label: string; error?:
 }
 
 export function Notice({ tone, children }: { tone: 'ok' | 'error' | 'info'; children: ReactNode }) {
-  const color = tone === 'error' ? 'border-[#c4443b] text-[#c4443b]' : tone === 'ok' ? 'border-ok text-ok' : 'border-line text-muted'
+  const color = tone === 'error' ? 'border-danger text-danger' : tone === 'ok' ? 'border-ok text-ok' : 'border-line text-muted'
   return (
     <p role={tone === 'error' ? 'alert' : 'status'} className={`rounded-[10px] border px-3.5 py-2.5 text-[14px] ${color}`}>
       {children}
@@ -57,6 +57,7 @@ const statusTone: Record<BookingStatus, string> = {
   repairing: 'bg-gold',
   ready: 'bg-ok',
   done: 'bg-ok',
+  cancelled: 'bg-line',
 }
 
 export function StatusBadge({ status }: { status: BookingStatus }) {

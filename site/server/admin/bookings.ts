@@ -171,7 +171,7 @@ export function createBookingAdmin(db: Db) {
     async calendar(date: string) {
       const monday = mondayOf(date)
       const docs = await col
-        .find({ slot: { $gte: startOfLocalDay(monday), $lt: startOfLocalDay(addDays(monday, 7)) } })
+        .find({ status: { $ne: 'cancelled' }, slot: { $gte: startOfLocalDay(monday), $lt: startOfLocalDay(addDays(monday, 7)) } })
         .sort({ slot: 1 })
         .toArray()
       const days = Array.from({ length: 7 }, (_, i) => ({ date: addDays(monday, i), slots: [] as unknown[] }))
@@ -193,7 +193,7 @@ export function createBookingAdmin(db: Db) {
     /** Pickup and drop-off jobs whose slot falls on the shop-local day. */
     async pickups(date: string) {
       const docs = await col
-        .find({ pickup: { $exists: true }, slot: { $gte: startOfLocalDay(date), $lt: startOfLocalDay(addDays(date, 1)) } })
+        .find({ pickup: { $exists: true }, status: { $ne: 'cancelled' }, slot: { $gte: startOfLocalDay(date), $lt: startOfLocalDay(addDays(date, 1)) } })
         .sort({ slot: 1 })
         .toArray()
       return docs.map((doc) => ({
@@ -249,14 +249,15 @@ export function createBookingAdmin(db: Db) {
         // A finished job counts what was actually charged when the owner wrote it down.
         const charged = doc.finalLei ?? mid
         const transport = doc.pickup?.quote?.totalLei ?? 0
+        const cancelled = doc.status === 'cancelled'
         if (doc.status === 'done') doneLei += charged
-        else pipelineLei += mid
+        else if (!cancelled) pipelineLei += mid
 
         for (const series of [weekly, monthly]) {
           const c = bucketOf(series, created)
           if (c) {
             c.created += 1
-            c.bookedLei += mid + transport
+            if (!cancelled) c.bookedLei += mid + transport
           }
         }
         if (doc.status === 'done') {

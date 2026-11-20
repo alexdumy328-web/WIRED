@@ -4,14 +4,24 @@ import { api } from '../api'
 import { Loading, Notice, useDateFormat } from '../ui'
 import { addDays, shopDate, type CalendarWeek } from './types'
 
+/** Capitalise the first letter only: Romanian keeps month names lower case ("Lun., 16 nov."). */
+const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
+
 export function CalendarTab({ onOpen }: { onOpen: (code: string) => void }) {
-  const { t } = useI18n()
+  const { t, lang } = useI18n()
   const c = t.owner.calendar
   const fmtDate = useDateFormat()
   const [anchor, setAnchor] = useState(shopDate())
   const [week, setWeek] = useState<CalendarWeek | null>(null)
   const [error, setError] = useState(false)
   const today = shopDate()
+  // "16–22 nov." for the week on screen, so paging never loses the owner.
+  const range = (start: string) => {
+    const f = new Intl.DateTimeFormat(lang === 'ro' ? 'ro-RO' : 'en-GB', { timeZone: 'UTC', day: 'numeric', month: 'short' })
+    const a = new Date(`${start}T12:00:00Z`)
+    const b = new Date(`${addDays(start, 6)}T12:00:00Z`)
+    return f.formatRange(a, b)
+  }
 
   useEffect(() => {
     let live = true
@@ -30,8 +40,12 @@ export function CalendarTab({ onOpen }: { onOpen: (code: string) => void }) {
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="display-2 text-2xl">{c.title}</h2>
-        <div className="flex gap-2">
+        <h2 className="display-2 text-2xl">
+          {c.title}
+          {week && ' '}
+          {week && <span className="ml-1 font-sans text-[17px] font-semibold text-muted">{range(week.weekStart)}</span>}
+        </h2>
+        <div className="flex flex-wrap gap-2">
           <button type="button" className="btn btn-ghost h-10 min-h-0" onClick={() => setAnchor(addDays(anchor, -7))}>
             {c.prev}
           </button>
@@ -50,7 +64,7 @@ export function CalendarTab({ onOpen }: { onOpen: (code: string) => void }) {
         <ol className="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-7" aria-live="polite">
           {week.days.map((day) => (
             <li key={day.date} className={`rounded-[14px] border bg-surface p-3 ${day.date === today ? 'border-gold' : 'border-line'}`}>
-              <h3 className="text-[14px] font-bold capitalize">{fmtDate.weekday(day.date)}</h3>
+              <h3 className="text-[14px] font-bold">{cap(fmtDate.weekday(day.date))}</h3>
               {day.slots.length === 0 ? (
                 <p className="mt-3 text-[13px] text-muted">{c.free}</p>
               ) : (

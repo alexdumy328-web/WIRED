@@ -15,28 +15,39 @@ export type Notifier = {
 const SHOP = 'Norgelis Tech'
 type Lang = 'ro' | 'en'
 
-const statusLine: Record<Lang, Record<BookingStatus, string>> = {
-  ro: {
-    received: 'Am primit aparatul la atelier.',
-    diagnosis: 'Aparatul tău e în diagnostic. Te sunăm dacă găsim ceva în plus față de estimare.',
-    'waiting-parts': 'Așteptăm piesa pentru aparatul tău. Îți scriem când ajunge.',
-    repairing: 'Lucrăm la aparatul tău.',
-    ready: 'Aparatul tău e gata. Poți veni să-l ridici în programul atelierului.',
-    done: 'Aparatul a fost predat. Mulțumim că ai venit la noi.',
-  },
-  en: {
-    received: 'Your device is at the workshop.',
-    diagnosis: 'Your device is being diagnosed. We will call you if we find more than the estimate covers.',
-    'waiting-parts': 'We are waiting for a part for your device. We will write when it arrives.',
-    repairing: 'We are repairing your device.',
-    ready: 'Your device is ready. You can pick it up during workshop hours.',
-    done: 'Your device has been handed back. Thank you for coming to us.',
-  },
+/** One line per status, worded for how the device travels: shop visit, pickup and delivery, or on site. */
+function statusLine(b: Booking, lang: Lang): string {
+  const delivered = b.pickup && b.pickup.trips !== 'pickup'
+  const onSite = b.mode === 'mobile'
+  const ro = lang === 'ro'
+  switch (b.status) {
+    case 'received':
+      return ro ? 'Am primit programarea ta.' : 'We got your booking.'
+    case 'diagnosis':
+      return ro
+        ? 'Aparatul tău e în diagnostic. Te sunăm dacă găsim ceva în plus față de estimare.'
+        : 'Your device is being diagnosed. We will call you if we find more than the estimate covers.'
+    case 'waiting-parts':
+      return ro ? 'Așteptăm piesa pentru aparatul tău. Îți scriem când ajunge.' : 'We are waiting for a part for your device. We will write when it arrives.'
+    case 'repairing':
+      return ro ? 'Lucrăm la aparatul tău.' : 'We are repairing your device.'
+    case 'ready':
+      if (onSite) return ro ? 'Lucrarea e gata.' : 'The job is done.'
+      if (delivered) return ro ? 'Aparatul tău e gata. Ți-l aducem la adresă și te sunăm înainte să plecăm.' : 'Your device is ready. We will bring it to your address and call before we set off.'
+      return ro ? 'Aparatul tău e gata. Poți veni să-l ridici în programul atelierului.' : 'Your device is ready. You can pick it up during workshop hours.'
+    case 'done':
+      if (onSite) return ro ? 'Lucrarea s-a încheiat. Mulțumim că ne-ai chemat.' : 'The job is finished. Thank you for calling us.'
+      return ro ? 'Aparatul a fost predat. Mulțumim că ai venit la noi.' : 'Your device has been handed back. Thank you for coming to us.'
+    case 'cancelled':
+      return ro
+        ? 'Programarea ta a fost anulată. Dacă e o greșeală sau vrei altă oră, fă o programare nouă pe site.'
+        : 'Your booking was cancelled. If this is a mistake or you want another time, make a new booking on the site.'
+  }
 }
 
 const statusName: Record<Lang, Record<BookingStatus, string>> = {
-  ro: { received: 'Primit la atelier', diagnosis: 'În diagnostic', 'waiting-parts': 'Așteptăm piesa', repairing: 'În reparație', ready: 'Gata de ridicare', done: 'Predat' },
-  en: { received: 'Received at the workshop', diagnosis: 'Being diagnosed', 'waiting-parts': 'Waiting for parts', repairing: 'Being repaired', ready: 'Ready for pickup', done: 'Picked up' },
+  ro: { received: 'Programare primită', diagnosis: 'În diagnostic', 'waiting-parts': 'Așteptăm piesa', repairing: 'În reparație', ready: 'Gata', done: 'Predat', cancelled: 'Anulată' },
+  en: { received: 'Booking received', diagnosis: 'Being diagnosed', 'waiting-parts': 'Waiting for parts', repairing: 'Being repaired', ready: 'Ready', done: 'Handed back', cancelled: 'Cancelled' },
 }
 
 function when(slot: string, lang: Lang): string {
@@ -156,8 +167,8 @@ export function createNotifier(options: { mailer: Mailer; origin: string; ownerE
           : ''
       const text =
         lang === 'ro'
-          ? `${statusLine.ro[b.status]}${price}\n\nCod: ${b.code}\nVezi starea: ${track(b.code)}\n\n${SHOP}`
-          : `${statusLine.en[b.status]}${price}\n\nCode: ${b.code}\nSee the status: ${track(b.code)}\n\n${SHOP}`
+          ? `${statusLine(b, 'ro')}${price}\n\nCod: ${b.code}\nVezi starea: ${track(b.code)}\n\n${SHOP}`
+          : `${statusLine(b, 'en')}${price}\n\nCode: ${b.code}\nSee the status: ${track(b.code)}\n\n${SHOP}`
       return send({
         to: b.contact.email,
         kind: `booking:${b.status}`,

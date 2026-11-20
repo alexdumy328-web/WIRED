@@ -119,7 +119,7 @@ function HealthSection({ tick }: { tick: number }) {
             ].map(([label, value, good]) => (
               <Card key={String(label)} className="!p-4">
                 <p className="flex items-center gap-2 text-[13px] text-muted">
-                  <span className={`size-2 rounded-full ${good ? 'bg-ok' : 'bg-[#c4443b]'}`} aria-hidden="true" />
+                  <span className={`size-2 rounded-full ${good ? 'bg-ok' : 'bg-danger'}`} aria-hidden="true" />
                   {String(label)}
                 </p>
                 <p className="mt-1 text-lg font-bold">{String(value)}</p>

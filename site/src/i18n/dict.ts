@@ -88,7 +88,7 @@ export type Dict = {
     button: string
     notFound: string
     error: string
-    statuses: Record<'received' | 'diagnosis' | 'waiting-parts' | 'repairing' | 'ready' | 'done', string>
+    statuses: Record<'received' | 'diagnosis' | 'waiting-parts' | 'repairing' | 'ready' | 'done' | 'cancelled', string>
     updated: string // "Updated {when}"
   }
   reviews: {
@@ -158,7 +158,7 @@ export type Dict = {
       questions: string // heading for the clarifying questions
       disclaimer: string
     }
-    when: { pickDay: string; pickTime: string; pickWindow: string; noSlots: string; location: string; locationPlaceholder: string }
+    when: { pickDay: string; pickTime: string; pickWindow: string; noSlots: string; slotGone: string; location: string; locationPlaceholder: string }
     who: { name: string; phone: string; email: string; optional: string; consent: string }
     summary: { title: string; price: string; eta: string; free: string; diagnosisNote: string; partsExtra: string; pickup: string; repair: string }
     open: string // CTA that opens the booking popup

@@ -50,7 +50,7 @@ export type Review = {
   text: Localized
 }
 
-export type BookingStatus = 'received' | 'diagnosis' | 'waiting-parts' | 'repairing' | 'ready' | 'done'
+export type BookingStatus = 'received' | 'diagnosis' | 'waiting-parts' | 'repairing' | 'ready' | 'done' | 'cancelled'
 
 export type BookingRequest = {
   mode: ServiceMode

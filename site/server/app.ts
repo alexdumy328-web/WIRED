@@ -22,7 +22,7 @@ import { safeEqual } from './security/compare.ts'
 import { recordError } from './security/error-log.ts'
 import { securityHeadersMiddleware } from './security/headers.ts'
 import { inlineScriptHashes } from './security/policy.ts'
-import type { Store } from './store.ts'
+import { SlotTakenError, type Store } from './store.ts'
 import type { PickupRates, Trips } from '../src/lib/pickup.ts'
 import type { AiEstimateRequest, Booking, ServiceMode } from '../src/types.ts'
 
@@ -48,6 +48,8 @@ export type CreateAppOptions = {
   fetch?: typeof fetch
   /** Separate limiter for /api/geo/* and /api/pickup/*. */
   upstreamRateLimit?: { windowMs?: number; max?: number }
+  /** Public status lookup by code. Default 30 per 10 minutes per IP. */
+  lookupRateLimit?: { windowMs?: number; max?: number }
   /** Pickup rate overrides (tests); env vars win over PICKUP_DEFAULTS, these win over env. */
   pickupRates?: Partial<PickupRates>
   /** Accounts, roles and dashboards. Without it the account routes answer 503. */
@@ -157,6 +159,8 @@ export function createApp(store: Store, options: CreateAppOptions = {}): Express
   const estimateRateLimit = makeRateLimit(estimateWindowMs, estimateMax)
   /** Sixty geo/pickup attempts per IP per ten minutes, on its own map. */
   const upstreamRateLimit = makeRateLimit(upstreamWindowMs, upstreamMax)
+  // Codes are short, so the public lookup is throttled to stop anyone walking the code space.
+  const lookupRateLimit = makeRateLimit(options.lookupRateLimit?.windowMs ?? 10 * 60_000, options.lookupRateLimit?.max ?? 30)
 
   const aiConfig = resolveAiConfig(options.ai, options.aiFetch)
   const estimateService = createEstimateService(aiConfig, platform ? () => platform.settings.labourRates() : undefined)
@@ -299,7 +303,9 @@ export function createApp(store: Store, options: CreateAppOptions = {}): Express
       res.status(400).json({ error: 'invalid', issues: [{ path: 'jobIds', message: 'Unknown job for this mode' }] })
       return
     }
-    if (!slotsFor(localDate(slot), data.mode, new Date()).some((s) => s.start === slot)) {
+    // Urgent pickups may take today's windows from one hour ahead instead of two (as the form offers).
+    const slotNow = data.pickup?.urgent ? new Date(Date.now() - 3600_000) : new Date()
+    if (!slotsFor(localDate(slot), data.mode, slotNow).some((s) => s.start === slot)) {
       res.status(400).json({ error: 'invalid', issues: [{ path: 'slot', message: 'Not a bookable slot' }] })
       return
     }
@@ -332,7 +338,17 @@ export function createApp(store: Store, options: CreateAppOptions = {}): Express
         createdAt: now,
         updatedAt: now,
       }
-      if (await store.insertBooking(booking)) {
+      let inserted: boolean
+      try {
+        inserted = await store.insertBooking(booking)
+      } catch (error) {
+        if (error instanceof SlotTakenError) {
+          res.status(409).json({ error: 'slot_taken' })
+          return
+        }
+        throw error
+      }
+      if (inserted) {
         // Mail before answering: a serverless function may stop as soon as the response is sent.
         // The notifier never throws, so a mail problem never loses a booking.
         if (platform) await platform.notifier.bookingCreated(booking)
@@ -344,7 +360,7 @@ export function createApp(store: Store, options: CreateAppOptions = {}): Express
     throw new Error('Could not allocate a unique booking code')
   })
 
-  app.get('/api/bookings/:code', async (req, res) => {
+  app.get('/api/bookings/:code', lookupRateLimit, async (req, res) => {
     const booking = await store.findByCode(req.params.code)
     if (!booking) {
       res.status(404).json({ error: 'not_found' })

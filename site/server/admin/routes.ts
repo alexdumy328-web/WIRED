@@ -3,6 +3,7 @@ import type { Request, Response, Router } from 'express'
 import { z } from 'zod'
 import { bookingStatusSchema } from '../schema.ts'
 import { clientIp } from '../auth/session.ts'
+import { isDuplicateKeyError } from '../store.ts'
 import type { PlatformDeps } from './deps.ts'
 import { localDate, isRealDate, DATE_ONLY } from './time.ts'
 
@@ -103,7 +104,17 @@ export function createAdminRouter(deps: PlatformDeps): Router {
     }
     const viewer = res.locals.viewer!
     const { status, note, finalLei, notify } = body.data
-    const result = await bookings.update(code.data, { status, note, finalLei }, { id: viewer.id, name: viewer.name || viewer.email })
+    let result: Awaited<ReturnType<typeof bookings.update>>
+    try {
+      result = await bookings.update(code.data, { status, note, finalLei }, { id: viewer.id, name: viewer.name || viewer.email })
+    } catch (error) {
+      // Reopening a cancelled booking whose slot someone else has taken since.
+      if (isDuplicateKeyError(error)) {
+        res.status(409).json({ error: 'slot_taken' })
+        return
+      }
+      throw error
+    }
     if (!result) {
       res.status(404).json({ error: 'not_found' })
       return

@@ -14,6 +14,7 @@
   --gold: #8f6a10;
   --gold-soft: #d9a93f;
   --ok: #1e6b4a;
+  --danger: #b3372e;
   --blue: #2f5e9e;
   --on-gold: #ffffff;
   --scrim: rgb(242 244 245 / 0.82);
@@ -33,7 +34,8 @@
     --line: #2b2e31;
     --gold: #d9a93f;
     --gold-soft: #d9a93f;
-    --ok: #2e8b57;
+    --ok: #36a167;
+    --danger: #ff6b5e;
     --blue: #3b6fb6;
     --on-gold: #121314;
     --scrim: rgb(18 19 20 / 0.78);
@@ -52,7 +54,8 @@
   --line: #2b2e31;
   --gold: #d9a93f;
   --gold-soft: #d9a93f;
-  --ok: #2e8b57;
+  --ok: #36a167;
+  --danger: #ff6b5e;
   --blue: #3b6fb6;
   --on-gold: #121314;
   --scrim: rgb(18 19 20 / 0.78);
@@ -71,6 +74,7 @@
   --color-gold: var(--gold);
   --color-gold-soft: var(--gold-soft);
   --color-ok: var(--ok);
+  --color-danger: var(--danger);
   --color-blue: var(--blue);
   --color-on-gold: var(--on-gold);
   --font-sans: 'Archivo', ui-sans-serif, system-ui, sans-serif;
@@ -194,7 +198,7 @@ html.lenis body {
   box-shadow: 0 0 0 3px color-mix(in oklab, var(--gold) 28%, transparent);
 }
 .field[aria-invalid='true'] {
-  border-color: #c4443b;
+  border-color: var(--danger);
 }
 
 }

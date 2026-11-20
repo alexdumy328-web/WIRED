@@ -12,6 +12,17 @@ export const ACTIVE_STATUSES: readonly BookingStatus[] = [
   'repairing',
 ]
 
+/** Bookings that no longer hold their slot. */
+export const CLOSED_STATUSES: readonly BookingStatus[] = ['done', 'cancelled']
+
+/** Thrown by insertBooking when another open booking already holds the slot (Mongo unique index). */
+export class SlotTakenError extends Error {
+  constructor() {
+    super('slot_taken')
+    this.name = 'SlotTakenError'
+  }
+}
+
 export const COLLECTION_NAME = 'bookings'
 export const DEFAULT_DB_NAME = 'norgelis'
 
@@ -33,7 +44,9 @@ function normalizeCode(code: string): string {
   return code.trim().toUpperCase()
 }
 
-function isDuplicateKeyError(error: unknown): boolean {
+const BOOKING_OPEN: BookingStatus[] = ['received', 'diagnosis', 'waiting-parts', 'repairing', 'ready']
+
+export function isDuplicateKeyError(error: unknown): boolean {
   return typeof error === 'object' && error !== null && (error as { code?: unknown }).code === 11000
 }
 
@@ -97,14 +110,14 @@ export class FileStore implements Store {
 
   async hasSlot(mode: ServiceMode, slot: string): Promise<boolean> {
     return this.bookings.some(
-      (booking) => booking.mode === mode && booking.slot === slot && booking.status !== 'done',
+      (booking) => booking.mode === mode && booking.slot === slot && !CLOSED_STATUSES.includes(booking.status),
     )
   }
 
   async takenSlots(mode: ServiceMode, fromMs: number, toMs: number): Promise<string[]> {
     const slots = this.bookings
       .filter((booking) => {
-        if (booking.mode !== mode || booking.status === 'done') return false
+        if (booking.mode !== mode || CLOSED_STATUSES.includes(booking.status)) return false
         const time = Date.parse(booking.slot)
         return Number.isFinite(time) && time >= fromMs && time <= toMs
       })
@@ -156,6 +169,18 @@ export class MongoStore implements Store {
     await this.collection.createIndex({ slot: 1 }, { name: 'slot' })
     await this.collection.createIndex({ mode: 1, slot: 1 }, { name: 'mode_slot' })
     await this.collection.createIndex({ status: 1 }, { name: 'status' })
+    // One open booking per mode and slot, enforced by the database so two submits at the same
+    // moment cannot both win. If old data already has a clash the index is skipped, not fatal.
+    await this.collection
+      .createIndex(
+        { mode: 1, slot: 1 },
+        {
+          name: 'mode_slot_open_unique',
+          unique: true,
+          partialFilterExpression: { status: { $in: BOOKING_OPEN } },
+        },
+      )
+      .catch((error: unknown) => console.warn('[store] slot uniqueness index not created:', (error as Error).message))
   }
 
   async close(): Promise<void> {
@@ -172,7 +197,10 @@ export class MongoStore implements Store {
       await this.requireCollection().insertOne(booking)
       return true
     } catch (error) {
-      if (isDuplicateKeyError(error)) return false
+      if (isDuplicateKeyError(error)) {
+        if (/mode_slot_open_unique/.test(String((error as Error).message))) throw new SlotTakenError()
+        return false
+      }
       throw error
     }
   }
@@ -185,7 +213,7 @@ export class MongoStore implements Store {
     const match = await this.requireCollection().findOne({
       mode,
       slot,
-      status: { $ne: 'done' },
+      status: { $nin: [...CLOSED_STATUSES] },
     })
     return match !== null
   }
@@ -195,7 +223,7 @@ export class MongoStore implements Store {
     const to = new Date(toMs).toISOString()
     const docs = await this.requireCollection()
       .find(
-        { mode, status: { $ne: 'done' }, slot: { $gte: from, $lte: to } },
+        { mode, status: { $nin: [...CLOSED_STATUSES] }, slot: { $gte: from, $lte: to } },
         { projection: { _id: 0, slot: 1 } },
       )
       .toArray()

@@ -338,6 +338,32 @@ describe('bookings for owners and customers', () => {
     assert.ok(audits.some((e) => JSON.stringify(e.detail.finalLei) === '[null,350]'))
   })
 
+  test('two submits for one slot: one wins; a cancelled booking frees its slot and earns nothing', async () => {
+    const body = bookingBody('race@example.com', slot(12))
+    const [a, b] = await Promise.all([
+      call('/api/bookings', { method: 'POST', body }),
+      call('/api/bookings', { method: 'POST', body: { ...body, contact: { ...body.contact, email: 'race2@example.com' } } }),
+    ])
+    assert.deepEqual([a.status, b.status].sort(), [201, 409])
+    const code = (a.status === 201 ? a : b).body.code as string
+
+    const owner = await signIn(OWNER)
+    const before = (await call('/api/admin/stats', { cookie: owner })).body.revenue.pipelineLei as number
+    const cancelled = await call(`/api/admin/bookings/${code}/status`, { method: 'PATCH', cookie: owner, body: { status: 'cancelled' } })
+    assert.equal(cancelled.status, 200)
+    assert.equal(cancelled.body.notified, 'sent')
+    const mail = await store.getDb().collection('dev_outbox').findOne({ kind: 'booking:cancelled', subject: new RegExp(code) })
+    assert.match(String(mail?.text), /anulată/)
+    const after = (await call('/api/admin/stats', { cookie: owner })).body.revenue.pipelineLei as number
+    assert.ok(after < before, 'a cancelled booking leaves the pipeline')
+
+    // The slot is free again, and the cancelled booking cannot be reopened over the new one.
+    const again = await call('/api/bookings', { method: 'POST', body: bookingBody('race3@example.com', slot(12)) })
+    assert.equal(again.status, 201)
+    const reopen = await call(`/api/admin/bookings/${code}/status`, { method: 'PATCH', cookie: owner, body: { status: 'received' } })
+    assert.equal(reopen.status, 409)
+  })
+
   test('a customer sees only their own bookings, without internal notes', async () => {
     const a = await signIn('alice@example.com')
     const b = await signIn('bob@example.com')

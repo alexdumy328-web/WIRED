@@ -35,7 +35,7 @@ function Field({ label, error, children, hint }: { label: string; error?: string
         {hint && <span className="font-normal text-muted"> ({hint})</span>}
       </span>
       {children}
-      {error && <span className="text-[13px] text-[#c4443b]">{error}</span>}
+      {error && <span className="text-[13px] text-danger">{error}</span>}
     </label>
   )
 }
@@ -96,8 +96,13 @@ function BookingModal() {
     lockPage(true)
     pauseStations(true)
     setModalOpen(true)
-    dialog.current?.querySelector<HTMLElement>('button, input, textarea')?.focus()
+    // Everything beside the dialog goes inert, so Tab cannot reach the page hidden behind it.
+    const node = dialog.current
+    const behind = node?.parentElement ? [...node.parentElement.children].filter((el) => el !== node && !el.hasAttribute('inert')) : []
+    for (const el of behind) el.setAttribute('inert', '')
+    node?.querySelector<HTMLElement>('button, input, textarea')?.focus()
     return () => {
+      for (const el of behind) el.removeAttribute('inert')
       lockPage(false)
       setModalOpen(false)
       pauseStations(false)
@@ -114,7 +119,8 @@ function BookingModal() {
   const slotNow = where === 'pickup' && urgent ? new Date(Date.now() - 60 * 60 * 1000) : new Date()
   const slots = day ? slotsFor(day, mode, slotNow, taken) : []
   const needsValue = picked.some((j) => j.hourly?.byValue) || customOn
-  const repair: [number, number] = [est.priceFrom + (ai.data?.total[0] ?? 0), est.priceTo + (ai.data?.total[1] ?? 0)]
+  // The price list figure, the same one the server stores and emails. The AI card shows its own guide price.
+  const repair: [number, number] = [est.priceFrom, est.priceTo]
   const transport = where === 'pickup' && pickup?.quote && !pickup.quote.tooFar ? pickup.quote.totalLei : 0
   const aiText = [customOn ? custom.trim() : '', issue.trim()].filter(Boolean).join('\n\n')
 
@@ -246,8 +252,24 @@ function BookingModal() {
         setTaken((x) => [...x, slot])
         setSlot('')
         setStep(2)
-        setErrors({ slot: t.booking.when.noSlots })
+        setErrors({ slot: t.booking.when.slotGone })
         return
+      }
+      if (r.status === 400) {
+        const d = (await r.json().catch(() => null)) as { issues?: { path?: string | string[] }[] } | null
+        const paths = (d?.issues ?? []).map((i) => (Array.isArray(i.path) ? i.path[0] : i.path))
+        if (paths.includes('slot')) {
+          // The window passed its cutoff while the form was open.
+          setSlot('')
+          setStep(2)
+          setErrors({ slot: t.booking.when.slotGone })
+          return
+        }
+        if (paths.includes('pickup')) {
+          setStep(2)
+          setErrors({ pickup: t.booking.pickup.tooFar })
+          return
+        }
       }
       if (!r.ok) throw new Error(String(r.status))
       const d = (await r.json()) as { code: string }
@@ -453,7 +475,7 @@ function BookingModal() {
                           {customOn && (
                             <textarea className="field mt-2 min-h-20" value={custom} onChange={(e) => setCustom(e.target.value)} placeholder={t.booking.what.customPlaceholder} maxLength={500} />
                           )}
-                          {errors.jobs && <p className="mt-2 text-[13px] text-[#c4443b]">{errors.jobs}</p>}
+                          {errors.jobs && <p className="mt-2 text-[13px] text-danger">{errors.jobs}</p>}
                         </fieldset>
                         <div className={`grid gap-3 ${mode === 'mobile' ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
                           <Field label={t.booking.what.brand}>
@@ -535,7 +557,7 @@ function BookingModal() {
                             <Suspense fallback={<div className="h-[300px] animate-pulse rounded-[18px] border border-line bg-surface md:h-[360px]" />}>
                               <PickupMap value={pickup} onChange={setPickup} lang={lang} labels={t.booking.pickup} urgent={urgent} />
                             </Suspense>
-                            {errors.pickup && <p className="text-[13px] text-[#c4443b]">{errors.pickup}</p>}
+                            {errors.pickup && <p className="text-[13px] text-danger">{errors.pickup}</p>}
                           </div>
                         )}
                         <fieldset>
@@ -584,7 +606,7 @@ function BookingModal() {
                             )}
                           </fieldset>
                         )}
-                        {errors.slot && <p className="text-[13px] text-[#c4443b]">{errors.slot}</p>}
+                        {errors.slot && <p className="text-[13px] text-danger">{errors.slot}</p>}
                         {mode === 'mobile' && (
                           <Field label={t.booking.when.location} error={errors.location}>
                             <input
@@ -618,8 +640,8 @@ function BookingModal() {
                           <input type="checkbox" className="mt-0.5 size-4 accent-[var(--gold)]" checked={consent} onChange={(e) => setConsent(e.target.checked)} />
                           <span>{t.booking.who.consent}</span>
                         </label>
-                        {errors.consent && <p className="-mt-2 text-[13px] text-[#c4443b]">{errors.consent}</p>}
-                        {errors.server && <p className="text-[14px] text-[#c4443b]">{errors.server}</p>}
+                        {errors.consent && <p className="-mt-2 text-[13px] text-danger">{errors.consent}</p>}
+                        {errors.server && <p className="text-[14px] text-danger">{errors.server}</p>}
                       </div>
                     )}
                   </motion.div>
