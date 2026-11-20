@@ -103,7 +103,7 @@ export function createAdminRouter(deps: PlatformDeps): Router {
       res.status(404).json({ error: 'not_found' })
       return
     }
-    await audit.record({
+    if (!('unchanged' in result)) await audit.record({
       action: 'booking_status',
       actor: { id: viewer.id, email: viewer.email, role: viewer.role },
       target: result.booking.code,

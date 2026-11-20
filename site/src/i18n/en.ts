@@ -394,6 +394,7 @@ const en: Dict = {
     profile: { title: 'Profile', name: 'Name', email: 'Email', role: 'Role', verified: 'Confirmed', notVerified: 'Not confirmed' },
     roles: { customer: 'Customer', owner: 'Owner', dev: 'Developer' },
     dashboards: { title: 'Dashboards', owner: 'Owner dashboard', dev: 'Developer dashboard' },
+    adminBar: { nav: 'Dashboards', owner: 'Owner', dev: 'Developer', site: 'View the site' },
     bookings: {
       title: 'My bookings',
       empty: 'You have no bookings yet.',
@@ -451,6 +452,7 @@ const en: Dict = {
       history: 'Status history',
       noteLabel: 'Internal note',
       notePlaceholder: 'Only staff can see this',
+      byCustomer: 'customer',
       newStatus: 'New status',
       save: 'Save status',
       saved: 'The status was saved.',
@@ -470,7 +472,6 @@ const en: Dict = {
     calendar: { title: 'The week', prev: 'Previous week', next: 'Next week', thisWeek: 'This week', free: 'Free' },
     stats: {
       title: 'Numbers',
-      perWeek: 'Bookings per week, last 12 weeks',
       byCategory: 'By category',
       byStatus: 'By status',
       revenue: 'Estimated revenue',
@@ -480,6 +481,19 @@ const en: Dict = {
       total: 'Total bookings',
       active: 'At the workshop now',
       other: { auto: 'Car electrics', custom: 'Custom request' },
+      trend: {
+        income: 'Estimated income',
+        incomeLead: 'What finished jobs brought in, next to the value of new bookings. Repair plus transport, parts not included.',
+        bookings: 'Bookings',
+        bookingsLead: 'How many new bookings came in and how many jobs were handed back.',
+        range: 'Period',
+        ranges: { weeks: '12 weeks', months: '12 months' },
+        series: { earned: 'Earned', booked: 'Booked', created: 'New bookings', done: 'Jobs handed back' },
+        table: 'Show the data as a table',
+        period: 'Period',
+        weekOf: 'Week of {date}',
+        empty: 'No data for this period yet.',
+      },
     },
     settings: {
       title: 'Rates',

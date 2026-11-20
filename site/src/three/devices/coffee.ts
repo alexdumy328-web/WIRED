@@ -266,9 +266,9 @@ export const COFFEE_MACHINE: ModelSpec = {
   span: 0.35,
   parts: [
     { id: '_frame', rank: 7, build: frame },
-    { id: 'housing', rank: 0, build: housing, xpos: [0, 0.42, -0.04] },
+    { id: 'housing', rank: 0, build: housing, xpos: [0, 0.25, -0.17] },
     { id: 'tank', rank: 1, build: tank, pos: [-0.055, BASE + 0.012, -0.075], xpos: [-0.07, BASE + 0.06, -0.28] },
-    { id: 'boiler', rank: 2, build: boiler, pos: [0, 0.27, -0.01], xpos: [-0.01, 0.38, -0.05] },
+    { id: 'boiler', rank: 2, build: boiler, pos: [0, 0.27, -0.01], xpos: [-0.01, 0.34, -0.03] },
     { id: 'pump', rank: 2, build: pump, pos: [0.06, BASE + 0.035, -0.035], xpos: [0.22, BASE + 0.035, -0.01], xrot: [0, 0.6, 0] },
     { id: 'controlBoard', rank: 3, build: controlBoard, pos: [W / 2 - 0.012, 0.18, -0.03], rot: [0, 0, Math.PI / 2], xpos: [0.215, 0.2, 0.02], xrot: [Math.PI / 2, 0, -0.5] },
     // Portafilter off first, then the gasket stack drops out of the group, then the group comes off.

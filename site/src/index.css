@@ -17,6 +17,9 @@
   --blue: #2f5e9e;
   --on-gold: #ffffff;
   --scrim: rgb(242 244 245 / 0.82);
+  /* Chart series, validated for colour-blind separation and contrast on each theme's surface. */
+  --chart-1: #8f6a10;
+  --chart-2: #2f5e9e;
   color-scheme: light;
 }
 
@@ -34,6 +37,8 @@
     --blue: #3b6fb6;
     --on-gold: #121314;
     --scrim: rgb(18 19 20 / 0.78);
+    --chart-1: #b98a26;
+    --chart-2: #4a7ec4;
     color-scheme: dark;
   }
 }
@@ -51,6 +56,8 @@
   --blue: #3b6fb6;
   --on-gold: #121314;
   --scrim: rgb(18 19 20 / 0.78);
+  --chart-1: #b98a26;
+  --chart-2: #4a7ec4;
   color-scheme: dark;
 }
 

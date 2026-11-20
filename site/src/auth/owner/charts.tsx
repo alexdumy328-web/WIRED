@@ -1,40 +1,5 @@
-import type { ReactNode } from 'react'
-
 export type Bar = { key: string; label: string; value: number; tone?: string }
 
-/**
- * Column chart in plain HTML. It is a list, so screen readers get "label, value" per item
- * and nothing depends on colour.
- */
-export function ColumnChart({ title, bars, caption }: { title: string; bars: Bar[]; caption?: ReactNode }) {
-  const max = Math.max(1, ...bars.map((b) => b.value))
-  return (
-    <figure aria-label={title}>
-      <ul className="flex h-48 items-end gap-1.5 sm:gap-2">
-        {bars.map((bar) => (
-          <li key={bar.key} className="flex h-full min-w-0 flex-1 flex-col justify-end text-center" aria-label={`${bar.label}: ${bar.value}`}>
-            <span className="text-[12px] font-semibold tabular-nums">{bar.value}</span>
-            <span
-              className={`mt-1 block w-full rounded-t-md ${bar.tone ?? 'bg-gold'}`}
-              style={{ height: `${Math.max(bar.value > 0 ? 4 : 1, (bar.value / max) * 100)}%` }}
-              aria-hidden="true"
-            />
-          </li>
-        ))}
-      </ul>
-      <ul className="mt-1.5 flex gap-1.5 sm:gap-2" aria-hidden="true">
-        {bars.map((bar) => (
-          <li key={bar.key} className="min-w-0 flex-1 truncate text-center text-[11px] text-muted">
-            {bar.label}
-          </li>
-        ))}
-      </ul>
-      {caption && <figcaption className="mt-3 text-[13px] text-muted">{caption}</figcaption>}
-    </figure>
-  )
-}
-
-/** Horizontal bars with the label on the left and the number on the right. */
 export function RowChart({ title, bars }: { title: string; bars: Bar[] }) {
   const max = Math.max(1, ...bars.map((b) => b.value))
   return (

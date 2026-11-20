@@ -300,7 +300,7 @@ export const PC: ModelSpec = {
   parts: [
     { id: '_chassis', rank: 6, build: chassis },
     // Glass comes off first and goes round the back, out of the way of everything leaving through the open side.
-    { id: 'sidePanel', rank: 0, build: glass, pos: [X0 - 0.002, H / 2, 0], via: [{ pos: [X0 - 0.07, H / 2, 0], rot: [0, 0, 0] }], xpos: [X0 - 0.12, H / 2 + 0.03, -0.42], xrot: [0, -0.25, 0] },
+    { id: 'sidePanel', rank: 0, build: glass, pos: [X0 - 0.002, H / 2, 0], via: [{ pos: [X0 - 0.07, H / 2, 0], rot: [0, 0, 0] }], xpos: [X0 - 0.04, H / 2 + 0.03, -0.62], xrot: [0, -0.35, 0] },
     // Front fans: back off the bezel, out through the open side, round to the front.
     {
       id: 'fans',
@@ -308,10 +308,11 @@ export const PC: ModelSpec = {
       build: frontFans,
       pos: [0, 0.215, Z1 - 0.025],
       via: [
-        { pos: [0, 0.225, Z1 - 0.045], rot: [0, 0, 0] },
-        { pos: [X0 - 0.08, 0.225, Z1 - 0.045], rot: [0, 0, 0] },
+        { pos: [0, 0.225, Z1 - 0.036], rot: [0, 0, 0] },
+        { pos: [X0 - 0.08, 0.225, Z1 - 0.036], rot: [0, 0, 0] },
+        { pos: [X0 - 0.15, 0.24, Z1 + 0.06], rot: [0, 0, 0] },
       ],
-      xpos: [-0.15, 0.23, Z1 + 0.13],
+      xpos: [-0.25, 0.27, Z1 + 0.24],
       xrot: [0, -0.75, 0],
     },
     {
@@ -320,7 +321,7 @@ export const PC: ModelSpec = {
       build: gpu,
       pos: [0.016, onBoard(-0.015, 0, 0)[1], -0.218 + 0.1425],
       via: [{ pos: [X0 - 0.09, onBoard(-0.015, 0, 0)[1], -0.218 + 0.1425], rot: [0, 0, 0] }],
-      xpos: [-0.25, 0.09, 0.05],
+      xpos: [-0.3, 0.06, 0.2],
       xrot: [0, 0.45, -Math.PI / 2],
     },
     // PSU: slides out through its opening in the rear panel, then stands up behind the case.
@@ -330,7 +331,7 @@ export const PC: ModelSpec = {
       build: psu,
       pos: [0.0, 0.016 + 0.043 + 0.002, Z0 + 0.0035 + 0.075],
       via: [{ pos: [0.0, 0.061, -0.4], rot: [0, 0, 0] }],
-      xpos: [-0.05, 0.09, -0.45],
+      xpos: [-0.1, 0.09, -0.36],
       xrot: [0, 0.45, -Math.PI / 2],
     },
     // Board: off the standoffs and the I/O out of the rear panel, straight out the side, then turn a little to the camera.
@@ -344,7 +345,7 @@ export const PC: ModelSpec = {
         { pos: [MB[0] - 0.012, MB[1], MB[2] + 0.035], rot: [0, 0, Math.PI / 2] },
         { pos: [X0 - 0.12, MB[1] + 0.02, MB[2] + 0.035], rot: [0, 0, Math.PI / 2] },
       ],
-      xpos: [X0 - 0.16, MB[1] + 0.04, MB[2] + 0.04],
+      xpos: [X0 - 0.27, MB[1] + 0.13, MB[2] + 0.02],
       xrot: [0, 0.35, Math.PI / 2],
     },
     { id: 'ram', rank: 6, parent: 'motherboard', build: ram, pos: [0.07, MB_T + 0.0025, 0], xpos: [0.07, MB_T + 0.07, 0.075] },

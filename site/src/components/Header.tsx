@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'motion/react'
 import { useI18n } from '../i18n'
 import { useTheme, type ThemePref } from '../lib/theme'
 import { Logo } from './Logo'
-import { Auto, Close, Menu, Moon, Sun, User } from './Icons'
+import { Arrow, Auto, Close, Menu, Moon, Sun, User } from './Icons'
 import { OpenStatus } from './OpenStatus'
 import { Roll } from './Chrome'
 import { openBooking } from '../lib/booking-store'
@@ -12,37 +12,9 @@ import { useViewer } from '../auth/viewer'
 
 const order: ThemePref[] = ['system', 'light', 'dark']
 
-export function Header() {
+function LangSwitch() {
   const { t, lang, setLang } = useI18n()
-  const { pref, setPref } = useTheme()
-  const [open, setOpen] = useState(false)
-  const [scrolled, setScrolled] = useState(false)
-  useEffect(() => {
-    const on = () => setScrolled(window.scrollY > 24)
-    on()
-    window.addEventListener('scroll', on, { passive: true })
-    return () => window.removeEventListener('scroll', on)
-  }, [])
-  useEffect(() => {
-    document.body.style.overflow = open ? 'hidden' : ''
-  }, [open])
-
-  const onHome = pageOf(usePath()) === null
-  const { user } = useViewer()
-  const base = onHome ? '' : '/'
-  const links = [
-    ['#servicii', t.nav.services],
-    ['#proces', t.nav.process],
-    ['#mobil', t.nav.mobile],
-    ['#recenzii', t.nav.reviews],
-    ['#intrebari', t.nav.faq],
-  ] as const
-
-  const nextTheme = order[(order.indexOf(pref) + 1) % order.length]
-  const themeLabel = { system: t.nav.themeSystem, light: t.nav.themeLight, dark: t.nav.themeDark }
-  const ThemeIcon = pref === 'system' ? Auto : pref === 'light' ? Sun : Moon
-
-  const langSwitch = (
+  return (
     <div role="group" aria-label={t.nav.language} className="flex rounded-full border border-line p-0.5 text-sm">
       {(['ro', 'en'] as const).map((l) => (
         <button
@@ -57,7 +29,15 @@ export function Header() {
       ))}
     </div>
   )
-  const themeBtn = (
+}
+
+function ThemeButton() {
+  const { t } = useI18n()
+  const { pref, setPref } = useTheme()
+  const nextTheme = order[(order.indexOf(pref) + 1) % order.length]
+  const themeLabel = { system: t.nav.themeSystem, light: t.nav.themeLight, dark: t.nav.themeDark }
+  const ThemeIcon = pref === 'system' ? Auto : pref === 'light' ? Sun : Moon
+  return (
     <button
       type="button"
       onClick={() => setPref(nextTheme)}
@@ -68,6 +48,112 @@ export function Header() {
       <ThemeIcon className="size-[18px]" />
     </button>
   )
+}
+
+function AccountLink() {
+  const { t } = useI18n()
+  const { user } = useViewer()
+  return (
+    <a
+      href="/cont"
+      onClick={linkTo('/cont')}
+      className="flex h-10 items-center gap-2 rounded-full border border-line px-2.5 text-[15px] font-semibold text-muted transition-colors hover:text-ink sm:px-3.5"
+      aria-label={user ? t.account.navSignedIn : t.account.nav}
+    >
+      {user ? (
+        <span className="grid size-6 place-items-center rounded-full bg-ink text-[13px] font-bold text-bg" aria-hidden="true">
+          {(user.name || user.email).slice(0, 1).toUpperCase()}
+        </span>
+      ) : (
+        <User className="size-[18px]" />
+      )}
+      <span className="hidden sm:inline">{t.account.nav}</span>
+    </a>
+  )
+}
+
+/**
+ * Top bar for the owner and dev dashboards. They are a work tool, so there is no customer nav
+ * and no booking button: logo, a switch between the dashboards the viewer may open, and a way
+ * back to the site.
+ */
+export function AdminHeader() {
+  const { t } = useI18n()
+  const { user } = useViewer()
+  const path = usePath()
+  const tabs: [string, string][] = [['/admin', t.account.adminBar.owner]]
+  if (user?.role === 'dev') tabs.push(['/dev', t.account.adminBar.dev])
+  return (
+    <header className="scrim fixed inset-x-0 top-0 z-50 border-b border-line">
+      <div className="mx-auto flex h-16 max-w-[1360px] items-center gap-3 px-4 sm:gap-5 sm:px-6">
+        <a href="/admin" onClick={linkTo('/admin')} className="shrink-0 rounded-md" aria-label="Norgelis Tech">
+          <Logo />
+        </a>
+        {tabs.length > 1 && (
+          <nav aria-label={t.account.adminBar.nav} className="flex rounded-full border border-line p-0.5 text-[14px]">
+            {tabs.map(([href, label]) => {
+              const on = path.startsWith(href)
+              return (
+                <a
+                  key={href}
+                  href={href}
+                  onClick={linkTo(href)}
+                  aria-current={on ? 'page' : undefined}
+                  className={`rounded-full px-3 py-1.5 font-semibold transition-colors sm:px-4 ${on ? 'bg-ink text-bg' : 'text-muted hover:text-ink'}`}
+                >
+                  {label}
+                </a>
+              )
+            })}
+          </nav>
+        )}
+        <div className="ml-auto flex items-center gap-2.5">
+          <a
+            href="/"
+            onClick={linkTo('/')}
+            aria-label={t.account.adminBar.site}
+            className="grid size-9 place-items-center rounded-full border border-line text-muted transition-colors hover:text-ink md:flex md:size-auto md:items-center md:gap-1.5 md:whitespace-nowrap md:border-0 md:text-[15px] md:font-semibold"
+          >
+            <span className="hidden md:inline">{t.account.adminBar.site}</span>
+            <Arrow className="size-4 -rotate-45" />
+          </a>
+          <div className="hidden sm:block">
+            <LangSwitch />
+          </div>
+          <ThemeButton />
+          <AccountLink />
+        </div>
+      </div>
+    </header>
+  )
+}
+
+export function Header() {
+  const { t } = useI18n()
+  const [open, setOpen] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
+  useEffect(() => {
+    const on = () => setScrolled(window.scrollY > 24)
+    on()
+    window.addEventListener('scroll', on, { passive: true })
+    return () => window.removeEventListener('scroll', on)
+  }, [])
+  useEffect(() => {
+    document.body.style.overflow = open ? 'hidden' : ''
+  }, [open])
+
+  const onHome = pageOf(usePath()) === null
+  const base = onHome ? '' : '/'
+  const links = [
+    ['#servicii', t.nav.services],
+    ['#proces', t.nav.process],
+    ['#mobil', t.nav.mobile],
+    ['#recenzii', t.nav.reviews],
+    ['#intrebari', t.nav.faq],
+  ] as const
+
+  const langSwitch = <LangSwitch />
+  const themeBtn = <ThemeButton />
 
   return (
     <header
@@ -93,21 +179,7 @@ export function Header() {
             {langSwitch}
             {themeBtn}
           </div>
-          <a
-            href="/cont"
-            onClick={linkTo('/cont')}
-            className="flex h-10 items-center gap-2 rounded-full border border-line px-2.5 text-[15px] font-semibold text-muted transition-colors hover:text-ink sm:px-3.5"
-            aria-label={user ? t.account.navSignedIn : t.account.nav}
-          >
-            {user ? (
-              <span className="grid size-6 place-items-center rounded-full bg-ink text-[13px] font-bold text-bg" aria-hidden="true">
-                {(user.name || user.email).slice(0, 1).toUpperCase()}
-              </span>
-            ) : (
-              <User className="size-[18px]" />
-            )}
-            <span className="hidden sm:inline">{t.account.nav}</span>
-          </a>
+          <AccountLink />
           <button type="button" onClick={() => openBooking()} className="btn btn-gold hidden h-10 min-h-0 sm:inline-flex">
             {t.nav.book}
           </button>

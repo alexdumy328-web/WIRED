@@ -12,7 +12,7 @@ import { FileStore } from './store.ts'
 import type { BookingRequest } from '../src/types.ts'
 
 const ADMIN_TOKEN = 'test-admin-token'
-const SLOT = '2030-06-03T09:00:00.000Z'
+const SLOT = '2030-06-03T08:00:00.000Z'
 const CODE_PATTERN = /^NT-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{4}$/
 
 let directory: string
@@ -37,7 +37,7 @@ async function close(instance: Server): Promise<void> {
 function booking(overrides: Partial<BookingRequest> = {}): BookingRequest {
   return {
     mode: 'shop',
-    jobIds: ['laptop-ssd-upgrade'],
+    jobIds: ['laptop-screen'],
     device: { brand: 'Apple', model: 'MacBook Air', year: '2021' },
     issue: 'Battery drains very fast after the last system update.',
     slot: SLOT,
@@ -121,7 +121,7 @@ test('public status lookup is case-insensitive and hides private fields', async 
   assert.equal(body.code, shopCode)
   assert.equal(body.status, 'received')
   assert.equal(body.mode, 'shop')
-  assert.deepEqual(body.jobIds, ['laptop-ssd-upgrade'])
+  assert.deepEqual(body.jobIds, ['laptop-screen'])
   assert.equal(body.slot, SLOT)
   assert.equal('contact' in body, false)
   assert.equal('issue' in body, false)
@@ -140,7 +140,7 @@ test('rejects a duplicate slot for the same mode but allows the other mode', asy
   assert.deepEqual(duplicate.body, { error: 'slot_taken' })
 
   const mobile = await postBooking(
-    booking({ mode: 'mobile', jobIds: ['auto-electrics'], location: 'Str. Fabricii 12, Cluj' }),
+    booking({ mode: 'mobile', jobIds: ['auto-obd-diagnosis'], location: 'Str. Fabricii 12, Cluj' }),
   )
   assert.equal(mobile.status, 201)
   assert.match(String(mobile.body.code), CODE_PATTERN)
@@ -297,4 +297,21 @@ test('unknown /api routes answer JSON 404', async () => {
   assert.equal(response.headers.get('content-type')?.includes('application/json'), true)
   assert.deepEqual(await response.json(), { error: 'not_found' })
   assert.equal(response.headers.get('x-powered-by'), null)
+})
+
+test('the server prices the booking itself and rejects unknown jobs and off-hours slots', async () => {
+  const forged = await postBooking(booking({ slot: '2030-06-05T08:00:00.000Z', estimate: { priceFrom: 1, priceTo: 1, etaHours: [0, 0] } }))
+  assert.equal(forged.status, 201)
+  const stored = (await store.findByCode(String(forged.body.code)))!
+  assert.ok(stored.estimate.priceFrom > 1, 'price comes from the price list, not the request')
+
+  const unknown = await postBooking(booking({ jobIds: ['no-such-job'], slot: '2030-06-06T08:00:00.000Z' }))
+  assert.equal(unknown.status, 400)
+
+  const wrongMode = await postBooking(booking({ mode: 'mobile', jobIds: ['laptop-screen'], location: 'Iași', slot: '2030-06-06T08:00:00.000Z' }))
+  assert.equal(wrongMode.status, 400)
+
+  // 03:00 in Bucharest is not a slot we offer.
+  const night = await postBooking(booking({ slot: '2030-06-06T00:00:00.000Z' }))
+  assert.equal(night.status, 400)
 })

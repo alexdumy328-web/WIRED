@@ -78,7 +78,7 @@ async function signIn(email: string): Promise<string> {
 
 const bookingBody = (email: string, slot: string) => ({
   mode: 'shop',
-  jobIds: [],
+  jobIds: ['laptop-dc-jack'],
   custom: 'Laptop does not charge',
   device: { brand: 'Lenovo' },
   issue: 'Does not charge anymore',
@@ -262,9 +262,15 @@ describe('bookings for owners and customers', () => {
     assert.equal(changed.body.statusHistory[1].note, 'Charging port looks burnt')
     assert.ok(changed.body.statusHistory[1].by)
 
+    // Saving the same status again without a note changes nothing: no history line, no audit entry.
+    const again = await call(`/api/admin/bookings/${code}/status`, { method: 'PATCH', cookie: owner, body: { status: 'diagnosis' } })
+    assert.equal(again.status, 200)
+    assert.equal(again.body.statusHistory.length, 2)
+
     const entries = await platform.audit.list(20)
     const entry = entries.find((e) => e.action === 'booking_status' && e.target === code)
     assert.ok(entry)
+    assert.equal(entries.filter((e) => e.action === 'booking_status' && e.target === code).length, 1)
     assert.deepEqual(entry.detail, { from: 'received', to: 'diagnosis', note: true })
     assert.ok(entry.ipHash && !entry.ipHash.includes('127.0.0.1'))
 
@@ -328,6 +334,16 @@ describe('bookings for owners and customers', () => {
     assert.equal(stats.body.weeks.length, 12)
     assert.ok(stats.body.total >= 4)
     assert.ok(stats.body.revenue.pipelineLei > 0)
+    // Trend series: 12 weeks and 12 months, the newest last; today's bookings land in the last point
+    // and the booked value includes the (server-side) transport quote.
+    const { weekly, monthly } = stats.body.trend
+    assert.equal(weekly.length, 12)
+    assert.equal(monthly.length, 12)
+    assert.match(monthly[11].start, /^\d{4}-\d{2}-01$/)
+    assert.ok(weekly[11].created >= 1)
+    assert.ok(weekly[11].bookedLei > 0)
+    const inWindow = weekly.reduce((n: number, p: { created: number }) => n + p.created, 0)
+    assert.ok(inWindow <= stats.body.total && inWindow >= 1)
   })
 })
 

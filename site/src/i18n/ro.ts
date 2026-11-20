@@ -394,6 +394,7 @@ const ro: Dict = {
     profile: { title: 'Profil', name: 'Nume', email: 'Email', role: 'Rol', verified: 'Confirmat', notVerified: 'Neconfirmat' },
     roles: { customer: 'Client', owner: 'Proprietar', dev: 'Dezvoltator' },
     dashboards: { title: 'Panouri de lucru', owner: 'Panoul proprietarului', dev: 'Panoul dezvoltatorului' },
+    adminBar: { nav: 'Panouri de lucru', owner: 'Proprietar', dev: 'Dezvoltator', site: 'Vezi site-ul' },
     bookings: {
       title: 'Programările mele',
       empty: 'Nu ai nicio programare încă.',
@@ -451,6 +452,7 @@ const ro: Dict = {
       history: 'Istoric stare',
       noteLabel: 'Notă internă',
       notePlaceholder: 'Vizibilă doar pentru personal',
+      byCustomer: 'client',
       newStatus: 'Stare nouă',
       save: 'Salvează starea',
       saved: 'Starea a fost salvată.',
@@ -470,7 +472,6 @@ const ro: Dict = {
     calendar: { title: 'Săptămâna', prev: 'Săptămâna trecută', next: 'Săptămâna viitoare', thisWeek: 'Săptămâna asta', free: 'Liber' },
     stats: {
       title: 'Cifre',
-      perWeek: 'Programări pe săptămână, ultimele 12 săptămâni',
       byCategory: 'După categorie',
       byStatus: 'După stare',
       revenue: 'Venit estimat',
@@ -480,6 +481,19 @@ const ro: Dict = {
       total: 'Total programări',
       active: 'La atelier acum',
       other: { auto: 'Electrică auto', custom: 'Cerere proprie' },
+      trend: {
+        income: 'Venit estimat',
+        incomeLead: 'Ce s-a încasat din lucrările predate, față de valoarea programărilor noi. Reparație plus transport, fără piese.',
+        bookings: 'Programări',
+        bookingsLead: 'Câte programări noi au intrat și câte lucrări s-au predat.',
+        range: 'Perioadă',
+        ranges: { weeks: '12 săptămâni', months: '12 luni' },
+        series: { earned: 'Încasat', booked: 'Programat', created: 'Programări noi', done: 'Lucrări predate' },
+        table: 'Vezi datele ca tabel',
+        period: 'Perioada',
+        weekOf: 'Săptămâna din {date}',
+        empty: 'Încă nu sunt date pentru perioada asta.',
+      },
     },
     settings: {
       title: 'Tarife',

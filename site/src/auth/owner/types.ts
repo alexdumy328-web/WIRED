@@ -22,8 +22,12 @@ export type PickupJob = {
 export type CalendarSlot = { slot: string; code: string; mode: 'shop' | 'mobile'; status: BookingStatus; name: string; device: string; pickup: boolean }
 export type CalendarWeek = { weekStart: string; days: { date: string; slots: CalendarSlot[] }[] }
 
+export type TrendPoint = { start: string; created: number; done: number; bookedLei: number; doneLei: number; transportLei: number }
+
 export type Stats = {
   weeks: { weekStart: string; count: number }[]
+  /** Missing when an older API answers (deploy in progress): the charts then show as empty. */
+  trend?: { weekly: TrendPoint[]; monthly: TrendPoint[] }
   byCategory: Record<string, number>
   byStatus: Record<string, number>
   total: number

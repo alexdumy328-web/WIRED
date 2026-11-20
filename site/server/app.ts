@@ -4,6 +4,10 @@ import express from 'express'
 import type { Express, NextFunction, Request, Response } from 'express'
 import type { ZodError } from 'zod'
 import { generateCode } from './code.ts'
+import { localDate } from './admin/time.ts'
+import { catalog } from '../src/data/catalog.ts'
+import { estimate as scriptEstimate } from '../src/lib/estimate.ts'
+import { slotsFor } from '../src/lib/slots.ts'
 import {
   createEstimateService,
   knownJobIds,
@@ -287,6 +291,28 @@ export function createApp(store: Store, options: CreateAppOptions = {}): Express
 
     const data = parsed.data
     const slot = new Date(data.slot).toISOString()
+
+    // Never trust the browser's numbers: jobs must exist for this mode, the slot must be one we
+    // offer, and the price and transport are worked out again here from the price list and rates.
+    const jobs = data.jobIds.map((id) => catalog.find((j) => j.id === id))
+    if (jobs.some((j) => !j || j.mode !== data.mode)) {
+      res.status(400).json({ error: 'invalid', issues: [{ path: 'jobIds', message: 'Unknown job for this mode' }] })
+      return
+    }
+    if (!slotsFor(localDate(slot), data.mode, new Date()).some((s) => s.start === slot)) {
+      res.status(400).json({ error: 'invalid', issues: [{ path: 'slot', message: 'Not a bookable slot' }] })
+      return
+    }
+    const priced = scriptEstimate(jobs as NonNullable<(typeof jobs)[number]>[], Boolean(data.custom), data.deviceValue)
+    data.estimate = { priceFrom: priced.priceFrom, priceTo: priced.priceTo, etaHours: priced.etaHours }
+    if (data.pickup) {
+      const quote = await pickupService.quote(data.pickup.lat, data.pickup.lon, data.pickup.trips, data.pickup.urgent === true)
+      if (quote.tooFar) {
+        res.status(400).json({ error: 'invalid', issues: [{ path: 'pickup', message: 'Too far for pickup' }] })
+        return
+      }
+      data.pickup.quote = { totalLei: quote.totalLei, oneWayKm: quote.oneWayKm, ...(quote.urgentLei ? { urgentLei: quote.urgentLei } : {}) }
+    }
 
     if (await store.hasSlot(data.mode, slot)) {
       res.status(409).json({ error: 'slot_taken' })

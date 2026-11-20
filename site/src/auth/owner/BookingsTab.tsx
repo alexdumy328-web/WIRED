@@ -126,7 +126,28 @@ export function BookingsTab({ initialCode, onCode }: { initialCode?: string | nu
       {state === 'ready' && items.length === 0 && <p className="py-10 text-center text-muted">{b.empty}</p>}
 
       {items.length > 0 && (
-        <div className="mt-2 overflow-x-auto rounded-[18px] border border-line" data-lenis-prevent>
+        // Phones: one card per booking, the whole card opens it. Wider screens: the table.
+        <ul className="mt-2 grid gap-2 sm:hidden">
+          {items.map((item) => (
+            <li key={item.code}>
+              <button type="button" onClick={() => select(item.code)} className="grid w-full gap-1 rounded-[16px] border border-line bg-surface px-4 py-3 text-left text-[14px] transition-colors hover:border-muted">
+                <span className="flex items-center justify-between gap-3">
+                  <span className="font-mono font-bold text-gold">{item.code}</span>
+                  <StatusBadge status={item.status} />
+                </span>
+                <span className="font-semibold">{item.contact.name}</span>
+                <span className="text-muted">
+                  {fmtDate.dateTime(item.slot)} · {b.modes[item.mode]}
+                  {item.pickup ? ' + ' + t.owner.pickups.map.toLowerCase() : ''}
+                </span>
+                <span className="text-muted">{[item.device.brand, item.device.model].filter(Boolean).join(' ') || item.custom || '-'}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {items.length > 0 && (
+        <div className="mt-2 hidden overflow-x-auto rounded-[18px] border border-line sm:block" data-lenis-prevent>
           <table className="w-full min-w-[44rem] border-collapse text-left text-[14px]">
             <thead className="bg-surface-2 text-[13px] text-muted">
               <tr>

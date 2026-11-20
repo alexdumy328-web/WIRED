@@ -244,6 +244,8 @@ export type Dict = {
     profile: { title: string; name: string; email: string; role: string; verified: string; notVerified: string }
     roles: Record<'customer' | 'owner' | 'dev', string>
     dashboards: { title: string; owner: string; dev: string }
+    /** Slim top bar on the owner and dev dashboards (no customer nav there). */
+    adminBar: { nav: string; owner: string; dev: string; site: string }
     bookings: {
       title: string
       empty: string
@@ -296,6 +298,8 @@ export type Dict = {
       history: string
       noteLabel: string
       notePlaceholder: string
+      /** Who made a history entry when the customer did (the booking form). */
+      byCustomer: string
       newStatus: string
       save: string
       saved: string
@@ -306,7 +310,6 @@ export type Dict = {
     calendar: { title: string; prev: string; next: string; thisWeek: string; free: string }
     stats: {
       title: string
-      perWeek: string
       byCategory: string
       byStatus: string
       revenue: string
@@ -316,6 +319,19 @@ export type Dict = {
       total: string
       active: string
       other: Record<'auto' | 'custom', string>
+      trend: {
+        income: string
+        incomeLead: string
+        bookings: string
+        bookingsLead: string
+        range: string
+        ranges: Record<'weeks' | 'months', string>
+        series: Record<'earned' | 'booked' | 'created' | 'done', string>
+        table: string
+        period: string
+        weekOf: string
+        empty: string
+      }
     }
     settings: {
       title: string

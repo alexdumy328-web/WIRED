@@ -1,13 +1,16 @@
 import { useId, type ReactNode } from 'react'
 import { useI18n } from '../i18n'
-import { Header } from '../components/Header'
+import { AdminHeader, Header } from '../components/Header'
+import { usePath } from '../lib/router'
 import type { BookingStatus } from '../types'
 
 /** Page frame for /cont, /admin and /dev: the site header and a centred column. */
 export function PageShell({ children, wide = false }: { children: ReactNode; wide?: boolean }) {
+  // The dashboards get their own work-tool bar instead of the customer site header.
+  const admin = /^\/(admin|dev)(\/|$)/.test(usePath())
   return (
     <>
-      <Header />
+      {admin ? <AdminHeader /> : <Header />}
       <main id="main" className={`mx-auto min-h-dvh px-4 pb-24 pt-24 sm:px-6 ${wide ? 'max-w-[1360px]' : 'max-w-[1080px]'}`}>
         {children}
       </main>

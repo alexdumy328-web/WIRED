@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { fmt, useI18n } from '../../i18n'
 import { api } from '../api'
 import { Card, Loading, Notice } from '../ui'
-import { ColumnChart, RowChart } from './charts'
+import { RowChart } from './charts'
+import { TrendChart, type TrendRow } from './TrendChart'
 import { BOOKING_STATUSES } from './constants'
 import type { Stats } from './types'
 
@@ -13,6 +14,7 @@ export function StatsTab() {
   const s = t.owner.stats
   const [stats, setStats] = useState<Stats | null>(null)
   const [error, setError] = useState(false)
+  const [range, setRange] = useState<'weeks' | 'months'>('weeks')
 
   useEffect(() => {
     let live = true
@@ -29,8 +31,28 @@ export function StatsTab() {
   if (error) return <Notice tone="error">{t.owner.detail.error}</Notice>
   if (!stats) return <Loading label={t.account.loading} />
 
-  const week = new Intl.DateTimeFormat(lang === 'ro' ? 'ro-RO' : 'en-GB', { timeZone: 'UTC', day: 'numeric', month: 'numeric' })
-  const lei = new Intl.NumberFormat(lang === 'ro' ? 'ro-RO' : 'en-GB')
+  const locale = lang === 'ro' ? 'ro-RO' : 'en-GB'
+  const lei = new Intl.NumberFormat(locale)
+  const tr = s.trend
+  // Trend rows: short axis label + a full period name for the tooltip and the table.
+  const day = new Intl.DateTimeFormat(locale, { timeZone: 'UTC', day: 'numeric', month: 'numeric' })
+  const dayLong = new Intl.DateTimeFormat(locale, { timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric' })
+  const mon = new Intl.DateTimeFormat(locale, { timeZone: 'UTC', month: 'short' })
+  const monLong = new Intl.DateTimeFormat(locale, { timeZone: 'UTC', month: 'long', year: 'numeric' })
+  const points = (range === 'weeks' ? stats.trend?.weekly : stats.trend?.monthly) ?? []
+  const rows: TrendRow[] = points.map((p) => {
+    const d = new Date(`${p.start}T12:00:00Z`)
+    return {
+      label: range === 'weeks' ? day.format(d) : mon.format(d),
+      long: range === 'weeks' ? fmt(tr.weekOf, { date: dayLong.format(d) }) : monLong.format(d),
+      earned: p.doneLei + p.transportLei,
+      booked: p.bookedLei,
+      created: p.created,
+      done: p.done,
+    }
+  })
+  const leiFmt = (n: number) => `${lei.format(Math.round(n))} lei`
+  const countFmt = (n: number) => lei.format(Math.round(n))
   const categoryName = (key: string) => (key in t.services.categories ? t.services.categories[key as keyof typeof t.services.categories].name : (s.other[key as 'auto' | 'custom'] ?? key))
 
   return (
@@ -58,11 +80,53 @@ export function StatsTab() {
         </Card>
       </div>
 
-      <Card>
-        <h2 className="text-lg font-bold">{s.perWeek}</h2>
-        <div className="mt-4">
-          <ColumnChart title={s.perWeek} bars={stats.weeks.map((w) => ({ key: w.weekStart, label: week.format(new Date(`${w.weekStart}T12:00:00Z`)), value: w.count }))} />
+      <div className="flex flex-wrap items-center gap-3">
+        <span className="text-[13px] font-semibold text-muted">{tr.range}</span>
+        <div role="group" aria-label={tr.range} className="inline-grid grid-cols-2 rounded-full border border-line p-0.5 text-[14px]">
+          {(['weeks', 'months'] as const).map((r) => (
+            <button
+              key={r}
+              type="button"
+              aria-pressed={range === r}
+              onClick={() => setRange(r)}
+              className={`rounded-full px-4 py-1.5 font-semibold transition-colors ${range === r ? 'bg-ink text-bg' : 'text-muted hover:text-ink'}`}
+            >
+              {tr.ranges[r]}
+            </button>
+          ))}
         </div>
+      </div>
+
+      <Card>
+        <TrendChart
+          title={tr.income}
+          lead={tr.incomeLead}
+          rows={rows}
+          series={[
+            { key: 'earned', label: tr.series.earned, colorVar: '--chart-1' },
+            { key: 'booked', label: tr.series.booked, colorVar: '--chart-2' },
+          ]}
+          format={leiFmt}
+          tableLabel={tr.table}
+          periodLabel={tr.period}
+          empty={tr.empty}
+        />
+      </Card>
+
+      <Card>
+        <TrendChart
+          title={tr.bookings}
+          lead={tr.bookingsLead}
+          rows={rows}
+          series={[
+            { key: 'created', label: tr.series.created, colorVar: '--chart-2' },
+            { key: 'done', label: tr.series.done, colorVar: '--chart-1' },
+          ]}
+          format={countFmt}
+          tableLabel={tr.table}
+          periodLabel={tr.period}
+          empty={tr.empty}
+        />
       </Card>
 
       <div className="grid gap-5 lg:grid-cols-2">

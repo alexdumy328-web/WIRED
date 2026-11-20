@@ -21,6 +21,22 @@ function strip(doc: Doc): Booking {
 const mapLink = (lat: number, lon: number) => `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`
 
 /** What the owner sees: everything, plus a map link for pickups. */
+export type TrendPoint = { start: string; created: number; done: number; bookedLei: number; doneLei: number; transportLei: number }
+
+/** First day (YYYY-MM-DD) of the month `n` months from the month of `date`. */
+function addMonths(date: string, n: number): string {
+  const d = new Date(`${date.slice(0, 7)}-01T12:00:00.000Z`)
+  d.setUTCMonth(d.getUTCMonth() + n)
+  return d.toISOString().slice(0, 10)
+}
+
+/** The point whose period holds the shop-local day (points are sorted, each runs until the next starts). */
+function bucketOf(series: TrendPoint[], day: string): TrendPoint | undefined {
+  if (day < series[0]!.start) return undefined
+  for (let i = series.length - 1; i >= 0; i -= 1) if (day >= series[i]!.start) return series[i]
+  return undefined
+}
+
 export function ownerView(doc: Doc) {
   const booking = strip(doc)
   return {
@@ -117,6 +133,8 @@ export function createBookingAdmin(db: Db) {
       const wanted = code.trim().toUpperCase()
       const before = await col.findOne({ code: wanted })
       if (!before) return null
+      // Same status and no note: nothing happened, so the history gets no new line.
+      if (before.status === status && !note) return { booking: ownerView(before), from: before.status, unchanged: true }
       const now = new Date().toISOString()
       const entry: StatusEntry = {
         status,
@@ -185,11 +203,16 @@ export function createBookingAdmin(db: Db) {
     },
 
     async stats(now = new Date()) {
-      const thisMonday = mondayOf(localDate(now))
+      const today = localDate(now)
+      const thisMonday = mondayOf(today)
       const firstMonday = addDays(thisMonday, -77) // 12 weeks including this one
       const weeks = Array.from({ length: 12 }, (_, i) => ({ weekStart: addDays(firstMonday, i * 7), count: 0 }))
+      // Trend points, one per week (12) and per month (12): new bookings and their value by the day they
+      // came in, finished jobs and their income (repair estimate midpoint + transport) by the day they were done.
+      const weekly: TrendPoint[] = weeks.map((w) => ({ start: w.weekStart, created: 0, done: 0, bookedLei: 0, doneLei: 0, transportLei: 0 }))
+      const monthly: TrendPoint[] = Array.from({ length: 12 }, (_, i) => ({ start: addMonths(`${today.slice(0, 7)}-01`, i - 11), created: 0, done: 0, bookedLei: 0, doneLei: 0, transportLei: 0 }))
       const docs = await col
-        .find({}, { projection: { createdAt: 1, status: 1, jobIds: 1, estimate: 1 } })
+        .find({}, { projection: { createdAt: 1, status: 1, jobIds: 1, estimate: 1, statusHistory: 1, updatedAt: 1, pickup: 1 } })
         .toArray()
 
       const byStatus: Record<string, number> = {}
@@ -202,19 +225,42 @@ export function createBookingAdmin(db: Db) {
         const category = categoryOf.get(doc.jobIds?.[0] ?? '') ?? 'custom'
         byCategory[category] = (byCategory[category] ?? 0) + 1
 
+        const created = localDate(doc.createdAt)
         const week = weeks.find((w, i) => {
           const next = weeks[i + 1]?.weekStart ?? addDays(w.weekStart, 7)
-          const created = localDate(doc.createdAt)
           return created >= w.weekStart && created < next
         })
         if (week) week.count += 1
 
         const mid = ((doc.estimate?.priceFrom ?? 0) + (doc.estimate?.priceTo ?? 0)) / 2
+        const transport = doc.pickup?.quote?.totalLei ?? 0
         if (doc.status === 'done') doneLei += mid
         else pipelineLei += mid
+
+        for (const series of [weekly, monthly]) {
+          const c = bucketOf(series, created)
+          if (c) {
+            c.created += 1
+            c.bookedLei += mid + transport
+          }
+        }
+        if (doc.status === 'done') {
+          const doneAt = [...(doc.statusHistory ?? [])].reverse().find((e) => e.status === 'done')?.at ?? doc.updatedAt ?? doc.createdAt
+          const day = localDate(doneAt)
+          for (const series of [weekly, monthly]) {
+            const d = bucketOf(series, day)
+            if (d) {
+              d.done += 1
+              d.doneLei += mid
+              d.transportLei += transport
+            }
+          }
+        }
       }
+      const round = (series: TrendPoint[]) => series.map((p) => ({ ...p, bookedLei: Math.round(p.bookedLei), doneLei: Math.round(p.doneLei), transportLei: Math.round(p.transportLei) }))
       return {
         weeks,
+        trend: { weekly: round(weekly), monthly: round(monthly) },
         byCategory,
         byStatus,
         total: docs.length,

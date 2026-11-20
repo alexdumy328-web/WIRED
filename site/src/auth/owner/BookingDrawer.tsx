@@ -183,7 +183,7 @@ export function BookingDrawer({ code, onClose, onChanged }: { code: string; onCl
                         <span className="font-semibold">{t.track.statuses[entry.status]}</span>
                         <span className="text-muted">
                           {' '}
-                          {fmtDate.dateTime(entry.at)}, {entry.by}
+                          {fmtDate.dateTime(entry.at)}, {entry.by === 'customer' ? d.byCustomer : entry.by}
                         </span>
                       </p>
                       {entry.note && <p className="mt-0.5 whitespace-pre-wrap text-muted">{entry.note}</p>}
@@ -209,7 +209,7 @@ export function BookingDrawer({ code, onClose, onChanged }: { code: string; onCl
                 {(p) => <textarea {...p} className="field min-h-24" value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} placeholder={d.notePlaceholder} />}
               </Field>
               {message && <Notice tone={message.tone}>{message.text}</Notice>}
-              <button type="submit" className="btn btn-gold" disabled={saving} aria-busy={saving}>
+              <button type="submit" className="btn btn-gold" disabled={saving || (status === booking.status && !note.trim())} aria-busy={saving}>
                 {d.save}
               </button>
             </form>
