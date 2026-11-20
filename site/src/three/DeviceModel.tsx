@@ -153,6 +153,7 @@ export function DeviceModel({
     }
     const ui = labelUi.current
     if (ui.wrap) ui.wrap.style.opacity = want ? String(clamp01((s.presence - 0.6) / 0.4)) : '0'
+    if (ui.label && ui.label.textContent !== labelTextRef.current) ui.label.textContent = labelTextRef.current
     if (ui.wrap && want && root.current) {
       const part = asset.parts.find((p) => p.spec.id === want)
       if (part) layoutLabel(root.current, asset.parts, refs.current, part, state.camera, state.size, ui, labelLay.current, reducedMotion ? 1 : 1 - Math.exp(-dt / 0.12))
@@ -176,10 +177,8 @@ export function DeviceModel({
   }, [asset])
 
   const labelText = label ? (partLabels?.[`${id}.${label}`] ?? label) : ''
-  useEffect(() => {
-    const el = labelUi.current.label
-    if (el) el.textContent = labelText
-  }, [labelText])
+  const labelTextRef = useRef('')
+  labelTextRef.current = labelText
 
   const renderPart = (p: PartAsset): ReactNode => (
     <group

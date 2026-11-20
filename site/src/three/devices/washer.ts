@@ -207,8 +207,8 @@ function controlBoard(b: GeoBuilder) {
 }
 
 function sackTruck(b: GeoBuilder) {
-  // Hand truck leaning behind the machine (we come to your home).
-  b.group([0, 0, -D / 2 - 0.12], [-0.16, 0, 0], () => {
+  // Hand truck standing beside the machine (we come to your home).
+  b.group([-W / 2 - 0.34, 0, 0.3], [-0.16, 0, 0], () => {
     for (const s of [-1, 1]) {
       b.cyl('metal', '#3a3d42', 0.014, 0.014, 1.15, [s * 0.2, 0.58, 0], 0, 10)
       b.cyl('matte', '#121213', 0.11, 0.11, 0.05, [s * 0.26, 0.11, -0.07], [0, 0, Math.PI / 2], 20)
@@ -224,23 +224,31 @@ function sackTruck(b: GeoBuilder) {
 const MOTOR = [-0.06, 0.11, -0.13] as const
 const PULLEY = [0, PORT.y, -0.245] as const
 
+/**
+ * Exploded along the drum axis, like a service-manual drawing: door, front panel and drum line
+ * up in front of the cabinet, the worktop lifts straight up with the control board under it,
+ * and the drain pump, motor and heater lie in a row on the floor beside the stack.
+ * The belt drive stays on the back of the tub (it lights up with the motor).
+ */
 export const WASHER: ModelSpec = {
   id: 'largeAppliance',
-  // Right end of the pavement, turned so the exploded parts spread along it (clear of the bollard and the kerb).
-  place: { pos: [4.88, 0, 2.42], yaw: 1.2 },
-  view: { az: -14, el: 16 },
+  // Right end of the pavement, facing the street: the parts line up toward the kerb and the
+  // camera looks from the open right-hand side, where the floor row lies.
+  place: { pos: [5.15, 0, 2.0], yaw: 0 },
+  view: { az: 48, el: 22 },
+  stageAz: 42,
   span: 0.3,
   shopBase: sackTruck,
   parts: [
     { id: 'cabinet', rank: 6, build: cabinet },
-    { id: '_top', rank: 0, parent: 'cabinet', build: worktop, xpos: [0, 0.72, -0.04], xrot: [-0.1, 0, 0] },
-    { id: '_front', rank: 1, parent: 'cabinet', build: frontPanel, via: [[0, 0, 0.16]], xpos: [0.78, 0, 0.42], xrot: [0, -0.35, 0] },
-    { id: 'door', rank: 0, build: door, pos: [-PORT.r - 0.03, PORT.y, D / 2 + 0.006], via: [[-PORT.r - 0.03, PORT.y, D / 2 + 0.45]], xpos: [0.8, PORT.y + 0.06, D / 2 + 0.3], xrot: [0, -0.6, 0] },
-    { id: 'controlBoard', rank: 2, build: controlBoard, pos: [0.0, H - 0.08, 0.16], via: [[0.0, H + 0.08, 0.16]], xpos: [0.05, H + 0.24, 0.3], xrot: [0.6, 0, 0] },
-    { id: 'drum', rank: 3, build: drum, pos: [0, PORT.y, -0.02], via: [[0, PORT.y, 0.42]], xpos: [-0.2, PORT.y + 0.06, 0.74] },
-    { id: 'heater', rank: 4, build: heater, pos: [0, 0.2, 0.15], via: [[0, 0.2, 0.5]], xpos: [0.06, 0.05, 0.86] },
-    { id: 'pump', rank: 4, build: pump, pos: [0.2, 0.05, 0.19], via: [[0.2, 0.06, 0.4]], xpos: [0.36, 0.06, 0.66], xrot: [0, -0.4, 0] },
-    { id: 'motor', rank: 5, build: motor, pos: MOTOR, via: [[MOTOR[0], MOTOR[1], 0.42]], xpos: [-0.5, 0.1, 0.42], xrot: [0, 0.5, 0] },
-    { id: '_drive', rank: 5, group: 'motor', build: (b) => drive(b, [MOTOR[0] - PULLEY[0], MOTOR[1] - PULLEY[1]]), pos: PULLEY, via: [[0, H + 0.4, PULLEY[2]], [-0.56, H + 0.4, -0.16]], xpos: [-0.58, 0.8, -0.1], xrot: [0, 0.5, 0] },
+    { id: '_drive', rank: 6, group: 'motor', build: (b) => drive(b, [MOTOR[0] - PULLEY[0], MOTOR[1] - PULLEY[1]]), pos: PULLEY },
+    { id: '_top', rank: 0, parent: 'cabinet', build: worktop, xpos: [0, 0.42, 0] },
+    { id: 'door', rank: 0, build: door, pos: [-PORT.r - 0.03, PORT.y, D / 2 + 0.006], xpos: [-PORT.r - 0.03, PORT.y, D / 2 + 1.2] },
+    { id: '_front', rank: 1, parent: 'cabinet', build: frontPanel, xpos: [0, 0, 0.9] },
+    { id: 'controlBoard', rank: 2, build: controlBoard, pos: [0.0, H - 0.08, 0.16], via: [[0.0, H + 0.1, 0.16]], xpos: [0, H + 0.22, 0.34], xrot: [0.55, 0, 0] },
+    { id: 'drum', rank: 3, build: drum, pos: [0, PORT.y, -0.02], xpos: [0, PORT.y, 0.62] },
+    { id: 'heater', rank: 4, build: heater, pos: [0, 0.2, 0.15], via: [[0, 0.2, 0.45]], xpos: [0.56, 0.08, 1.0] },
+    { id: 'pump', rank: 4, build: pump, pos: [0.2, 0.05, 0.19], via: [[0.2, 0.06, 0.42], [0.56, 0.06, 0.42]], xpos: [0.56, 0.06, 0.18] },
+    { id: 'motor', rank: 5, build: motor, pos: MOTOR, via: [[MOTOR[0], MOTOR[1], 0.42]], xpos: [0.56, 0.1, 0.56] },
   ],
 }

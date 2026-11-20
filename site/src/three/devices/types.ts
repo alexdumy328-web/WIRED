@@ -45,6 +45,8 @@ export type ModelSpec = {
    * the ranks follow each other more strictly: outer parts are clear before inner ones move.
    */
   span?: number
+  /** Where the device stage camera starts, degrees around the device from its front (default about 30). */
+  stageAz?: number
   /** Placement in the workshop (world). The yaw turns the model's front. */
   place: { pos: V3; yaw: number }
   /** Workshop-only props that never move (trolley, dolly...). Not shown on the device stage. */

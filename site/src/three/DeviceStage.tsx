@@ -1,7 +1,7 @@
 // @refresh reset
 import { ContactShadows, Environment, Lightformer, OrbitControls } from '@react-three/drei'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Suspense, useCallback, useMemo, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Color, MeshStandardMaterial, NeutralToneMapping, Vector3, type Group, type PerspectiveCamera } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
 import { sceneState, type DeviceStageProps, type ModelId, type Theme } from './contract'
@@ -26,7 +26,7 @@ function stageFrame(id: ModelId) {
   const lift = Math.max(0, a.boxA.min.y - a.boxE.min.y)
   let r = 0
   for (const b of [a.boxA, a.boxE])
-    for (const x of [b.min.x, b.max.x]) for (const z of [b.min.z, b.max.z]) r = Math.max(r, Math.hypot(x - cx, z - cz) * (b === a.boxA ? 1 : 0.6))
+    for (const x of [b.min.x, b.max.x]) for (const z of [b.min.z, b.max.z]) r = Math.max(r, Math.hypot(x - cx, z - cz) * (b === a.boxA ? 1 : 0.8))
   return { a, cx, cz, y0, lift, radius: Math.max(0.12, r * 1.08) }
 }
 
@@ -90,6 +90,18 @@ function StageContent({ theme, reducedMotion, partLabels, controls }: { theme: T
   const st = useRef({ e: 0, dist: 0, target: new Vector3(), init: false })
   const camera = useThree((s) => s.camera) as PerspectiveCamera
   const size = useThree((s) => s.size)
+
+  // Start each device from its best side (an axial exploded view reads from the side, not head on).
+  useEffect(() => {
+    const ctl = controls.current
+    const az = frame.a.spec.stageAz
+    if (!ctl || az == null) return
+    const d = Math.max(0.1, camera.position.distanceTo(ctl.target))
+    const el = 0.38
+    const a = (az * Math.PI) / 180
+    camera.position.set(ctl.target.x + Math.sin(a) * Math.cos(el) * d, ctl.target.y + Math.sin(el) * d, ctl.target.z + Math.cos(a) * Math.cos(el) * d)
+    ctl.update()
+  }, [frame, camera, controls])
 
   const onLeft = useCallback(() => {
     leaving.current = false
