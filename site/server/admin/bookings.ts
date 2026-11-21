@@ -167,6 +167,20 @@ export function createBookingAdmin(db: Db) {
         : null
     },
 
+    /** Open bookings per shop-local day between two dates (inclusive), for the calendar dots. */
+    async busyDays(from: string, to: string) {
+      const docs = await col
+        .find({ status: { $ne: 'cancelled' }, slot: { $gte: startOfLocalDay(from), $lt: startOfLocalDay(addDays(to, 1)) } }, { projection: { slot: 1, pickup: 1 } })
+        .toArray()
+      const days: Record<string, { total: number; pickups: number }> = {}
+      for (const doc of docs) {
+        const day = (days[localDate(doc.slot)] ??= { total: 0, pickups: 0 })
+        day.total++
+        if (doc.pickup) day.pickups++
+      }
+      return days
+    },
+
     /** Booked slots for the 7 days starting on the Monday of the given date. */
     async calendar(date: string) {
       const monday = mondayOf(date)

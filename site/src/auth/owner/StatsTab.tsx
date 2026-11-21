@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { fmt, useI18n } from '../../i18n'
 import { api } from '../api'
 import { Card, Loading, Notice } from '../ui'
+import { KpiCard, change } from './KpiCard'
 import { RowChart } from './charts'
 import { TrendChart, type TrendRow } from './TrendChart'
 import { BOOKING_STATUSES } from './constants'
@@ -39,6 +40,7 @@ export function StatsTab() {
   const dayLong = new Intl.DateTimeFormat(locale, { timeZone: 'UTC', day: 'numeric', month: 'long', year: 'numeric' })
   const mon = new Intl.DateTimeFormat(locale, { timeZone: 'UTC', month: 'short' })
   const monLong = new Intl.DateTimeFormat(locale, { timeZone: 'UTC', month: 'long', year: 'numeric' })
+  const weekly = stats.trend?.weekly ?? []
   const points = (range === 'weeks' ? stats.trend?.weekly : stats.trend?.monthly) ?? []
   const rows: TrendRow[] = points.map((p) => {
     const d = new Date(`${p.start}T12:00:00Z`)
@@ -57,27 +59,11 @@ export function StatsTab() {
 
   return (
     <div className="grid gap-5">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Card className="!p-4">
-          <p className="text-[13px] text-muted">{s.total}</p>
-          <p className="display-2 text-3xl">{stats.total}</p>
-        </Card>
-        <Card className="!p-4">
-          <p className="text-[13px] text-muted">{s.active}</p>
-          <p className="display-2 text-3xl">{stats.active}</p>
-        </Card>
-        <Card className="!p-4">
-          <p className="text-[13px] text-muted">
-            {s.revenue}, {s.done.toLowerCase()}
-          </p>
-          <p className="display-2 text-3xl">{fmt('{n} lei', { n: lei.format(stats.revenue.doneLei) })}</p>
-        </Card>
-        <Card className="!p-4">
-          <p className="text-[13px] text-muted">
-            {s.revenue}, {s.pipeline.toLowerCase()}
-          </p>
-          <p className="display-2 text-3xl">{fmt('{n} lei', { n: lei.format(stats.revenue.pipelineLei) })}</p>
-        </Card>
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard label={s.total} value={lei.format(stats.total)} series={weekly.map((w) => w.created)} delta={change(weekly.map((w) => w.created))} note={s.delta} />
+        <KpiCard label={s.active} value={lei.format(stats.active)} />
+        <KpiCard label={`${s.revenue}, ${s.done.toLowerCase()}`} value={`${lei.format(stats.revenue.doneLei)} lei`} series={weekly.map((w) => w.doneLei + w.transportLei)} delta={change(weekly.map((w) => w.doneLei + w.transportLei))} note={s.delta} />
+        <KpiCard label={`${s.revenue}, ${s.pipeline.toLowerCase()}`} value={`${lei.format(stats.revenue.pipelineLei)} lei`} />
       </div>
 
       <div className="flex flex-wrap items-center gap-3">

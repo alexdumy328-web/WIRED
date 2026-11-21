@@ -12,6 +12,7 @@ import { lockPage } from '../lib/scroll'
 import { inertOutside } from '../lib/inert'
 import { Logo } from '../components/Logo'
 import { DevicePanel } from '../components/Scene3D'
+import { MonthCalendar } from '../components/MonthCalendar'
 import type { AiEstimate, BookingRequest, ServiceMode } from '../types'
 import { VALUE_TIERS, type ValueTier } from '../lib/pricing'
 import type { PickupValue } from '../components/PickupMap'
@@ -51,6 +52,7 @@ function BookingModal() {
   const pre = useBooking()
   const [confirm, setConfirm] = useState(false)
   const dialog = useRef<HTMLDivElement>(null)
+  const scroller = useRef<HTMLDivElement>(null)
   const [step, setStep] = useState<Step>(0)
   const [mode, setMode] = useState<ServiceMode>('shop')
   const [where, setWhere] = useState<Where>('shop')
@@ -78,6 +80,7 @@ function BookingModal() {
   const [done, setDone] = useState<string | null>(null)
   const [taken, setTaken] = useState<string[]>([])
   const [now] = useState(() => new Date())
+  const todayIso = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Bucharest' }).format(now)
 
   // "Book this" buttons elsewhere on the page land here with jobs preselected.
   useEffect(() => {
@@ -118,6 +121,9 @@ function BookingModal() {
   // Urgent pickup also offers today's windows from one hour ahead (slotsFor keeps a 2 h margin).
   const slotNow = where === 'pickup' && urgent ? new Date(Date.now() - 60 * 60 * 1000) : new Date()
   const slots = day ? slotsFor(day, mode, slotNow, taken) : []
+  // Days with at least one free slot; the rest show crossed out in the calendar.
+  const openDays = new Set(days.filter((d) => slotsFor(d, mode, slotNow, taken).length > 0))
+  const firstOpen = days.find((d) => openDays.has(d))
   const needsValue = picked.some((j) => j.hourly?.byValue) || customOn
   // The price list figure, the same one the server stores and emails. The AI card shows its own guide price.
   const repair: [number, number] = [est.priceFrom, est.priceTo]
@@ -181,6 +187,18 @@ function BookingModal() {
   useEffect(() => {
     setSlot('')
   }, [day, mode])
+
+  // Arriving at the time step: open on the first day that still has room.
+  useEffect(() => {
+    if (step === 2 && (!day || !openDays.has(day)) && firstOpen) setDay(firstOpen)
+    // Only on entering the step or when the first free day changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, firstOpen])
+
+  // Each step starts at the top, not wherever the last one was scrolled to.
+  useEffect(() => {
+    scroller.current?.scrollTo({ top: 0 })
+  }, [step, done])
 
   const toggleJob = (id: string) => setJobIds((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]))
 
@@ -296,13 +314,7 @@ function BookingModal() {
   }
 
   const locale = lang === 'ro' ? 'ro-RO' : 'en-GB'
-  const dayLabel = (d: string) => {
-    const date = new Date(`${d}T12:00:00Z`)
-    return {
-      wd: new Intl.DateTimeFormat(locale, { weekday: 'short', timeZone: 'Europe/Bucharest' }).format(date),
-      dm: new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'short', timeZone: 'Europe/Bucharest' }).format(date),
-    }
-  }
+  const dayLong = (d: string) => new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${d}T12:00:00Z`))
   const stepNames = [t.booking.steps.where, t.booking.steps.what, t.booking.steps.when, t.booking.steps.who]
   const rangeText = ([lo, hi]: [number, number]) =>
     lo === 0 && hi === 0
@@ -357,7 +369,7 @@ function BookingModal() {
           </motion.div>
         )}
       </AnimatePresence>
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain lg:mr-[40vw]" data-lenis-prevent>
+      <div ref={scroller} className="min-h-0 flex-1 overflow-y-auto overscroll-contain lg:mr-[40vw]" data-lenis-prevent>
       <div className="mx-auto max-w-[56rem] px-4 py-8 sm:px-6 sm:py-12">
         <h2 id="booking-title" className="display-2 text-[clamp(2rem,3.6vw,3rem)]">{t.booking.title}</h2>
         <p className="measure mt-3 text-lg text-muted">{t.booking.lead}</p>
@@ -451,7 +463,7 @@ function BookingModal() {
 
                     {step === 1 && (
                       <div className="grid gap-5">
-                        <fieldset>
+                        <fieldset className="min-w-0">
                           <legend className="text-[14px] font-semibold">{t.booking.what.pickJobs}</legend>
                           <div className="mt-2 max-h-[18rem] overflow-y-auto overscroll-contain rounded-[14px] border border-line" data-lenis-prevent>
                             {jobs.map((j) => {
@@ -503,7 +515,7 @@ function BookingModal() {
                           />
                         </Field>
                         {needsValue && (
-                          <fieldset>
+                          <fieldset className="min-w-0">
                             <legend className="text-[14px] font-semibold">{t.booking.what.value}</legend>
                             <p className="mt-1 text-[13px] text-muted">{t.booking.what.valueHint}</p>
                             <div className="mt-2 flex flex-wrap gap-2">
@@ -562,52 +574,44 @@ function BookingModal() {
                             {errors.pickup && <p className="text-[13px] text-danger">{errors.pickup}</p>}
                           </div>
                         )}
-                        <fieldset>
-                          <legend className="text-[14px] font-semibold">{t.booking.when.pickDay}</legend>
-                          <div className="-mx-1 mt-2 flex gap-2 overflow-x-auto px-1 pb-2" data-lenis-prevent-horizontal>
-                            {days.map((d) => {
-                              const l = dayLabel(d)
-                              return (
-                                <button
-                                  key={d}
-                                  type="button"
-                                  onClick={() => setDay(d)}
-                                  aria-pressed={day === d}
-                                  className={`flex min-w-[4.6rem] shrink-0 flex-col items-center rounded-[14px] border px-3 py-2.5 transition-colors ${
-                                    day === d ? 'border-gold bg-surface' : 'border-line hover:border-muted'
-                                  }`}
-                                >
-                                  <span className="text-[12px] capitalize text-muted">{l.wd}</span>
-                                  <span className="font-semibold" style={{ fontStretch: '110%' }}>
-                                    {l.dm}
-                                  </span>
-                                </button>
-                              )
-                            })}
+                        <div className="grid gap-5 rounded-[20px] border border-line bg-surface p-4 sm:p-5 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] md:gap-6">
+                          <div className="min-w-0">
+                            <p className="mb-2 text-[14px] font-semibold">{t.booking.when.pickDay}</p>
+                            <MonthCalendar
+                              lang={lang}
+                              today={todayIso}
+                              label={t.booking.when.pickDay}
+                              value={day || null}
+                              onSelect={setDay}
+                              isDisabled={(d) => !openDays.has(d)}
+                              minMonth={days[0]?.slice(0, 7)}
+                              maxMonth={days[days.length - 1]?.slice(0, 7)}
+                            />
                           </div>
-                        </fieldset>
-                        {day && (
-                          <fieldset>
+                          <fieldset className="min-w-0 md:border-l md:border-line md:pl-6">
                             <legend className="text-[14px] font-semibold">{where === 'pickup' ? t.booking.when.pickWindow : t.booking.when.pickTime}</legend>
-                            {slots.length ? (
-                              <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-5">
+                            {day && <p className="mt-1 text-[14px] text-muted first-letter:uppercase">{dayLong(day)}</p>}
+                            {!day ? (
+                              <p className="mt-3 text-[14px] text-muted">{t.booking.when.pickDayFirst}</p>
+                            ) : slots.length ? (
+                              <div className={`mt-3 grid gap-2 ${where === 'pickup' ? 'grid-cols-2' : 'grid-cols-3 md:grid-cols-2 lg:grid-cols-3'}`}>
                                 {slots.map((s) => (
                                   <button
                                     key={s.start}
                                     type="button"
                                     onClick={() => setSlot(s.start)}
                                     aria-pressed={slot === s.start}
-                                    className={`rounded-[12px] border py-2.5 font-semibold transition-colors ${slot === s.start ? 'border-gold bg-gold text-on-gold' : 'border-line hover:border-muted'}`}
+                                    className={`rounded-[12px] border py-2.5 text-[15px] font-semibold tabular-nums transition-colors ${slot === s.start ? 'border-gold bg-gold text-on-gold' : 'border-line hover:border-gold/60 hover:bg-surface-2'}`}
                                   >
                                     {where === 'pickup' ? windowLabel(s.label) : s.label}
                                   </button>
                                 ))}
                               </div>
                             ) : (
-                              <p className="mt-2 text-[15px] text-muted">{t.booking.when.noSlots}</p>
+                              <p className="mt-3 text-[14px] text-muted">{t.booking.when.noSlots}</p>
                             )}
                           </fieldset>
-                        )}
+                        </div>
                         {errors.slot && <p className="text-[13px] text-danger">{errors.slot}</p>}
                         {mode === 'mobile' && (
                           <Field label={t.booking.when.location} error={errors.location}>

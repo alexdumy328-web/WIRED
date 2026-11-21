@@ -158,7 +158,7 @@ export type Dict = {
       questions: string // heading for the clarifying questions
       disclaimer: string
     }
-    when: { pickDay: string; pickTime: string; pickWindow: string; noSlots: string; slotGone: string; location: string; locationPlaceholder: string }
+    when: { pickDay: string; pickDayFirst: string; pickTime: string; pickWindow: string; noSlots: string; slotGone: string; location: string; locationPlaceholder: string }
     who: { name: string; phone: string; email: string; optional: string; consent: string }
     summary: { title: string; price: string; eta: string; free: string; diagnosisNote: string; partsExtra: string; pickup: string; repair: string }
     open: string // CTA that opens the booking popup
@@ -269,7 +269,24 @@ export type Dict = {
     lead: string
     refresh: string
     loadError: string
-    tabs: { bookings: string; pickups: string; calendar: string; stats: string; settings: string }
+    tabs: { today: string; bookings: string; pickups: string; calendar: string; stats: string; settings: string }
+    /** Sidebar heading over the small month calendar. */
+    jump: string
+    today: {
+      greeting: Record<'morning' | 'day' | 'evening', string>
+      visits: string
+      pickups: string
+      ready: string
+      inShop: string
+      agenda: string
+      agendaEmpty: string
+      /** Title when today is empty and the list shows the next day with bookings: "{day}". */
+      agendaNext: string
+      readyList: string
+      readyEmpty: string
+      seeAll: string
+      now: string
+    }
     bookings: {
       search: string
       searchPlaceholder: string
@@ -285,8 +302,11 @@ export type Dict = {
       empty: string
       total: string // "{n} bookings"
       loadMore: string
-      columns: { code: string; when: string; customer: string; device: string; mode: string; status: string }
+      columns: { code: string; when: string; customer: string; device: string; mode: string; status: string; price: string }
       modes: Record<'shop' | 'mobile', string>
+      dates: string
+      range: { label: string; any: string; pickEnd: string; clear: string; presets: { today: string; week: string; month: string; next7: string } }
+      pickup: string
     }
     detail: {
       close: string
@@ -320,12 +340,14 @@ export type Dict = {
       savedMailed: string
       savedMailFailed: string
     }
-    pickups: { title: string; today: string; tomorrow: string; none: string; urgent: string; window: string; call: string; map: string }
-    calendar: { title: string; prev: string; next: string; thisWeek: string; free: string }
+    pickups: { title: string; today: string; tomorrow: string; none: string; urgent: string; window: string; call: string; map: string; pickDay: string; stop: string; stops: string; transport: string; prevDay: string; nextDay: string }
+    calendar: { title: string; prev: string; next: string; thisWeek: string; free: string; pick: string; closed: string; count: string; legend: { shop: string; mobile: string; pickup: string } }
     stats: {
       title: string
       byCategory: string
       byStatus: string
+      /** Under a KPI: the last four weeks against the four before. */
+      delta: string
       revenue: string
       done: string
       pipeline: string

@@ -145,6 +145,18 @@ export function createAdminRouter(deps: PlatformDeps): Router {
     res.json(await bookings.calendar(parsed.data.week ?? localDate(new Date())))
   }))
 
+  admin.get('/busy', handle(async (req, res) => {
+    const parsed = z
+      .object({ from: dateParam, to: dateParam })
+      .refine((q) => q.from <= q.to && Date.parse(q.to) - Date.parse(q.from) <= 62 * 86_400_000, 'At most 62 days')
+      .safeParse(req.query)
+    if (!parsed.success) {
+      res.status(400).json({ error: 'invalid', issues: issues(parsed.error) })
+      return
+    }
+    res.json({ days: await bookings.busyDays(parsed.data.from, parsed.data.to) })
+  }))
+
   admin.get('/pickups', handle(async (req, res) => {
     const parsed = z.object({ date: dateParam.optional() }).safeParse(req.query)
     if (!parsed.success) {

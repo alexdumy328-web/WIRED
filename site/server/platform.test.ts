@@ -408,6 +408,12 @@ describe('bookings for owners and customers', () => {
     assert.equal(week.body.days.length, 7)
     assert.equal(week.body.days[0].slots.length, 1)
 
+    const busy = await call('/api/admin/busy?from=2031-03-01&to=2031-03-31', { cookie: owner })
+    assert.equal(busy.status, 200)
+    assert.equal(busy.body.days['2031-03-10'].pickups, 1)
+    assert.ok(busy.body.days['2031-03-10'].total >= 1)
+    assert.equal((await call('/api/admin/busy?from=2031-03-01&to=2031-06-30', { cookie: owner })).status, 400)
+
     const pickups = await call('/api/admin/pickups?date=2031-03-10', { cookie: owner })
     assert.equal(pickups.body.jobs.length, 1)
     assert.equal(pickups.body.jobs[0].urgent, true)

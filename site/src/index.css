@@ -349,3 +349,9 @@ a:focus-visible > .roll .roll-ch {
 .nt-tiles-dark {
   filter: invert(1) hue-rotate(180deg) grayscale(0.6) brightness(0.85) contrast(0.9);
 }
+
+/* Closed hours in the owner week calendar. */
+.closed-hatch {
+  background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--line) 70%, transparent) 0 1px, transparent 1px 9px);
+  background-color: color-mix(in oklab, var(--surface-2) 45%, transparent);
+}
