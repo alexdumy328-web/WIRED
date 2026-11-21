@@ -69,7 +69,7 @@ final class APIClient: ObservableObject {
         }
         let (data, response) = try await session.data(from: url)
         try validateResponse(response, data: data)
-        return try JSONDecoder().decode(HealthResponse.self, data: data)
+        return try JSONDecoder().decode(HealthResponse.self, from: data)
     }
 
     func fetchBooking(code: String) async throws -> Booking {
@@ -80,7 +80,7 @@ final class APIClient: ObservableObject {
 
         let (data, response) = try await session.data(from: url)
         try validateResponse(response, data: data)
-        return try JSONDecoder().decode(Booking.self, data: data)
+        return try JSONDecoder().decode(Booking.self, from: data)
     }
 
     func fetchMyBookings() async throws -> [Booking] {
@@ -89,7 +89,7 @@ final class APIClient: ObservableObject {
         }
         let (data, response) = try await session.data(from: url)
         try validateResponse(response, data: data)
-        return try JSONDecoder().decode([Booking].self, data: data)
+        return try JSONDecoder().decode([Booking].self, from: data)
     }
 
     // MARK: - Owner / Admin Endpoints
@@ -100,7 +100,7 @@ final class APIClient: ObservableObject {
         }
         let (data, response) = try await session.data(from: url)
         try validateResponse(response, data: data)
-        return try JSONDecoder().decode([Booking].self, data: data)
+        return try JSONDecoder().decode([Booking].self, from: data)
     }
 
     func fetchAdminPickups(date: String? = nil) async throws -> [Booking] {
@@ -115,7 +115,7 @@ final class APIClient: ObservableObject {
         }
         let (data, response) = try await session.data(from: url)
         try validateResponse(response, data: data)
-        return try JSONDecoder().decode([Booking].self, data: data)
+        return try JSONDecoder().decode([Booking].self, from: data)
     }
 
     func fetchAdminBusy(from: String, to: String) async throws -> [String: BusyDaySummary] {
@@ -131,7 +131,7 @@ final class APIClient: ObservableObject {
         }
         let (data, response) = try await session.data(from: url)
         try validateResponse(response, data: data)
-        let decoded = try JSONDecoder().decode(BusyDaysResponse.self, data: data)
+        let decoded = try JSONDecoder().decode(BusyDaysResponse.self, from: data)
         return decoded.days
     }
 
@@ -151,7 +151,7 @@ final class APIClient: ObservableObject {
 
         let (data, response) = try await session.data(for: request)
         try validateResponse(response, data: data)
-        return try JSONDecoder().decode(Booking.self, data: data)
+        return try JSONDecoder().decode(Booking.self, from: data)
     }
 
     // MARK: - Planned Phase 2 Endpoints (Plumbing Prepared)
@@ -181,7 +181,7 @@ final class APIClient: ObservableObject {
 
         let decoder = JSONDecoder()
         decoder.dateDecodingStrategy = .iso8601
-        return try decoder.decode(DriverTrackingStatus.self, data: data)
+        return try decoder.decode(DriverTrackingStatus.self, from: data)
     }
 
     // MARK: - Helper
