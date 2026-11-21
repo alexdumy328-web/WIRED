@@ -78,6 +78,7 @@ enum MockData {
                 urgent: true,
                 quote: PickupQuote(totalLei: 70, oneWayKm: 4.8, urgentLei: 20)
             ),
+            estimate: Estimate(priceFrom: 180, priceTo: 320, etaHours: [24, 48]),
             updatedAt: "2026-11-21T09:15:00.000Z"
         ),
         Booking(
@@ -97,6 +98,7 @@ enum MockData {
                 urgent: false,
                 quote: PickupQuote(totalLei: 35, oneWayKm: 3.2, urgentLei: 0)
             ),
+            estimate: Estimate(priceFrom: 450, priceTo: 650, etaHours: [48, 72]),
             updatedAt: "2026-11-21T08:30:00.000Z"
         ),
         Booking(
@@ -116,6 +118,7 @@ enum MockData {
                 urgent: false,
                 quote: PickupQuote(totalLei: 35, oneWayKm: 4.1, urgentLei: 0)
             ),
+            estimate: Estimate(priceFrom: 0, priceTo: 0, etaHours: nil),
             updatedAt: "2026-11-21T09:45:00.000Z"
         ),
         Booking(
@@ -135,6 +138,7 @@ enum MockData {
                 urgent: true,
                 quote: PickupQuote(totalLei: 60, oneWayKm: 2.5, urgentLei: 20)
             ),
+            estimate: Estimate(priceFrom: 220, priceTo: 280, etaHours: [24, 24]),
             updatedAt: "2026-11-21T10:00:00.000Z"
         )
     ]

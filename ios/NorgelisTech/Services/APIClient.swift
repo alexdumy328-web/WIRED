@@ -31,6 +31,16 @@ struct HealthResponse: Codable {
     var store: String?
 }
 
+/// `shop` is workshop visits with no pickup, `pickup` is shop jobs we collect or deliver, `mobile` is on site.
+enum AdminBookingMode: String, CaseIterable {
+    case shop, pickup, mobile
+}
+
+struct AdminBookingsPage: Codable {
+    var total: Int
+    var items: [Booking]
+}
+
 struct BusyDaySummary: Codable, Hashable {
     var total: Int
     var pickups: Int
@@ -94,13 +104,23 @@ final class APIClient: ObservableObject {
 
     // MARK: - Owner / Admin Endpoints
 
-    func fetchAdminBookings() async throws -> [Booking] {
-        guard let url = baseURL?.appendingPathComponent("api/admin/bookings") else {
+    /// `GET /api/admin/bookings`. `mode` filters by kind of job.
+    func fetchAdminBookings(mode: AdminBookingMode? = nil, limit: Int = 50, skip: Int = 0) async throws -> AdminBookingsPage {
+        guard let base = baseURL,
+              var components = URLComponents(url: base.appendingPathComponent("api/admin/bookings"), resolvingAgainstBaseURL: true) else {
+            throw APIError.invalidURL
+        }
+        var items = [URLQueryItem(name: "limit", value: String(limit)), URLQueryItem(name: "skip", value: String(skip))]
+        if let mode = mode {
+            items.append(URLQueryItem(name: "mode", value: mode.rawValue))
+        }
+        components.queryItems = items
+        guard let url = components.url else {
             throw APIError.invalidURL
         }
         let (data, response) = try await session.data(from: url)
         try validateResponse(response, data: data)
-        return try JSONDecoder().decode([Booking].self, from: data)
+        return try JSONDecoder().decode(AdminBookingsPage.self, from: data)
     }
 
     func fetchAdminPickups(date: String? = nil) async throws -> [Booking] {

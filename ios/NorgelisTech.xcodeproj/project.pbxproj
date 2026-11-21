@@ -14,6 +14,7 @@
 		230CDEB9E924E65FC0427472 /* NorgelisTechApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98C6305B2534614EEAA5D4E3 /* NorgelisTechApp.swift */; };
 		3D3165897A45E51291C3A266 /* DevSettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72F75513ADD4CD691582923D /* DevSettingsSheet.swift */; };
 		435FD6A59E8F2D19538D60A9 /* OwnerBookingDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C983DB6E573338D7BD9CDFD4 /* OwnerBookingDetailView.swift */; };
+		448AAFCFCF4F26AC7235874E /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28F395CC0D785227DA003BA9 /* Theme.swift */; };
 		4519977934CD9C31C3CA532D /* RolePickerBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC5769863689A4328D6595CD /* RolePickerBar.swift */; };
 		591C64F7A941A983B0CFC84B /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F9450E7F038C309CBD57807 /* APIClient.swift */; };
 		597500261874022043B4F9F3 /* DriverRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83445BA20548B7813B954853 /* DriverRootView.swift */; };
@@ -40,6 +41,7 @@
 		1B2DF236626B8F383298F113 /* OwnerRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerRootView.swift; sourceTree = "<group>"; };
 		1D528A3E819AA56AAD606D18 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		1D7A82FC4C6942C2F99279E9 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		28F395CC0D785227DA003BA9 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		2C9FD522D1BB4B6E50601C26 /* DriverRadarCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverRadarCard.swift; sourceTree = "<group>"; };
 		329441B426EC90221423E628 /* StopsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsListView.swift; sourceTree = "<group>"; };
 		462B015C55EABD0771F7A9DA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -139,6 +141,7 @@
 				72F75513ADD4CD691582923D /* DevSettingsSheet.swift */,
 				EC5769863689A4328D6595CD /* RolePickerBar.swift */,
 				1D7A82FC4C6942C2F99279E9 /* RootView.swift */,
+				28F395CC0D785227DA003BA9 /* Theme.swift */,
 				710D4B2E334EF3553037DE87 /* Customer */,
 				A7EE10EE1445F576F499E49E /* Driver */,
 				93A8313031B77F1F4B22E1DA /* Owner */,
@@ -270,6 +273,7 @@
 				05F575A00ACB2716907FB760 /* RootView.swift in Sources */,
 				B95AF1EF4E204ABEF36BA85B /* StopDetailSheet.swift in Sources */,
 				A650A5E2D90AACF480D57073 /* StopsListView.swift in Sources */,
+				448AAFCFCF4F26AC7235874E /* Theme.swift in Sources */,
 				EE9DBEB75D0F670C145F67CE /* UserRole.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

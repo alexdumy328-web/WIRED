@@ -87,3 +87,11 @@
 "settings.health.test" = "Test API Connection";
 "settings.health.success" = "Successfully connected to backend!";
 "settings.health.failed" = "Connection failed:";
+
+/* Job kinds and price */
+"kind.shop" = "Workshop";
+"kind.pickup" = "Pickup / delivery";
+"kind.mobile" = "On site";
+"booking.kind.label" = "Job type";
+"booking.price.label" = "Estimated price";
+"booking.price.after_diagnosis" = "After diagnosis";

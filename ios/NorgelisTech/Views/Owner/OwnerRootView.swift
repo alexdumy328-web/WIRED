@@ -90,14 +90,14 @@ struct OwnerRootView: View {
                 title: "Reparații active",
                 value: "\(appState.bookings.filter { $0.status != .done && $0.status != .cancelled }.count)",
                 icon: "wrench.and.screwdriver.fill",
-                color: .blue
+                color: Theme.shop
             )
 
             statBox(
                 title: "Preluări astăzi",
                 value: "\(appState.stops.count)",
                 icon: "car.fill",
-                color: .orange
+                color: Theme.pickup
             )
         }
     }
@@ -128,18 +128,15 @@ struct OwnerRootView: View {
                     .font(.subheadline.bold())
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
-                    .background(Color.blue.opacity(0.12))
-                    .foregroundColor(.blue)
+                    .background(booking.kind.color.opacity(0.14))
+                    .foregroundColor(booking.kind.color)
                     .clipShape(Capsule())
+
+                KindChip(kind: booking.kind)
 
                 Spacer()
 
-                HStack(spacing: 4) {
-                    Image(systemName: booking.status.iconName)
-                    Text(LocalizedStringKey(booking.status.titleKey))
-                }
-                .font(.caption.bold())
-                .foregroundColor(booking.status.color)
+                StatusBadge(status: booking.status)
             }
 
             VStack(alignment: .leading, spacing: 3) {
@@ -157,7 +154,7 @@ struct OwnerRootView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "car.fill")
                         .font(.caption)
-                        .foregroundColor(.orange)
+                        .foregroundColor(Theme.pickup)
                     Text(pickup.address)
                         .font(.caption)
                         .foregroundColor(.secondary)

@@ -14,33 +14,33 @@ struct LiveTrackingView: View {
             HStack {
                 HStack(spacing: 8) {
                     Circle()
-                        .fill(Color.green)
+                        .fill(Theme.ok)
                         .frame(width: 10, height: 10)
                         .overlay(
                             Circle()
-                                .stroke(Color.green.opacity(0.3), lineWidth: 6)
+                                .stroke(Theme.ok.opacity(0.3), lineWidth: 6)
                                 .scaleEffect(1.4)
                         )
                     Text(LocalizedStringKey("customer.driver.live_badge"))
                         .font(.caption.bold())
-                        .foregroundColor(.green)
+                        .foregroundColor(Theme.ok)
                 }
 
                 Spacer()
 
                 Text("Sosire în ~\(appState.etaMinutes) min")
                     .font(.subheadline.bold())
-                    .foregroundColor(.blue)
+                    .foregroundColor(Theme.pickup)
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 10)
-            .background(Color.green.opacity(0.12))
+            .background(Theme.ok.opacity(0.12))
 
             // MapKit view showing driver approaching customer
             Map(position: $cameraPosition) {
                 // Customer destination marker
                 Marker("Adresa ta", systemImage: "house.fill", coordinate: stop.coordinate)
-                    .tint(.red)
+                    .tint(Theme.danger)
 
                 // Live driver position marker
                 Annotation("Șofer Norgelis", coordinate: appState.driverCoordinate) {

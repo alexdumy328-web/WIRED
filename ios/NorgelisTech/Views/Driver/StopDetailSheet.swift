@@ -16,8 +16,8 @@ struct StopDetailSheet: View {
                                 .font(.caption.bold())
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(Color.blue.opacity(0.15))
-                                .foregroundColor(.blue)
+                                .background(Theme.pickup.opacity(0.15))
+                                .foregroundColor(Theme.pickup)
                                 .clipShape(Capsule())
 
                             if stop.isUrgent {
@@ -25,7 +25,7 @@ struct StopDetailSheet: View {
                                     .font(.caption.bold())
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
-                                    .background(Color.red)
+                                    .background(Theme.danger)
                                     .foregroundColor(.white)
                                     .clipShape(Capsule())
                             }
@@ -69,7 +69,7 @@ struct StopDetailSheet: View {
                             Label("Sună (\(stop.customerPhone))", systemImage: "phone.fill")
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 12)
-                                .background(Color.green)
+                                .background(Theme.ok)
                                 .foregroundColor(.white)
                                 .clipShape(RoundedRectangle(cornerRadius: 12))
                         }

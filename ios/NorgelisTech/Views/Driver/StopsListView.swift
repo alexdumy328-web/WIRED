@@ -13,7 +13,7 @@ struct StopsListView: View {
                         HStack(spacing: 14) {
                             Image(systemName: stop.isCompleted ? "checkmark.circle.fill" : (stop.isUrgent ? "exclamationmark.triangle.fill" : "circle"))
                                 .font(.system(size: 20))
-                                .foregroundColor(stop.isCompleted ? .green : (stop.isUrgent ? .red : .secondary))
+                                .foregroundColor(stop.isCompleted ? Theme.ok : (stop.isUrgent ? Theme.danger : .secondary))
 
                             VStack(alignment: .leading, spacing: 4) {
                                 HStack {
@@ -35,8 +35,8 @@ struct StopsListView: View {
                                         .font(.caption2.bold())
                                         .padding(.horizontal, 6)
                                         .padding(.vertical, 2)
-                                        .background(Color.blue.opacity(0.15))
-                                        .foregroundColor(.blue)
+                                        .background(Theme.pickup.opacity(0.15))
+                                        .foregroundColor(Theme.pickup)
                                         .clipShape(Capsule())
 
                                     Text(LocalizedStringKey(stop.type.localizedTitleKey))

@@ -34,7 +34,7 @@ struct DriverMapView: View {
                             VStack(spacing: 2) {
                                 Image(systemName: stop.isCompleted ? "checkmark.circle.fill" : (stop.isUrgent ? "exclamationmark.triangle.fill" : "mappin.circle.fill"))
                                     .font(.system(size: 26))
-                                    .foregroundStyle(stop.isCompleted ? .gray : (stop.isUrgent ? .red : .orange))
+                                    .foregroundStyle(stop.isCompleted ? .gray : (stop.isUrgent ? Theme.danger : Theme.pickup))
                                     .background(Circle().fill(.white))
 
                                 Text(stop.bookingCode)
@@ -148,8 +148,8 @@ struct DriverMapView: View {
                     .font(.caption.bold())
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
-                    .background(Color.blue.opacity(0.15))
-                    .foregroundColor(.blue)
+                    .background(Theme.pickup.opacity(0.15))
+                    .foregroundColor(Theme.pickup)
                     .clipShape(Capsule())
 
                 if stop.isUrgent {
@@ -157,7 +157,7 @@ struct DriverMapView: View {
                         .font(.caption2.bold())
                         .padding(.horizontal, 6)
                         .padding(.vertical, 3)
-                        .background(Color.red)
+                        .background(Theme.danger)
                         .foregroundColor(.white)
                         .clipShape(Capsule())
                 }
@@ -214,11 +214,11 @@ struct DriverMapView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(spacing: 6) {
                         Circle()
-                            .fill(Color.green)
+                            .fill(Theme.ok)
                             .frame(width: 8, height: 8)
                         Text(LocalizedStringKey("driver.action.en_route"))
                             .font(.caption.bold())
-                            .foregroundColor(.green)
+                            .foregroundColor(Theme.ok)
                     }
 
                     Text(stop.address)
@@ -232,7 +232,7 @@ struct DriverMapView: View {
                 VStack(alignment: .trailing, spacing: 2) {
                     Text("~\(appState.etaMinutes) min")
                         .font(.title2.bold())
-                        .foregroundColor(.blue)
+                        .foregroundColor(Theme.pickup)
                     Text("Timp estimat")
                         .font(.caption2)
                         .foregroundColor(.secondary)
@@ -241,7 +241,7 @@ struct DriverMapView: View {
 
             HStack(spacing: 10) {
                 Image(systemName: "antenna.radiowaves.left.and.right")
-                    .foregroundColor(.blue)
+                    .foregroundColor(Theme.pickup)
                 Text(LocalizedStringKey("driver.tracking.active"))
                     .font(.footnote)
                     .foregroundColor(.secondary)
@@ -255,7 +255,7 @@ struct DriverMapView: View {
                     .font(.headline)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
-                    .background(Color.green)
+                    .background(Theme.ok)
                     .foregroundColor(.white)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
             }
@@ -270,7 +270,7 @@ struct DriverMapView: View {
         VStack(spacing: 8) {
             Image(systemName: "checkmark.seal.fill")
                 .font(.system(size: 32))
-                .foregroundColor(.green)
+                .foregroundColor(Theme.ok)
             Text("Toate opririle au fost finalizate!")
                 .font(.headline)
             Text("Felicitări! Întoarce-te la atelierul Norgelis Tech.")

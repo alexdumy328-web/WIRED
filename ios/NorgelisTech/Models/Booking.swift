@@ -46,21 +46,36 @@ struct PickupDetails: Codable, Hashable {
     var quote: PickupQuote?
 }
 
+struct Estimate: Codable, Hashable {
+    var priceFrom: Double
+    var priceTo: Double
+    var etaHours: [Double]?
+
+    /// The site shows "After diagnosis" instead of a price when the top of the range is 0.
+    var hasPrice: Bool { priceTo > 0 }
+}
+
 struct Booking: Codable, Identifiable, Hashable {
     var code: String
     var status: BookingStatus
-    var mode: String? // "shop" or "mobile"
+    var mode: String? // "shop" or "mobile"; a shop job with a pickup is the "pickup" kind
     var jobIds: [String]?
     var issue: String?
     var slot: String?
     var device: DeviceDetails?
     var contact: ContactInfo?
     var pickup: PickupDetails?
+    var estimate: Estimate?
     var updatedAt: String?
 
     var id: String { code }
 
     var hasPickup: Bool {
         pickup != nil
+    }
+
+    var kind: JobKind {
+        if mode == "mobile" { return .mobile }
+        return pickup != nil ? .pickup : .shop
     }
 }

@@ -87,3 +87,11 @@
 "settings.health.test" = "Verifică conexiunea API";
 "settings.health.success" = "Conectat cu succes la backend!";
 "settings.health.failed" = "Conexiune eșuată:";
+
+/* Job kinds and price */
+"kind.shop" = "Atelier";
+"kind.pickup" = "Ridicare / livrare";
+"kind.mobile" = "La fața locului";
+"booking.kind.label" = "Tip lucrare";
+"booking.price.label" = "Preț estimat";
+"booking.price.after_diagnosis" = "După diagnostic";

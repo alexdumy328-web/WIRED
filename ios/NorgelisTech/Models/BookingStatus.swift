@@ -15,15 +15,16 @@ enum BookingStatus: String, Codable, CaseIterable, Identifiable {
         "status.\(rawValue)"
     }
 
+    /// Tint for text and icons. Never gold, green-as-kind or blue: those mean the kind of job.
     var color: Color {
         switch self {
-        case .received: return .blue
-        case .diagnosis: return .purple
-        case .waitingParts: return .orange
-        case .repairing: return .indigo
-        case .ready: return .green
-        case .done: return .gray
-        case .cancelled: return .red
+        case .received: return .secondary
+        case .diagnosis: return Theme.violet
+        case .waitingParts: return Theme.rose
+        case .repairing: return Theme.violet
+        case .ready: return Theme.ok
+        case .done: return Color.primary.opacity(0.4)
+        case .cancelled: return .secondary
         }
     }
 

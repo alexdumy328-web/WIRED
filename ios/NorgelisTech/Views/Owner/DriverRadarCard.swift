@@ -8,17 +8,17 @@ struct DriverRadarCard: View {
             HStack {
                 HStack(spacing: 8) {
                     Circle()
-                        .fill(appState.isDriverEnRoute ? Color.green : Color.orange)
+                        .fill(appState.isDriverEnRoute ? Theme.ok : Theme.shop)
                         .frame(width: 10, height: 10)
                         .overlay(
                             Circle()
-                                .stroke(appState.isDriverEnRoute ? Color.green.opacity(0.4) : Color.clear, lineWidth: 6)
+                                .stroke(appState.isDriverEnRoute ? Theme.ok.opacity(0.4) : Color.clear, lineWidth: 6)
                                 .scaleEffect(appState.isDriverEnRoute ? 1.5 : 1.0)
                         )
 
                     Text(appState.isDriverEnRoute ? "ȘOFER ÎN MIȘCARE" : "ȘOFER LA ATELIER")
                         .font(.caption.bold())
-                        .foregroundColor(appState.isDriverEnRoute ? .green : .orange)
+                        .foregroundColor(appState.isDriverEnRoute ? Theme.ok : Theme.shop)
                 }
 
                 Spacer()
@@ -26,10 +26,10 @@ struct DriverRadarCard: View {
                 if appState.isDriverEnRoute {
                     Text("~\(appState.etaMinutes) min")
                         .font(.subheadline.bold())
-                        .foregroundColor(.blue)
+                        .foregroundColor(Theme.pickup)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 2)
-                        .background(Color.blue.opacity(0.12))
+                        .background(Theme.pickup.opacity(0.12))
                         .clipShape(Capsule())
                 }
             }

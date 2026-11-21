@@ -23,7 +23,7 @@ struct OwnerBookingDetailView: View {
                     Picker("Status", selection: $selectedStatus) {
                         ForEach(BookingStatus.allCases) { status in
                             HStack {
-                                Circle().fill(status.color).frame(width: 8, height: 8)
+                                StatusDot(status: status, size: 8)
                                 Text(LocalizedStringKey(status.titleKey))
                             }
                             .tag(status)
@@ -49,6 +49,14 @@ struct OwnerBookingDetailView: View {
                 // Device & Issue Section
                 Section(header: Text("Dispozitiv & Problemă")) {
                     LabeledContent("Aparat", value: booking.device?.displayName ?? "Nespecificat")
+                    HStack {
+                        Text(LocalizedStringKey("booking.kind.label"))
+                        Spacer()
+                        KindChip(kind: booking.kind)
+                    }
+                    if let estimate = booking.estimate {
+                        PriceRow(estimate: estimate)
+                    }
                     if let issue = booking.issue {
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Defect raportat:")

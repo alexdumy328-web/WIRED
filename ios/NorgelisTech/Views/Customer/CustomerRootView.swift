@@ -51,14 +51,14 @@ struct CustomerRootView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Label("Preluare / Livrare programată", systemImage: "clock.badge.checkmark.fill")
                                     .font(.subheadline.bold())
-                                    .foregroundColor(.orange)
+                                    .foregroundColor(Theme.pickup)
                                 Text(LocalizedStringKey("customer.driver.waiting"))
                                     .font(.footnote)
                                     .foregroundColor(.secondary)
                             }
                             .padding(14)
                             .frame(maxWidth: .infinity, alignment: .leading)
-                            .background(Color.orange.opacity(0.1))
+                            .background(Theme.pickup.opacity(0.1))
                             .clipShape(RoundedRectangle(cornerRadius: 12))
                         }
 
@@ -70,22 +70,21 @@ struct CustomerRootView: View {
 
                                 Spacer()
 
-                                HStack(spacing: 4) {
-                                    Image(systemName: booking.status.iconName)
-                                    Text(LocalizedStringKey(booking.status.titleKey))
-                                }
-                                .font(.subheadline.bold())
-                                .foregroundColor(booking.status.color)
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 4)
-                                .background(booking.status.color.opacity(0.12))
-                                .clipShape(Capsule())
+                                StatusBadge(status: booking.status)
                             }
 
                             Divider()
 
                             VStack(alignment: .leading, spacing: 8) {
                                 LabeledContent("Dispozitiv", value: booking.device?.displayName ?? "Nespecificat")
+                                HStack {
+                                    Text(LocalizedStringKey("booking.kind.label"))
+                                    Spacer()
+                                    KindChip(kind: booking.kind)
+                                }
+                                if let estimate = booking.estimate {
+                                    PriceRow(estimate: estimate)
+                                }
                                 if let slot = booking.slot {
                                     LabeledContent("Data programării", value: formatDate(slot))
                                 }
@@ -112,7 +111,7 @@ struct CustomerRootView: View {
                                     if let quote = pickup.quote, let total = quote.totalLei {
                                         Text("Cost transport: \(Int(total)) lei")
                                             .font(.caption.bold())
-                                            .foregroundColor(.blue)
+                                            .foregroundColor(Theme.pickup)
                                     }
                                 }
                             }
