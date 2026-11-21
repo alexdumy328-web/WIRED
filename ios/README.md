@@ -81,6 +81,7 @@ ios/
     ├── Views/
     │   ├── RootView.swift               # Role container
     │   ├── RolePickerBar.swift          # Dev role selector
+    │   ├── Theme.swift                  # Site colours, status dots, kind chips, price row
     │   ├── DevSettingsSheet.swift       # API base URL and dev controls
     │   ├── Driver/                      # MapKit view, stop details, stops list
     │   ├── Owner/                       # Stats, radar card, booking details
@@ -89,8 +90,21 @@ ios/
         ├── Info.plist                   # Location descriptions and capabilities
         ├── ro.lproj/Localizable.strings # Romanian text (default)
         ├── en.lproj/Localizable.strings # English text
-        └── Assets.xcassets/             # App icons and AccentColor
+        └── Assets.xcassets/             # App icon (site favicon mark) and AccentColor
 ```
+
+## Look and feel
+
+The app uses the website's colour system, in light and dark (`Views/Theme.swift`).
+
+- Kind of job: gold for the workshop, green for pickup and delivery, blue for on site.
+- Status dots use their own colours and never gold, green-as-kind or blue. Received is grey, diagnosis is a violet ring, repairing is violet, waiting for parts is rose, ready is green, done is faded ink and cancelled is a hollow grey ring.
+- When `estimate.priceTo` is 0 the app shows "După diagnostic" / "After diagnosis" instead of a price, as the site does.
+- The app icon is the site favicon mark (`ios/AppIcon.svg`) rendered at 1024 px with no alpha.
+
+## Roles
+
+The role picker is for development. A local account can hold both the owner and dev roles on the server (`OWNER_EMAILS` and `DEV_EMAILS` in `site/.env.local`, not committed). The dev role includes everything the owner can do, so the app does not need to hide owner screens from it.
 
 ## Permissions and Background Capability
 
@@ -116,7 +130,7 @@ Base URL: configurable in Dev Settings, defaults to `http://localhost:8787`.
 - `GET /api/health` — API health check.
 - `GET /api/bookings/:code` — Public booking status lookup.
 - `GET /api/me/bookings` — Customer booking list.
-- `GET /api/admin/bookings` — Owner bookings list.
+- `GET /api/admin/bookings?mode=shop|pickup|mobile&limit=&skip=` — Owner bookings, returned as `{ total, items }`. `shop` is workshop visits with no pickup, `pickup` is shop jobs we collect or deliver, `mobile` is on site.
 - `GET /api/admin/pickups?date=YYYY-MM-DD` — Owner pickups for a date.
 - `GET /api/admin/calendar?week=YYYY-MM-DD` — Booked slots for a week.
 - `GET /api/admin/busy?from=YYYY-MM-DD&to=YYYY-MM-DD` — Returns `{ days: { "YYYY-MM-DD": { total, pickups } } }` for calendar load dots.
