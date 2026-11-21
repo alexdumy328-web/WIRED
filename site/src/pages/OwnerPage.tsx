@@ -1,48 +1,63 @@
-import { useEffect, useState, type ComponentType } from 'react'
+import { useCallback, useEffect, useState, type ComponentType } from 'react'
 import { useI18n } from '../i18n'
 import { Guard } from '../auth/Guard'
-import { BookingDrawer } from '../auth/owner/BookingDrawer'
 import { BookingsTab } from '../auth/owner/BookingsTab'
 import { CalendarTab } from '../auth/owner/CalendarTab'
+import { CustomersTab } from '../auth/owner/CustomersTab'
 import { PickupsTab } from '../auth/owner/PickupsTab'
 import { SettingsTab } from '../auth/owner/SettingsTab'
 import { StatsTab } from '../auth/owner/StatsTab'
 import { TodayTab } from '../auth/owner/TodayTab'
-import { ChartIcon, ListIcon, SlidersIcon, TodayIcon, VanIcon, WeekIcon } from '../auth/owner/icons'
+import { WalkInDialog } from '../auth/owner/WalkInDialog'
+import { WarrantiesTab } from '../auth/owner/WarrantiesTab'
+import { WorkOrderDrawer } from '../auth/owner/WorkOrderDrawer'
+import { ChartIcon, ListIcon, PlusIcon, ShieldIcon, SlidersIcon, TodayIcon, UsersIcon, VanIcon, WeekIcon } from '../auth/owner/icons'
 import { shopDate } from '../auth/owner/types'
 import { useBusy } from '../auth/owner/useBusy'
+import { useWorkshopCopy } from '../auth/owner/workshop/copy'
 import { PageShell } from '../auth/ui'
+import { isManager, type Viewer } from '../auth/viewer'
 import { MonthCalendar } from '../components/MonthCalendar'
+import type { Customer } from '../types'
 
-const TABS = ['today', 'bookings', 'pickups', 'calendar', 'stats', 'settings'] as const
-type Tab = (typeof TABS)[number]
+const ALL_TABS = ['today', 'bookings', 'customers', 'pickups', 'calendar', 'warranties', 'stats', 'settings'] as const
+type Tab = (typeof ALL_TABS)[number]
+/** Money, numbers and settings stay with owners; technicians get the workshop. */
+const MANAGER_ONLY: Tab[] = ['stats', 'settings']
 const ICONS: Record<Tab, ComponentType<{ className?: string }>> = {
   today: TodayIcon,
   bookings: ListIcon,
+  customers: UsersIcon,
   pickups: VanIcon,
   calendar: WeekIcon,
+  warranties: ShieldIcon,
   stats: ChartIcon,
   settings: SlidersIcon,
 }
 
-/** /admin: the owner dashboard. Owners and devs only. */
+/** /admin: the workshop dashboard. Technicians, owners and devs. */
 export function OwnerPage() {
   return (
     <Guard roles={['technician', 'owner', 'dev']} wide>
-      {() => <Dashboard />}
+      {(user) => <Dashboard user={user} />}
     </Guard>
   )
 }
 
-function Dashboard() {
+function Dashboard({ user }: { user: Viewer }) {
   const { t, lang } = useI18n()
-  // The new-booking email links to /admin?cod=NT-XXXX; open that booking once, on the bookings tab.
+  const c = useWorkshopCopy()
+  const manager = isManager(user)
+  const TABS = ALL_TABS.filter((name) => manager || !MANAGER_ONLY.includes(name))
+  // The new-booking email links to /admin?cod=NT-XXXX; open that job once.
   const [linked] = useState(() => {
-    const c = new URLSearchParams(window.location.search).get('cod')?.trim().toUpperCase() ?? ''
-    return /^NT-[A-Z0-9]{4}$/.test(c) ? c : null
+    const code = new URLSearchParams(window.location.search).get('cod')?.trim().toUpperCase() ?? ''
+    return /^NT-[A-Z0-9]{4}$/.test(code) ? code : null
   })
   const [tab, setTab] = useState<Tab>(linked ? 'bookings' : 'today')
-  const [drawerCode, setDrawerCode] = useState<string | null>(null)
+  const [drawerCode, setDrawerCode] = useState<string | null>(linked)
+  const [customerId, setCustomerId] = useState<string | null>(null)
+  const [walkIn, setWalkIn] = useState<{ preset: Customer | null } | null>(null)
   // Bumped when the drawer saves, so every view reloads what changed.
   const [version, setVersion] = useState(0)
   const today = shopDate()
@@ -53,6 +68,11 @@ function Dashboard() {
   useEffect(() => {
     document.getElementById(`owner-tab-${tab}`)?.scrollIntoView({ inline: 'nearest', block: 'nearest' })
   }, [tab])
+
+  const changed = useCallback(() => setVersion((v) => v + 1), [])
+  const closeDrawer = useCallback(() => setDrawerCode(null), [])
+  const closeWalkIn = useCallback(() => setWalkIn(null), [])
+  const label = (name: Tab) => (name === 'customers' || name === 'warranties' ? c.tabs[name] : t.owner.tabs[name])
 
   const go = (next: Tab) => {
     setTab(next)
@@ -101,7 +121,7 @@ function Dashboard() {
                 >
                   {on && <span className="absolute inset-y-2 left-0 hidden w-[3px] rounded-full bg-gold lg:block" aria-hidden="true" />}
                   <Icon className={`size-[18px] ${on ? 'lg:text-gold' : ''}`} />
-                  {t.owner.tabs[name]}
+                  {label(name)}
                 </button>
               )
             })}
@@ -126,24 +146,56 @@ function Dashboard() {
         </aside>
 
         <div className="min-w-0">
-          <header className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-1">
+          <header className="mb-6 flex flex-wrap items-end justify-between gap-x-6 gap-y-3">
             <div>
               <p className="text-[13px] font-semibold uppercase tracking-wider text-muted first-letter:uppercase">{longToday}</p>
-              <h1 className="display-2 mt-1 text-[clamp(2rem,3.4vw,2.75rem)]">{tab === 'today' ? greeting : t.owner.tabs[tab]}</h1>
+              <h1 className="display-2 mt-1 text-[clamp(2rem,3.4vw,2.75rem)]">{tab === 'today' ? greeting : label(tab)}</h1>
             </div>
+            {/* The counter's main action: a device walks in. */}
+            <button type="button" className="btn btn-gold gap-2" onClick={() => setWalkIn({ preset: null })}>
+              <PlusIcon className="size-[18px]" />
+              {c.newSheet}
+            </button>
           </header>
 
           <div role="tabpanel" id="owner-panel" aria-labelledby={`owner-tab-${tab}`}>
             {tab === 'today' && <TodayTab onOpen={setDrawerCode} version={version} onGo={(next) => setTab(next)} />}
-            {tab === 'bookings' && <BookingsTab initialCode={linked} version={version} onChanged={() => setVersion((v) => v + 1)} />}
+            {tab === 'bookings' && <BookingsTab version={version} onOpen={setDrawerCode} />}
+            {tab === 'customers' && (
+              <CustomersTab selected={customerId} onSelect={setCustomerId} onOpen={setDrawerCode} onNewSheet={(preset) => setWalkIn({ preset })} manager={manager} version={version} />
+            )}
+            {tab === 'warranties' && <WarrantiesTab onOpen={setDrawerCode} version={version} />}
             {tab === 'pickups' && <PickupsTab onOpen={setDrawerCode} version={version} />}
             {tab === 'calendar' && <CalendarTab onOpen={setDrawerCode} version={version} anchor={anchor} onAnchor={setAnchor} />}
-            {tab === 'stats' && <StatsTab />}
-            {tab === 'settings' && <SettingsTab />}
+            {tab === 'stats' && manager && <StatsTab />}
+            {tab === 'settings' && manager && <SettingsTab />}
           </div>
         </div>
       </div>
-      {drawerCode && <BookingDrawer code={drawerCode} onClose={() => setDrawerCode(null)} onChanged={() => setVersion((v) => v + 1)} />}
+      {drawerCode && (
+        <WorkOrderDrawer
+          code={drawerCode}
+          manager={manager}
+          onClose={closeDrawer}
+          onChanged={changed}
+          onCustomer={(id) => {
+            setDrawerCode(null)
+            setCustomerId(id)
+            setTab('customers')
+          }}
+        />
+      )}
+      {walkIn && (
+        <WalkInDialog
+          preset={walkIn.preset}
+          onClose={closeWalkIn}
+          onCreated={(booking) => {
+            setWalkIn(null)
+            changed()
+            setDrawerCode(booking.code)
+          }}
+        />
+      )}
     </PageShell>
   )
 }

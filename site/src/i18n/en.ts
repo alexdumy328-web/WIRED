@@ -445,7 +445,7 @@ const en: Dict = {
       seeAll: 'See all',
       now: 'now',
     },
-    tabs: { today: 'Today', bookings: 'Bookings', pickups: 'Pickups', calendar: 'Calendar', stats: 'Numbers', settings: 'Rates' },
+    tabs: { today: 'Today', bookings: 'Bookings', pickups: 'Pickups', calendar: 'Calendar', stats: 'Numbers', settings: 'Settings' },
     bookings: {
       search: 'Search',
       searchPlaceholder: 'Code, name, phone, email, device',

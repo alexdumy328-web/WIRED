@@ -4,16 +4,16 @@ import { api } from '../api'
 import { Notice, STATUS_DOT, StatusBadge } from '../ui'
 import { DateRangeButton } from '../../components/DatePopover'
 import { Close } from '../../components/Icons'
-import { BookingDrawer } from './BookingDrawer'
 import { BOOKING_STATUSES, KIND_TONE, kindOf } from './constants'
 import { SearchIcon } from './icons'
 import { Initials } from './TodayTab'
-import { shopDate, type OwnerBooking, type Stats } from './types'
+import { shopDate, type OwnerBooking } from './types'
+import { sheetLabel } from './workshop/model'
 
 const PAGE = 25
 
 
-export function BookingsTab({ initialCode, version = 0, onChanged }: { initialCode?: string | null; version?: number; onChanged?: () => void }) {
+export function BookingsTab({ version = 0, onOpen }: { version?: number; onOpen: (code: string) => void }) {
   const { t, lang } = useI18n()
   const b = t.owner.bookings
   const locale = lang === 'ro' ? 'ro-RO' : 'en-GB'
@@ -26,7 +26,6 @@ export function BookingsTab({ initialCode, version = 0, onChanged }: { initialCo
   const [total, setTotal] = useState(0)
   const [counts, setCounts] = useState<Record<string, number> | null>(null)
   const [state, setState] = useState<'loading' | 'ready' | 'error'>('loading')
-  const [open, setOpen] = useState<string | null>(initialCode ?? null)
   const seq = useRef(0)
   const today = shopDate()
 
@@ -65,7 +64,7 @@ export function BookingsTab({ initialCode, version = 0, onChanged }: { initialCo
 
   // Counts on the status chips, across all bookings.
   useEffect(() => {
-    void api<Stats>('/api/admin/stats').then((r) => r.ok && setCounts(r.data.byStatus))
+    void api<{ byStatus: Record<string, number> }>('/api/admin/counts').then((r) => r.ok && setCounts(r.data.byStatus))
   }, [version])
 
   const more = async () => {
@@ -206,7 +205,7 @@ export function BookingsTab({ initialCode, version = 0, onChanged }: { initialCo
             const when = dayText(item.slot)
             return (
               <li key={item.code}>
-                <button type="button" onClick={() => setOpen(item.code)} className="flex w-full gap-3 rounded-[16px] border border-line bg-surface p-3.5 text-left transition-colors hover:border-muted">
+                <button type="button" onClick={() => onOpen(item.code)} className="flex w-full gap-3 rounded-[16px] border border-line bg-surface p-3.5 text-left transition-colors hover:border-muted">
                   <Initials name={item.contact.name} />
                   <span className="grid min-w-0 flex-1 gap-0.5">
                     <span className="flex items-center justify-between gap-2">
@@ -216,7 +215,8 @@ export function BookingsTab({ initialCode, version = 0, onChanged }: { initialCo
                       </span>
                     </span>
                     <span className="truncate text-[13px] text-muted">
-                      <span className="font-mono">{item.code}</span> · {device(item)}
+                      <span className="font-mono">{item.code}</span>
+                      {item.intake && <span className="font-mono font-semibold text-ink"> · {sheetLabel(item)}</span>} · {device(item)}
                     </span>
                     <span className="mt-1.5 flex items-center justify-between gap-2">
                       <span className="flex min-w-0 items-center gap-1.5">
@@ -250,7 +250,7 @@ export function BookingsTab({ initialCode, version = 0, onChanged }: { initialCo
                 return (
                   <tr
                     key={item.code}
-                    onClick={() => setOpen(item.code)}
+                    onClick={() => onOpen(item.code)}
                     className="cursor-pointer border-t border-line/70 transition-colors first:border-t-0 hover:bg-surface-2/60"
                   >
                     <td className="px-4 py-3">
@@ -258,11 +258,12 @@ export function BookingsTab({ initialCode, version = 0, onChanged }: { initialCo
                         <Initials name={item.contact.name} />
                         <div className="min-w-0">
                           {/* The real control for keyboards and screen readers; the row click is a shortcut. */}
-                          <button type="button" className="block max-w-[14rem] truncate text-left font-semibold hover:text-gold" onClick={(e) => { e.stopPropagation(); setOpen(item.code) }}>
+                          <button type="button" className="block max-w-[14rem] truncate text-left font-semibold hover:text-gold" onClick={(e) => { e.stopPropagation(); onOpen(item.code) }}>
                             {item.contact.name}
                           </button>
                           <span className="block text-[13px] text-muted">
-                            <span className="font-mono">{item.code}</span> · {item.contact.phone}
+                            <span className="font-mono">{item.code}</span>
+                            {item.intake && <span className="font-mono font-semibold text-ink"> · {sheetLabel(item)}</span>} · {item.contact.phone}
                           </span>
                         </div>
                       </div>
@@ -296,16 +297,6 @@ export function BookingsTab({ initialCode, version = 0, onChanged }: { initialCo
         </div>
       )}
 
-      {open && (
-        <BookingDrawer
-          code={open}
-          onClose={() => setOpen(null)}
-          onChanged={(updated) => {
-            setItems((current) => current.map((i) => (i.code === updated.code ? updated : i)))
-            onChanged?.()
-          }}
-        />
-      )}
     </div>
   )
 }

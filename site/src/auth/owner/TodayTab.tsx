@@ -4,9 +4,14 @@ import { api } from '../api'
 import { Notice, StatusBadge, useDateFormat } from '../ui'
 import { KIND_TONE, kindOf } from './constants'
 import { BoxIcon, ClockIcon, VanIcon, WrenchIcon } from './icons'
-import { addDays, shopDate, type CalendarSlot, type CalendarWeek, type OwnerBooking, type PickupJob, type Stats } from './types'
+import { addDays, shopDate, type CalendarSlot, type CalendarWeek, type OwnerBooking, type PickupJob } from './types'
+import { useWorkshopCopy } from './workshop/copy'
+import { sheetLabel } from './workshop/model'
 
-type Data = { day: string; todayCount: number; slots: CalendarSlot[]; pickups: PickupJob[]; stats: Stats; ready: OwnerBooking[] }
+type Counts = { byStatus: Record<string, number> }
+type Data = { day: string; todayCount: number; slots: CalendarSlot[]; pickups: PickupJob[]; counts: Counts; ready: OwnerBooking[] }
+
+const ACTIVE = ['received', 'diagnosis', 'waiting-parts', 'repairing'] as const
 
 function Kpi({ icon: Icon, label, value, tone, onClick }: { icon: ComponentType<{ className?: string }>; label: string; value: ReactNode; tone: string; onClick?: () => void }) {
   return (
@@ -29,6 +34,7 @@ function Kpi({ icon: Icon, label, value, tone, onClick }: { icon: ComponentType<
 export function TodayTab({ onOpen, version, onGo }: { onOpen: (code: string) => void; version: number; onGo: (tab: 'bookings' | 'pickups' | 'calendar') => void }) {
   const { t, lang } = useI18n()
   const d = t.owner.today
+  const c = useWorkshopCopy()
   const fmtDate = useDateFormat()
   const [data, setData] = useState<Data | null>(null)
   const [error, setError] = useState(false)
@@ -40,8 +46,9 @@ export function TodayTab({ onOpen, version, onGo }: { onOpen: (code: string) => 
     void Promise.all([
       api<CalendarWeek>(`/api/admin/calendar?week=${today}`),
       api<{ jobs: PickupJob[] }>(`/api/admin/pickups?date=${today}`),
-      api<Stats>('/api/admin/stats'),
-      api<{ items: OwnerBooking[] }>('/api/admin/bookings?status=ready&limit=6&skip=0'),
+      api<Counts>('/api/admin/counts'),
+      // Ready and unrepairable alike: both are waiting for the customer to come and collect.
+      api<{ items: OwnerBooking[] }>('/api/admin/bookings?status=handback&limit=6&skip=0'),
     ]).then(async ([week, pickups, stats, ready]) => {
       if (!live) return
       if (!week.ok || !pickups.ok || !stats.ok || !ready.ok) return setError(true)
@@ -65,7 +72,7 @@ export function TodayTab({ onOpen, version, onGo }: { onOpen: (code: string) => 
         todayCount: week.data.days.find((x) => x.date === today)?.slots.length ?? 0,
         slots,
         pickups: pickups.data.jobs,
-        stats: stats.data,
+        counts: stats.data,
         ready: ready.data.items,
       })
     })
@@ -86,8 +93,8 @@ export function TodayTab({ onOpen, version, onGo }: { onOpen: (code: string) => 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi icon={ClockIcon} label={d.visits} value={data ? data.todayCount : skeleton} tone="bg-surface-2 text-ink" onClick={() => onGo('calendar')} />
         <Kpi icon={VanIcon} label={d.pickups} value={data ? data.pickups.length : skeleton} tone="bg-ok/15 text-ok" onClick={() => onGo('pickups')} />
-        <Kpi icon={BoxIcon} label={d.ready} value={data ? (data.stats.byStatus.ready ?? 0) : skeleton} tone="bg-surface-2 text-ink" onClick={() => onGo('bookings')} />
-        <Kpi icon={WrenchIcon} label={d.inShop} value={data ? data.stats.active : skeleton} tone="bg-surface-2 text-ink" onClick={() => onGo('bookings')} />
+        <Kpi icon={BoxIcon} label={c.today.handback} value={data ? (data.counts.byStatus.ready ?? 0) + (data.counts.byStatus.unrepairable ?? 0) : skeleton} tone="bg-surface-2 text-ink" onClick={() => onGo('bookings')} />
+        <Kpi icon={WrenchIcon} label={d.inShop} value={data ? ACTIVE.reduce((n, s) => n + (data.counts.byStatus[s] ?? 0), 0) : skeleton} tone="bg-surface-2 text-ink" onClick={() => onGo('bookings')} />
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
@@ -150,7 +157,7 @@ export function TodayTab({ onOpen, version, onGo }: { onOpen: (code: string) => 
         <section className="rounded-[20px] border border-line bg-surface p-5 sm:p-6" aria-labelledby="ready-title">
           <div className="flex items-center justify-between gap-3">
             <h2 id="ready-title" className="text-lg font-bold">
-              {d.readyList}
+              {c.today.handbackList}
             </h2>
             <button type="button" onClick={() => onGo('bookings')} className="shrink-0 whitespace-nowrap text-[14px] font-semibold text-gold underline-offset-4 hover:underline">
               {d.seeAll}
@@ -163,7 +170,7 @@ export function TodayTab({ onOpen, version, onGo }: { onOpen: (code: string) => 
               ))}
             </div>
           ) : data.ready.length === 0 ? (
-            <p className="mt-8 pb-4 text-center text-muted">{d.readyEmpty}</p>
+            <p className="mt-8 pb-4 text-center text-muted">{c.today.handbackEmpty}</p>
           ) : (
             <ul className="mt-4 grid gap-1">
               {data.ready.map((b) => (
@@ -172,7 +179,10 @@ export function TodayTab({ onOpen, version, onGo }: { onOpen: (code: string) => 
                     <Initials name={b.contact.name} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-semibold">{b.contact.name}</span>
-                      <span className="block truncate text-[13px] text-muted">{[b.device.brand, b.device.model].filter(Boolean).join(' ') || b.code}</span>
+                      <span className="block truncate text-[13px] text-muted">
+                        {b.status === 'unrepairable' && <span className="font-semibold text-rose">{t.track.statuses.unrepairable} · </span>}
+                        {[sheetLabel(b), [b.device.brand, b.device.model].filter(Boolean).join(' ') || b.code].filter(Boolean).join(' · ')}
+                      </span>
                     </span>
                   </button>
                   <a

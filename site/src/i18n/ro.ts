@@ -445,7 +445,7 @@ const ro: Dict = {
       seeAll: 'Vezi toate',
       now: 'acum',
     },
-    tabs: { today: 'Azi', bookings: 'Programări', pickups: 'Ridicări', calendar: 'Calendar', stats: 'Cifre', settings: 'Tarife' },
+    tabs: { today: 'Azi', bookings: 'Programări', pickups: 'Ridicări', calendar: 'Calendar', stats: 'Cifre', settings: 'Setări' },
     bookings: {
       search: 'Caută',
       searchPlaceholder: 'Cod, nume, telefon, email, aparat',

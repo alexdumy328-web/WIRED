@@ -18,7 +18,8 @@ export function issues(error: z.ZodError) {
 const dateParam = z.string().regex(DATE_ONLY).refine(isRealDate, 'Not a real date')
 
 const searchQuerySchema = z.object({
-  status: bookingStatusSchema.optional(),
+  /** `handback`: ready and unrepairable, everything waiting to go back to the customer. */
+  status: z.union([bookingStatusSchema, z.literal('handback')]).optional(),
   /** shop: visits at the workshop; pickup: shop jobs we collect or deliver; mobile: on site. */
   mode: z.enum(['shop', 'pickup', 'mobile']).optional(),
   from: dateParam.optional(),
@@ -239,6 +240,12 @@ export function createAdminRouter(deps: PlatformDeps): Router {
     }
     const date = parsed.data.date ?? localDate(new Date())
     res.json({ date, jobs: await bookings.pickups(date) })
+  }))
+
+  // Counts every staff member may see: no money in here.
+  admin.get('/counts', handle(async (_req, res) => {
+    const [byStatus, warranties] = await Promise.all([bookings.statusCounts(), deps.warranties.counts()])
+    res.json({ byStatus, warranties })
   }))
 
   admin.get('/stats', managers, handle(async (_req, res) => {

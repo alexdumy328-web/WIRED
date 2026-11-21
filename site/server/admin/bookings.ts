@@ -59,7 +59,8 @@ export function customerView(doc: Doc) {
     ...rest,
     ...(intake ? { intake: { number: intake.number, year: intake.year, receivedAt: intake.receivedAt, deviceType: intake.deviceType } } : {}),
     ...(repair?.workDone ? { repair: { workDone: repair.workDone } } : {}),
-    timeline: history.map((entry) => ({ status: entry.status, at: entry.at })),
+    // A note or an intake adds a line with the same status; the customer sees each status once.
+    timeline: history.filter((entry, i) => i === 0 || entry.status !== history[i - 1]!.status).map((entry) => ({ status: entry.status, at: entry.at })),
   }
 }
 
@@ -83,7 +84,7 @@ function compact<T extends Record<string, unknown>>(value: T): T {
 }
 
 export type SearchQuery = {
-  status?: BookingStatus
+  status?: BookingStatus | 'handback'
   mode?: 'shop' | 'pickup' | 'mobile'
   /** YYYY-MM-DD, shop-local, inclusive. */
   from?: string
@@ -123,7 +124,8 @@ export function createBookingAdmin(db: Db, counters?: Counters) {
     async search(query: SearchQuery) {
       await ensureIndexes()
       const filter: Filter<Doc> = {}
-      if (query.status) filter.status = query.status
+      if (query.status === 'handback') filter.status = { $in: ['ready', 'unrepairable'] }
+      else if (query.status) filter.status = query.status
       if (query.mode === 'pickup') {
         filter.mode = 'shop'
         filter.pickup = { $exists: true }
@@ -328,6 +330,11 @@ export function createBookingAdmin(db: Db, counters?: Counters) {
       if (user.emailVerified && user.email) clauses.push({ 'contact.email': user.email })
       const doc = await col.findOne({ code: code.trim().toUpperCase(), $or: clauses }, { collation: CI })
       return doc ? strip(doc) : null
+    },
+
+    async statusCounts(): Promise<Record<string, number>> {
+      const rows = await col.aggregate<{ _id: string; n: number }>([{ $group: { _id: '$status', n: { $sum: 1 } } }]).toArray()
+      return Object.fromEntries(rows.map((r) => [r._id, r.n]))
     },
 
     /** Open bookings per shop-local day between two dates (inclusive), for the calendar dots. */

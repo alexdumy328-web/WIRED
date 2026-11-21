@@ -46,8 +46,15 @@ export type SettingsData = {
     valueRate: Record<'low' | 'mid' | 'high' | 'premium', number>
     consumablesFactor: Record<'low' | 'medium' | 'high', number>
   }
+  company: CompanyDetails
+  documents: { intakeTerms: string; warrantyTerms: string; warrantyMonths: Record<WarrantyCategory, number> }
   updatedAt: string | null
 }
+
+export const COMPANY_FIELDS = ['name', 'cui', 'regCom', 'address', 'phone', 'email', 'iban', 'bank'] as const
+export type CompanyDetails = Record<(typeof COMPANY_FIELDS)[number], string>
+export const WARRANTY_CATEGORIES = ['laptop', 'pc', 'board', 'coffee', 'appliance', 'it', 'vintage', 'auto', 'custom'] as const
+export type WarrantyCategory = (typeof WARRANTY_CATEGORIES)[number]
 
 /** YYYY-MM-DD in the shop's time zone. */
 export function shopDate(date = new Date()): string {
