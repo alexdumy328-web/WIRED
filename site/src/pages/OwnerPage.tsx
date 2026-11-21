@@ -1,4 +1,4 @@
-import { useState, type ComponentType } from 'react'
+import { useEffect, useState, type ComponentType } from 'react'
 import { useI18n } from '../i18n'
 import { Guard } from '../auth/Guard'
 import { BookingDrawer } from '../auth/owner/BookingDrawer'
@@ -49,6 +49,11 @@ function Dashboard() {
   const [anchor, setAnchor] = useState(today)
   const busy = useBusy(version)
 
+  // Phones: the tab strip scrolls sideways; keep the open tab in sight.
+  useEffect(() => {
+    document.getElementById(`owner-tab-${tab}`)?.scrollIntoView({ inline: 'nearest', block: 'nearest' })
+  }, [tab])
+
   const go = (next: Tab) => {
     setTab(next)
     document.getElementById(`owner-tab-${next}`)?.focus()
@@ -67,8 +72,8 @@ function Dashboard() {
 
   return (
     <PageShell wide>
-      <div className="grid gap-6 lg:grid-cols-[15.5rem_minmax(0,1fr)] lg:gap-10">
-        <aside className="lg:sticky lg:top-24 lg:self-start">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[15.5rem_minmax(0,1fr)] lg:gap-10">
+        <aside className="min-w-0 lg:sticky lg:top-24 lg:self-start">
           <div
             role="tablist"
             aria-label={t.owner.title}

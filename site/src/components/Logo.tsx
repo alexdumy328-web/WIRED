@@ -31,11 +31,11 @@ export function LogoMark({ size = 32, draw = false }: { size?: number; draw?: bo
   )
 }
 
-export function Logo({ draw = false }: { draw?: boolean }) {
+export function Logo({ draw = false, compact = false }: { draw?: boolean; compact?: boolean }) {
   return (
     <span className="inline-flex items-center gap-2.5 text-ink">
       <LogoMark draw={draw} />
-      <span className="leading-none" style={{ fontStretch: '120%' }}>
+      <span className={`leading-none ${compact ? 'hidden lg:inline' : ''}`} style={{ fontStretch: '120%' }}>
         <span className="font-extrabold tracking-tight">Norgelis</span>
         <span className="font-normal text-muted"> Tech</span>
       </span>

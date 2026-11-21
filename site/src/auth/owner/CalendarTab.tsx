@@ -7,6 +7,7 @@ import { Chevron } from '../../components/Icons'
 import { mondayOf } from '../../components/MonthCalendar'
 import { addDays, shopDate, type CalendarSlot, type CalendarWeek } from './types'
 import { useBusy } from './useBusy'
+import { KIND_TONE, kindOf } from './constants'
 
 const FIRST = 9 // first hour row
 const LAST = 18 // the grid ends at this hour
@@ -54,12 +55,7 @@ function lanes(slots: CalendarSlot[]) {
   return placed
 }
 
-const tone = (s: CalendarSlot) =>
-  s.mode === 'mobile'
-    ? 'border-l-blue bg-blue/12 hover:bg-blue/20'
-    : s.pickup
-      ? 'border-l-ok bg-ok/12 hover:bg-ok/20'
-      : 'border-l-gold bg-gold/12 hover:bg-gold/20'
+const tone = (s: CalendarSlot) => KIND_TONE[kindOf(s)].card
 
 export function CalendarTab({ onOpen, version = 0, anchor, onAnchor }: { onOpen: (code: string) => void; version?: number; anchor: string; onAnchor: (date: string) => void }) {
   const { t, lang } = useI18n()
@@ -118,7 +114,7 @@ export function CalendarTab({ onOpen, version = 0, anchor, onAnchor }: { onOpen:
         </button>
       </div>
       <div className="min-w-0 flex-1 sm:w-60 sm:flex-none lg:hidden">
-        <DateButton lang={lang} today={today} value={anchor} onChange={onAnchor} label={c.pick} marks={busy.marks} onView={busy.load} />
+        <DateButton lang={lang} today={today} value={anchor} onChange={onAnchor} label={c.pick} marks={busy.marks} onView={busy.load} align="right" />
       </div>
     </div>
   )
@@ -220,12 +216,13 @@ export function CalendarTab({ onOpen, version = 0, anchor, onAnchor }: { onOpen:
                       type="button"
                       onClick={() => onOpen(slot.code)}
                       title={`${slot.name} · ${slot.code}`}
-                      className={`absolute flex flex-col justify-start overflow-hidden rounded-[10px] border-l-[3px] px-2 py-1.5 text-left text-[12px] leading-tight transition-colors ${tone(slot)} ${slot.status === 'done' ? 'opacity-55' : ''}`}
+                      className={`absolute flex flex-col justify-start overflow-hidden rounded-[10px] border-l-[3px] ${of > 1 ? 'px-1.5' : 'px-2'} py-1.5 text-left text-[12px] leading-tight transition-colors ${tone(slot)} ${slot.status === 'done' ? 'opacity-55' : ''}`}
                       style={{ top: top + 2, height: height - 4, left: `calc(${(lane / of) * 100}% + 3px)`, width: `calc(${100 / of}% - 6px)` }}
                     >
                       <span className="block font-mono text-[11px] font-bold text-muted">{fmtTime.format(new Date(slot.slot))}</span>
-                      <span className="block truncate font-semibold">{slot.name}</span>
-                      {height > 56 && <span className="block truncate text-muted">{slot.device || slot.code}</span>}
+                      {/* Side-by-side lanes are narrow: first name only, wrapping, no device line. */}
+                      <span className={`block font-semibold ${of > 1 ? 'line-clamp-2 break-words' : 'truncate'}`}>{of > 1 ? slot.name.split(' ')[0] : slot.name}</span>
+                      {height > 56 && of === 1 && <span className="block truncate text-muted">{slot.device || slot.code}</span>}
                     </button>
                   )
                 })}

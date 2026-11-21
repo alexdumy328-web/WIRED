@@ -2,6 +2,7 @@ import { useEffect, useState, type ComponentType, type ReactNode } from 'react'
 import { fmt, useI18n } from '../../i18n'
 import { api } from '../api'
 import { Notice, StatusBadge, useDateFormat } from '../ui'
+import { KIND_TONE, kindOf } from './constants'
 import { BoxIcon, ClockIcon, VanIcon, WrenchIcon } from './icons'
 import { addDays, shopDate, type CalendarSlot, type CalendarWeek, type OwnerBooking, type PickupJob, type Stats } from './types'
 
@@ -83,9 +84,9 @@ export function TodayTab({ onOpen, version, onGo }: { onOpen: (code: string) => 
   return (
     <div className="grid gap-6">
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <Kpi icon={ClockIcon} label={d.visits} value={data ? data.todayCount : skeleton} tone="bg-gold/15 text-gold" onClick={() => onGo('calendar')} />
-        <Kpi icon={VanIcon} label={d.pickups} value={data ? data.pickups.length : skeleton} tone="bg-blue/15 text-blue" onClick={() => onGo('pickups')} />
-        <Kpi icon={BoxIcon} label={d.ready} value={data ? (data.stats.byStatus.ready ?? 0) : skeleton} tone="bg-ok/15 text-ok" onClick={() => onGo('bookings')} />
+        <Kpi icon={ClockIcon} label={d.visits} value={data ? data.todayCount : skeleton} tone="bg-surface-2 text-ink" onClick={() => onGo('calendar')} />
+        <Kpi icon={VanIcon} label={d.pickups} value={data ? data.pickups.length : skeleton} tone="bg-ok/15 text-ok" onClick={() => onGo('pickups')} />
+        <Kpi icon={BoxIcon} label={d.ready} value={data ? (data.stats.byStatus.ready ?? 0) : skeleton} tone="bg-surface-2 text-ink" onClick={() => onGo('bookings')} />
         <Kpi icon={WrenchIcon} label={d.inShop} value={data ? data.stats.active : skeleton} tone="bg-surface-2 text-ink" onClick={() => onGo('bookings')} />
       </div>
 
@@ -95,7 +96,7 @@ export function TodayTab({ onOpen, version, onGo }: { onOpen: (code: string) => 
             <h2 id="agenda-title" className="text-lg font-bold first-letter:uppercase">
               {data && data.day !== today ? fmt(d.agendaNext, { day: new Intl.DateTimeFormat(lang === 'ro' ? 'ro-RO' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${data.day}T12:00:00Z`)) }) : d.agenda}
             </h2>
-            <button type="button" onClick={() => onGo('calendar')} className="text-[14px] font-semibold text-gold underline-offset-4 hover:underline">
+            <button type="button" onClick={() => onGo('calendar')} className="shrink-0 whitespace-nowrap text-[14px] font-semibold text-gold underline-offset-4 hover:underline">
               {d.seeAll}
             </button>
           </div>
@@ -122,7 +123,7 @@ export function TodayTab({ onOpen, version, onGo }: { onOpen: (code: string) => 
                     <span className={`pt-3 text-right font-mono text-[14px] font-bold ${past ? 'text-muted' : ''}`}>{fmtDate.time(s.slot)}</span>
                     <span className="relative flex justify-center">
                       <span className={`absolute top-0 w-px ${i === data.slots.length - 1 ? 'h-5' : 'h-full'} bg-line`} aria-hidden="true" />
-                      <span className={`relative mt-4 size-3 rounded-full border-2 ${past ? 'border-line bg-surface-2' : s.mode === 'mobile' ? 'border-blue bg-surface' : 'border-gold bg-surface'}`} aria-hidden="true" />
+                      <span className={`relative mt-4 size-3 rounded-full border-2 ${past ? 'border-line bg-surface-2' : `${KIND_TONE[kindOf(s)].border} bg-surface`}`} aria-hidden="true" />
                     </span>
                     <button
                       type="button"
@@ -131,7 +132,7 @@ export function TodayTab({ onOpen, version, onGo }: { onOpen: (code: string) => 
                     >
                       <span className="min-w-0">
                         <span className="block truncate font-semibold">{s.name}</span>
-                        <span className="block truncate text-[13px] text-muted">
+                        <span className="block text-[13px] text-muted sm:truncate">
                           <span className="font-mono">{s.code}</span>
                           {s.device ? ` · ${s.device}` : ''}
                           {s.mode === 'mobile' ? ` · ${t.owner.calendar.legend.mobile}` : s.pickup ? ` · ${t.owner.calendar.legend.pickup}` : ''}
@@ -151,7 +152,7 @@ export function TodayTab({ onOpen, version, onGo }: { onOpen: (code: string) => 
             <h2 id="ready-title" className="text-lg font-bold">
               {d.readyList}
             </h2>
-            <button type="button" onClick={() => onGo('bookings')} className="text-[14px] font-semibold text-gold underline-offset-4 hover:underline">
+            <button type="button" onClick={() => onGo('bookings')} className="shrink-0 whitespace-nowrap text-[14px] font-semibold text-gold underline-offset-4 hover:underline">
               {d.seeAll}
             </button>
           </div>
@@ -199,8 +200,8 @@ export function Initials({ name }: { name: string }) {
     .slice(0, 2)
     .map((w) => w[0]!.toUpperCase())
     .join('')
-  const tones = ['bg-gold/15 text-gold', 'bg-blue/15 text-blue', 'bg-ok/15 text-ok', 'bg-surface-2 text-ink']
-  const tone = tones[[...name].reduce((a, c) => a + c.charCodeAt(0), 0) % tones.length]
+  // Neutral on purpose: gold, green and blue already mean workshop, pickup and on site.
+  const tone = 'bg-surface-2 text-ink'
   return (
     <span className={`grid size-9 shrink-0 place-items-center rounded-full text-[13px] font-bold ${tone}`} aria-hidden="true">
       {letters || '?'}

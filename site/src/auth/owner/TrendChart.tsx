@@ -73,12 +73,7 @@ export function TrendChart({
   const rm = useReducedMotion()
   const hasData = rows.some((r) => series.some((s) => Number(r[s.key]) > 0))
   const last = rows.length - 1
-  // Direct labels at the line ends: above the end point, except a lower line that ends close to a
-  // higher one goes below it, unless that would put it on the date axis.
-  const ends = series.map((s) => Number(rows[last]?.[s.key] ?? 0))
-  const yMax = Math.max(1, ...rows.flatMap((r) => series.map((s) => Number(r[s.key] ?? 0))))
-  const top = ends.indexOf(Math.max(...ends))
-  const below = (i: number) => i !== top && Math.abs(ends[top]! - ends[i]!) < yMax * 0.15 && ends[i]! > yMax * 0.12
+  // The legend above names the series; the end point only marks the latest value.
 
   const Tip = ({ active, payload, label }: TooltipContentProps<ValueType, NameType>) => {
     if (!active || !payload?.length) return null
@@ -138,9 +133,6 @@ export function TrendChart({
                   props.index === last && props.cx != null && props.cy != null ? (
                     <g key={`end-${s.key}`}>
                       <circle cx={props.cx} cy={props.cy} r={4} fill={c[s.colorVar]} stroke={c['--surface']} strokeWidth={2} />
-                      <text x={props.cx - 8} y={props.cy + (below(series.indexOf(s)) ? 18 : -10)} textAnchor="end" fontSize={12} fontWeight={600} fill={c['--ink']}>
-                        {s.label}
-                      </text>
                     </g>
                   ) : (
                     <g key={`d-${s.key}-${props.index}`} />

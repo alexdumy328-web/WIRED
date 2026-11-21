@@ -28,7 +28,7 @@ export function Hero() {
 
   return (
     <section id="top" ref={ref} className="relative grid min-h-[100svh] items-center gap-8 pb-12 pt-20 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-12 lg:pb-16">
-      <div className="order-2 lg:order-1">
+      <div>
         <OpenStatus className="inline-flex" />
         <h1 className="display mt-5 max-w-[14ch] text-[clamp(2.4rem,5vw,4.6rem)]">{t.hero.title}</h1>
         <p className="measure mt-6 max-w-[34rem] text-lg text-muted sm:text-xl">{t.hero.lead}</p>
@@ -41,9 +41,9 @@ export function Hero() {
           </a>
         </div>
       </div>
-      <motion.div ref={card} style={{ scale, y, opacity }} className="order-1 lg:order-2">
+      <motion.div ref={card} style={{ scale, y, opacity }}>
         <div className="relative">
-          <ShopPanel className="h-[42svh] rounded-[24px] border border-line lg:h-[min(76svh,760px)] lg:rounded-[32px]" onSelect={onSelect} />
+          <ShopPanel className="h-[36svh] rounded-[24px] sm:h-[42svh] border border-line lg:h-[min(76svh,760px)] lg:rounded-[32px]" onSelect={onSelect} />
           <a
             href="/atelier"
             onClick={linkTo('/atelier')}

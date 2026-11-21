@@ -16,6 +16,9 @@
   --ok: #1e6b4a;
   --danger: #b3372e;
   --blue: #2f5e9e;
+  /* Status dots: their own hues, so they never read as workshop, pickup or on site. */
+  --violet: #6b4fb8;
+  --rose: #b8456f;
   --on-gold: #ffffff;
   --scrim: rgb(242 244 245 / 0.82);
   /* Chart series, validated for colour-blind separation and contrast on each theme's surface. */
@@ -34,9 +37,11 @@
     --line: #2b2e31;
     --gold: #d9a93f;
     --gold-soft: #d9a93f;
-    --ok: #36a167;
+    --ok: #42b075;
     --danger: #ff6b5e;
-    --blue: #3b6fb6;
+    --blue: #6a9ae0;
+    --violet: #a48be8;
+    --rose: #ef7fa8;
     --on-gold: #121314;
     --scrim: rgb(18 19 20 / 0.78);
     --chart-1: #b98a26;
@@ -54,9 +59,11 @@
   --line: #2b2e31;
   --gold: #d9a93f;
   --gold-soft: #d9a93f;
-  --ok: #36a167;
+  --ok: #42b075;
   --danger: #ff6b5e;
-  --blue: #3b6fb6;
+  --blue: #6a9ae0;
+    --violet: #a48be8;
+    --rose: #ef7fa8;
   --on-gold: #121314;
   --scrim: rgb(18 19 20 / 0.78);
   --chart-1: #b98a26;
@@ -76,6 +83,8 @@
   --color-ok: var(--ok);
   --color-danger: var(--danger);
   --color-blue: var(--blue);
+  --color-violet: var(--violet);
+  --color-rose: var(--rose);
   --color-on-gold: var(--on-gold);
   --font-sans: 'Archivo', ui-sans-serif, system-ui, sans-serif;
 }
@@ -352,6 +361,6 @@ a:focus-visible > .roll .roll-ch {
 
 /* Closed hours in the owner week calendar. */
 .closed-hatch {
-  background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--line) 70%, transparent) 0 1px, transparent 1px 9px);
+  background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--muted) 30%, transparent) 0 1px, transparent 1px 9px);
   background-color: color-mix(in oklab, var(--surface-2) 45%, transparent);
 }

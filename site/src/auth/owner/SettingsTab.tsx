@@ -113,10 +113,7 @@ export function SettingsTab() {
 
   return (
     <form className="grid gap-5" onSubmit={(e) => void submit(e)} noValidate>
-      <div>
-        <h2 className="display-2 text-2xl">{s.title}</h2>
-        <p className="mt-2 max-w-[62ch] text-muted">{s.lead}</p>
-      </div>
+      <p className="max-w-[62ch] text-pretty text-muted">{s.lead}</p>
       <div className="grid gap-5 lg:grid-cols-2">
         {group('pickup', s.pickup)}
         {group('labour', s.labour)}

@@ -91,7 +91,7 @@ export function PickupsTab({ onOpen, version = 0 }: { onOpen: (code: string) => 
               <li key={job.code} className="grid grid-cols-[2.25rem_minmax(0,1fr)] gap-3">
                 <div className="relative flex justify-center">
                   {i < jobs.length - 1 && <span className="absolute top-9 bottom-[-0.75rem] w-px bg-line" aria-hidden="true" />}
-                  <span className="relative grid size-9 place-items-center rounded-full bg-gold text-[14px] font-bold text-on-gold">{i + 1}</span>
+                  <span className="relative grid size-9 place-items-center rounded-full bg-ok text-[14px] font-bold text-bg">{i + 1}</span>
                 </div>
                 <article className="rounded-[18px] border border-line bg-surface p-4 sm:p-5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
@@ -104,7 +104,7 @@ export function PickupsTab({ onOpen, version = 0 }: { onOpen: (code: string) => 
                     </div>
                   </div>
                   <p className="mt-2 flex items-start gap-2 text-[16px] font-semibold">
-                    <Pin className="mt-0.5 size-4 shrink-0 text-gold" />
+                    <Pin className="mt-0.5 size-4 shrink-0 text-ok" />
                     {job.address}
                   </p>
                   <p className="mt-1 text-[14px] text-muted">
@@ -115,7 +115,7 @@ export function PickupsTab({ onOpen, version = 0 }: { onOpen: (code: string) => 
                     </button>
                   </p>
                   <div className="mt-3.5 flex flex-wrap gap-2">
-                    <a className="btn btn-gold h-10 min-h-0 gap-2" href={job.mapLink} target="_blank" rel="noreferrer">
+                    <a className="btn h-10 min-h-0 gap-2 bg-ok text-bg hover:brightness-110" href={job.mapLink} target="_blank" rel="noreferrer">
                       <Pin className="size-4" />
                       {p.map}
                     </a>

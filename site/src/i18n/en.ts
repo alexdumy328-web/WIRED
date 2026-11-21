@@ -174,6 +174,7 @@ const en: Dict = {
       where: 'Where',
       what: 'What',
       when: 'When',
+      whereWhen: 'Address and time',
       who: 'Your details',
     },
     where: {
@@ -242,6 +243,8 @@ const en: Dict = {
     },
     when: {
       pickDayFirst: 'Pick a day in the calendar first.',
+      closedHint: 'Struck-out days are full or closed. We are closed on Sundays and public holidays.',
+      todayFull: 'There are no free times left today.',
       pickDay: 'Pick a day',
       pickTime: 'Pick a time',
       pickWindow: 'Choose the pickup window',
@@ -457,7 +460,7 @@ const en: Dict = {
       total: '{n} bookings',
       loadMore: 'Show more',
       columns: { code: 'Code', when: 'Date', customer: 'Customer', device: 'Device', mode: 'Place', status: 'Status', price: 'Estimate' },
-      modes: { shop: 'Workshop', mobile: 'Mobile' },
+      modes: { shop: 'Workshop', pickup: 'Pickup', mobile: 'Mobile' },
       dates: 'Dates',
       range: { label: 'Pick dates', any: 'Any time', pickEnd: 'Pick the last day', clear: 'Clear', presets: { today: 'Today', week: 'This week', next7: 'Next 7 days', month: 'This month' } },
       pickup: 'pickup',
@@ -488,6 +491,7 @@ const en: Dict = {
       finalLabel: 'Final price, lei',
       finalHint: 'What you charged for the repair, parts included, transport not. Shows in the numbers and in the customer email.',
       final: '{n} lei',
+      noEstimate: 'After diagnosis',
       notify: 'Email the customer',
       noEmail: 'The customer left no email, so they get no update.',
       savedMailed: 'Saved. The customer got an email.',
@@ -530,7 +534,7 @@ const en: Dict = {
       pipeline: 'In progress',
       note: 'Repair plus transport. The final price where you entered one, otherwise the middle of the estimate.',
       total: 'Total bookings',
-      active: 'At the workshop now',
+      active: 'Open jobs',
       other: { auto: 'Car electrics', custom: 'Custom request' },
       trend: {
         income: 'Estimated income',
@@ -548,7 +552,7 @@ const en: Dict = {
     },
     settings: {
       title: 'Rates',
-      lead: 'These values replace the ones in the code. They apply at once to estimates and transport.',
+      lead: 'These prices are used for estimates and transport. Changes apply at once.',
       pickup: 'Transport',
       labour: 'Labour',
       save: 'Save rates',

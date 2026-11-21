@@ -174,6 +174,7 @@ const ro: Dict = {
       where: 'Unde',
       what: 'Ce',
       when: 'Când',
+      whereWhen: 'Adresă și oră',
       who: 'Datele tale',
     },
     where: {
@@ -242,6 +243,8 @@ const ro: Dict = {
     },
     when: {
       pickDayFirst: 'Alege mai întâi o zi din calendar.',
+      closedHint: 'Zilele tăiate sunt pline sau închise. Duminica și de sărbătorile legale suntem închiși.',
+      todayFull: 'Pentru azi nu mai avem ore libere.',
       pickDay: 'Alege ziua',
       pickTime: 'Alege ora',
       pickWindow: 'Alege intervalul de ridicare',
@@ -320,7 +323,7 @@ const ro: Dict = {
         a: 'La atelier, diagnosticul este gratuit dacă faci reparația. Dacă nu o faci, plătești 50 de lei. La service mobil, diagnosticul OBD costă 150 de lei.',
       },
       {
-        q: 'Îmi pierzi datele de pe laptop?',
+        q: 'Îmi pierdeți datele de pe laptop?',
         a: 'Nu. Dacă discul este sănătos, copiem datele înainte de reinstalare sau de orice alt lucru. Dacă discul este defect, nu garantăm recuperarea și îți spunem asta de la început.',
       },
       {
@@ -457,7 +460,7 @@ const ro: Dict = {
       total: '{n} programări',
       loadMore: 'Arată mai multe',
       columns: { code: 'Cod', when: 'Data', customer: 'Client', device: 'Aparat', mode: 'Loc', status: 'Stare', price: 'Estimare' },
-      modes: { shop: 'Atelier', mobile: 'Mobil' },
+      modes: { shop: 'Atelier', pickup: 'Ridicare', mobile: 'Mobil' },
       dates: 'Perioadă',
       range: { label: 'Alege perioada', any: 'Oricând', pickEnd: 'Alege ultima zi', clear: 'Șterge', presets: { today: 'Azi', week: 'Săptămâna asta', next7: 'Următoarele 7 zile', month: 'Luna asta' } },
       pickup: 'ridicare',
@@ -488,6 +491,7 @@ const ro: Dict = {
       finalLabel: 'Preț final, lei',
       finalHint: 'Cât ai încasat pentru reparație, cu piese, fără transport. Apare în cifre și în emailul pentru client.',
       final: '{n} lei',
+      noEstimate: 'După diagnostic',
       notify: 'Anunță clientul pe email',
       noEmail: 'Clientul n-a lăsat email, așa că nu primește anunț.',
       savedMailed: 'Salvat. Clientul a primit email.',
@@ -530,7 +534,7 @@ const ro: Dict = {
       pipeline: 'În lucru',
       note: 'Reparație plus transport. Prețul final unde l-ai trecut, altfel mijlocul estimării.',
       total: 'Total programări',
-      active: 'La atelier acum',
+      active: 'Lucrări deschise',
       other: { auto: 'Electrică auto', custom: 'Cerere proprie' },
       trend: {
         income: 'Venit estimat',
@@ -548,7 +552,7 @@ const ro: Dict = {
     },
     settings: {
       title: 'Tarife',
-      lead: 'Valorile de aici înlocuiesc cele din cod. Se aplică imediat la estimări și la transport.',
+      lead: 'Prețurile de aici se folosesc la estimări și la transport. Modificările se aplică imediat.',
       pickup: 'Transport',
       labour: 'Manoperă',
       save: 'Salvează tarifele',

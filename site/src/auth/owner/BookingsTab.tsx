@@ -1,18 +1,17 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fmt, useI18n } from '../../i18n'
 import { api } from '../api'
-import { Notice, StatusBadge } from '../ui'
+import { Notice, STATUS_DOT, StatusBadge } from '../ui'
 import { DateRangeButton } from '../../components/DatePopover'
 import { Close } from '../../components/Icons'
 import { BookingDrawer } from './BookingDrawer'
-import { BOOKING_STATUSES } from './constants'
+import { BOOKING_STATUSES, KIND_TONE, kindOf } from './constants'
 import { SearchIcon } from './icons'
 import { Initials } from './TodayTab'
 import { shopDate, type OwnerBooking, type Stats } from './types'
 
 const PAGE = 25
 
-const dot: Record<string, string> = { received: 'bg-muted', diagnosis: 'bg-blue', 'waiting-parts': 'bg-gold', repairing: 'bg-gold', ready: 'bg-ok', done: 'bg-ok', cancelled: 'bg-line' }
 
 export function BookingsTab({ initialCode, version = 0, onChanged }: { initialCode?: string | null; version?: number; onChanged?: () => void }) {
   const { t, lang } = useI18n()
@@ -121,7 +120,7 @@ export function BookingsTab({ initialCode, version = 0, onChanged }: { initialCo
       {/* Status chips: the first filter most owners reach for. */}
       <div role="group" aria-label={b.status} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0" data-lenis-prevent>
         {chip('', b.all, all)}
-        {BOOKING_STATUSES.map((s) => chip(s, t.track.statuses[s], counts ? (counts[s] ?? 0) : null, dot[s]))}
+        {BOOKING_STATUSES.map((s) => chip(s, t.track.statuses[s], counts ? (counts[s] ?? 0) : null, STATUS_DOT[s]))}
       </div>
 
       <form className="mt-4 grid gap-2.5 sm:grid-cols-[minmax(0,1fr)_auto] lg:grid-cols-[minmax(0,1fr)_auto_15rem_auto]" role="search" onSubmit={(e) => e.preventDefault()}>
@@ -130,11 +129,12 @@ export function BookingsTab({ initialCode, version = 0, onChanged }: { initialCo
           <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" />
           <input className="field w-full pl-10 font-normal" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={b.searchPlaceholder} maxLength={100} />
         </label>
-        <div role="group" aria-label={b.mode} className="inline-grid grid-cols-3 rounded-full border border-line bg-surface p-0.5 text-[14px]">
+        <div role="group" aria-label={b.mode} className="grid grid-cols-4 rounded-full border border-line bg-surface p-0.5 text-[14px] sm:inline-grid">
           {(
             [
               ['', b.all],
               ['shop', b.modes.shop],
+              ['pickup', b.modes.pickup],
               ['mobile', b.modes.mobile],
             ] as const
           ).map(([v, label]) => (
@@ -143,7 +143,7 @@ export function BookingsTab({ initialCode, version = 0, onChanged }: { initialCo
               type="button"
               aria-pressed={mode === v}
               onClick={() => setMode(v)}
-              className={`rounded-full px-3.5 py-1.5 font-semibold transition-colors ${mode === v ? 'bg-ink text-bg' : 'text-muted hover:text-ink'}`}
+              className={`whitespace-nowrap rounded-full px-2.5 py-1.5 font-semibold transition-colors sm:px-3.5 ${mode === v ? 'bg-ink text-bg' : 'text-muted hover:text-ink'}`}
             >
               {label}
             </button>
@@ -219,7 +219,10 @@ export function BookingsTab({ initialCode, version = 0, onChanged }: { initialCo
                       <span className="font-mono">{item.code}</span> · {device(item)}
                     </span>
                     <span className="mt-1.5 flex items-center justify-between gap-2">
-                      <StatusBadge status={item.status} />
+                      <span className="flex min-w-0 items-center gap-1.5">
+                        <StatusBadge status={item.status} />
+                        <span className={`rounded-md px-1.5 py-0.5 text-[12px] font-semibold ${KIND_TONE[kindOf(item)].chip}`}>{b.modes[kindOf(item)]}</span>
+                      </span>
                       <span className="text-[13px] font-semibold tabular-nums">{price(item)}</span>
                     </span>
                   </span>
@@ -270,9 +273,8 @@ export function BookingsTab({ initialCode, version = 0, onChanged }: { initialCo
                     </td>
                     <td className="max-w-[16rem] truncate px-4 py-3">{device(item)}</td>
                     <td className="whitespace-nowrap px-4 py-3">
-                      <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[13px] font-semibold ${item.mode === 'mobile' ? 'bg-blue/12 text-blue' : item.pickup ? 'bg-ok/12 text-ok' : 'bg-gold/12 text-gold'}`}>
-                        {b.modes[item.mode]}
-                        {item.pickup ? ` + ${b.pickup}` : ''}
+                      <span className={`inline-flex items-center gap-1.5 rounded-md px-2 py-0.5 text-[13px] font-semibold ${KIND_TONE[kindOf(item)].chip}`}>
+                        {b.modes[kindOf(item)]}
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-4 py-3 text-right font-semibold tabular-nums">{price(item)}</td>

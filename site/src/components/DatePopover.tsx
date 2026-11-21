@@ -1,6 +1,5 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from 'react'
 import { lastOfMonth, MonthCalendar, plusDays } from './MonthCalendar'
-import { Close } from './Icons'
 
 /** A button that opens a floating panel; Escape or a click outside closes it and focus returns. */
 function Popover({ label, trigger, active, children, align = 'left' }: { label: string; trigger: ReactNode; active: boolean; children: (close: () => void) => ReactNode; align?: 'left' | 'right' }) {
@@ -54,7 +53,7 @@ function Popover({ label, trigger, active, children, align = 'left' }: { label: 
           id={id}
           role="dialog"
           aria-label={label}
-          className={`absolute top-[calc(100%+8px)] z-40 w-[min(22rem,calc(100vw-2rem))] rounded-[20px] border border-line bg-surface p-4 shadow-[0_24px_60px_-24px_rgb(0_0_0/0.45)] ${align === 'right' ? 'right-0' : 'left-0'}`}
+          className={`absolute top-[calc(100%+8px)] z-40 w-[min(22rem,calc(100vw-2rem))] rounded-[20px] border border-muted/30 bg-surface p-4 shadow-[0_24px_60px_-20px_rgb(0_0_0/0.55),0_0_0_1px_rgb(255_255_255/0.03)] ${align === 'right' ? 'right-0' : 'left-0'}`}
         >
           {children(close)}
         </div>
@@ -105,6 +104,18 @@ export function DateRangeButton({ lang, today, from, to, onChange, text, align }
       {(close) => (
         <div className="grid gap-3">
           <div className="flex flex-wrap gap-1.5">
+            <button
+              type="button"
+              aria-pressed={!from && !to}
+              onClick={() => {
+                setStart(null)
+                onChange('', '')
+                close()
+              }}
+              className={`rounded-full border px-3 py-1 text-[13px] font-semibold transition-colors ${!from && !to ? 'border-gold bg-gold text-on-gold' : 'border-line text-muted hover:border-muted hover:text-ink'}`}
+            >
+              {text.any}
+            </button>
             {presets.map(([name, a, b]) => {
               const on = from === a && to === b
               return (
@@ -143,25 +154,11 @@ export function DateRangeButton({ lang, today, from, to, onChange, text, align }
               close()
             }}
           />
-          <div className="flex items-center justify-between gap-2 border-t border-line pt-3 text-[13px]">
-            <span className="text-muted" aria-live="polite">
-              {start ? text.pickEnd : ''}
-            </span>
-            {(from || to || start) && (
-              <button
-                type="button"
-                onClick={() => {
-                  setStart(null)
-                  onChange('', '')
-                  close()
-                }}
-                className="inline-flex items-center gap-1 rounded-full px-2.5 py-1 font-semibold text-muted transition-colors hover:bg-surface-2 hover:text-ink"
-              >
-                <Close className="size-3.5" />
-                {text.clear}
-              </button>
-            )}
-          </div>
+          {start && (
+            <p className="border-t border-line pt-3 text-[13px] text-muted" aria-live="polite">
+              {text.pickEnd}
+            </p>
+          )}
         </div>
       )}
     </Popover>
@@ -169,11 +166,11 @@ export function DateRangeButton({ lang, today, from, to, onChange, text, align }
 }
 
 /** One-day picker in a popover, for pages that look at a single day. */
-export function DateButton({ lang, today, value, onChange, label, marks, onView }: { lang: 'ro' | 'en'; today: string; value: string; onChange: (d: string) => void; label: string; marks?: Record<string, number>; onView?: (from: string, to: string) => void }) {
+export function DateButton({ lang, today, value, onChange, label, marks, onView, align }: { lang: 'ro' | 'en'; today: string; value: string; onChange: (d: string) => void; label: string; marks?: Record<string, number>; onView?: (from: string, to: string) => void; align?: 'left' | 'right' }) {
   const f = new Intl.DateTimeFormat(lang === 'ro' ? 'ro-RO' : 'en-GB', { weekday: 'short', day: 'numeric', month: 'long', timeZone: 'UTC' })
   const text = f.format(new Date(`${value}T12:00:00Z`))
   return (
-    <Popover label={label} trigger={<span className="inline-block first-letter:uppercase">{text}</span>} active>
+    <Popover label={label} trigger={<span className="inline-block first-letter:uppercase">{text}</span>} active align={align}>
       {(close) => (
         <MonthCalendar
           lang={lang}

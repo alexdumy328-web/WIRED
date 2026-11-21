@@ -203,7 +203,7 @@ export function MonthCalendar({ lang, value, rangeEnd, mode = 'single', onSelect
                     onFocus={() => setFocus(d)}
                     onMouseEnter={() => onHover?.(d)}
                     className={`relative flex aspect-square w-full ${cell} flex-col items-center justify-center rounded-full text-[14px] font-semibold tabular-nums transition-[background-color,color,box-shadow] duration-150
-                      ${sel ? 'bg-gold text-on-gold shadow-[0_6px_18px_-8px_var(--gold)]' : off ? 'text-muted/35' : outside ? 'text-muted/60 hover:bg-surface-2' : 'hover:bg-surface-2'}
+                      ${sel ? 'bg-gold text-on-gold shadow-[0_6px_18px_-8px_var(--gold)]' : off ? (d < today ? 'text-muted/30' : 'text-muted/45 line-through decoration-muted/50') : outside ? 'text-muted/60 hover:bg-surface-2' : 'hover:bg-surface-2'}
                       ${d === today && !sel ? 'ring-1 ring-inset ring-gold/70 text-gold' : ''}
                       disabled:cursor-not-allowed`}
                   >

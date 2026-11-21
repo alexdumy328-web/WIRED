@@ -58,7 +58,7 @@ export function customerView(doc: Doc) {
 
 export type SearchQuery = {
   status?: BookingStatus
-  mode?: 'shop' | 'mobile'
+  mode?: 'shop' | 'pickup' | 'mobile'
   /** YYYY-MM-DD, shop-local, inclusive. */
   from?: string
   to?: string
@@ -95,7 +95,13 @@ export function createBookingAdmin(db: Db) {
       await ensureIndexes()
       const filter: Filter<Doc> = {}
       if (query.status) filter.status = query.status
-      if (query.mode) filter.mode = query.mode
+      if (query.mode === 'pickup') {
+        filter.mode = 'shop'
+        filter.pickup = { $exists: true }
+      } else if (query.mode === 'shop') {
+        filter.mode = 'shop'
+        filter.pickup = { $exists: false }
+      } else if (query.mode === 'mobile') filter.mode = 'mobile'
       if (query.from || query.to) {
         filter.slot = {
           ...(query.from ? { $gte: startOfLocalDay(query.from) } : {}),

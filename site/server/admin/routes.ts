@@ -15,7 +15,8 @@ const dateParam = z.string().regex(DATE_ONLY).refine(isRealDate, 'Not a real dat
 
 const searchQuerySchema = z.object({
   status: bookingStatusSchema.optional(),
-  mode: z.enum(['shop', 'mobile']).optional(),
+  /** shop: visits at the workshop; pickup: shop jobs we collect or deliver; mobile: on site. */
+  mode: z.enum(['shop', 'pickup', 'mobile']).optional(),
   from: dateParam.optional(),
   to: dateParam.optional(),
   q: z.string().trim().max(100).optional(),

@@ -85,12 +85,12 @@ export function AdminHeader() {
   if (user?.role === 'dev') tabs.push(['/dev', t.account.adminBar.dev])
   return (
     <header className="scrim fixed inset-x-0 top-0 z-50 border-b border-line">
-      <div className="mx-auto flex h-16 max-w-[1360px] items-center gap-3 px-4 sm:gap-5 sm:px-6">
+      <div className="mx-auto flex h-16 max-w-[1360px] items-center gap-2 px-4 sm:gap-5 sm:px-6">
         <a href="/admin" onClick={linkTo('/admin')} className="shrink-0 rounded-md" aria-label="Norgelis Tech">
-          <Logo />
+          <Logo compact />
         </a>
         {tabs.length > 1 && (
-          <nav aria-label={t.account.adminBar.nav} className="flex rounded-full border border-line p-0.5 text-[14px]">
+          <nav aria-label={t.account.adminBar.nav} className="flex min-w-0 overflow-x-auto rounded-full border border-line p-0.5 text-[14px]">
             {tabs.map(([href, label]) => {
               const on = path.startsWith(href)
               return (
@@ -99,7 +99,7 @@ export function AdminHeader() {
                   href={href}
                   onClick={linkTo(href)}
                   aria-current={on ? 'page' : undefined}
-                  className={`rounded-full px-3 py-1.5 font-semibold transition-colors sm:px-4 ${on ? 'bg-ink text-bg' : 'text-muted hover:text-ink'}`}
+                  className={`whitespace-nowrap rounded-full px-2 py-1.5 text-[13px] font-semibold transition-colors sm:px-4 sm:text-[14px] ${on ? 'bg-ink text-bg' : 'text-muted hover:text-ink'}`}
                 >
                   {label}
                 </a>
@@ -107,17 +107,17 @@ export function AdminHeader() {
             })}
           </nav>
         )}
-        <div className="ml-auto flex items-center gap-2.5">
+        <div className="ml-auto flex shrink-0 items-center gap-2.5">
           <a
             href="/"
             onClick={linkTo('/')}
             aria-label={t.account.adminBar.site}
-            className="grid size-9 place-items-center rounded-full border border-line text-muted transition-colors hover:text-ink md:flex md:size-auto md:items-center md:gap-1.5 md:whitespace-nowrap md:border-0 md:text-[15px] md:font-semibold"
+            className={`${tabs.length > 1 ? 'hidden sm:grid' : 'grid'} size-9 place-items-center rounded-full border border-line text-muted transition-colors hover:text-ink lg:flex lg:size-auto lg:items-center lg:gap-1.5 lg:whitespace-nowrap lg:border-0 lg:text-[15px] lg:font-semibold`}
           >
-            <span className="hidden md:inline">{t.account.adminBar.site}</span>
+            <span className="hidden lg:inline">{t.account.adminBar.site}</span>
             <Arrow className="size-4 -rotate-45" />
           </a>
-          <div className="hidden sm:block">
+          <div className="hidden md:block">
             <LangSwitch />
           </div>
           <ThemeButton />

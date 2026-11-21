@@ -315,7 +315,7 @@ function BookingModal() {
 
   const locale = lang === 'ro' ? 'ro-RO' : 'en-GB'
   const dayLong = (d: string) => new Intl.DateTimeFormat(locale, { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${d}T12:00:00Z`))
-  const stepNames = [t.booking.steps.where, t.booking.steps.what, t.booking.steps.when, t.booking.steps.who]
+  const stepNames = [t.booking.steps.where, t.booking.steps.what, where === 'pickup' || mode === 'mobile' ? t.booking.steps.whereWhen : t.booking.steps.when, t.booking.steps.who]
   const rangeText = ([lo, hi]: [number, number]) =>
     lo === 0 && hi === 0
       ? '–'
@@ -378,7 +378,7 @@ function BookingModal() {
           {done ? (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} role="status">
               <div className="flex items-center gap-3">
-                <span className="grid size-10 place-items-center rounded-full bg-ok text-white">
+                <span className="grid size-10 place-items-center rounded-full bg-ok text-on-gold">
                   <Check />
                 </span>
                 <h3 className="display-2 text-2xl">{t.booking.success.title}</h3>
@@ -587,6 +587,10 @@ function BookingModal() {
                               minMonth={days[0]?.slice(0, 7)}
                               maxMonth={days[days.length - 1]?.slice(0, 7)}
                             />
+                            <p className="mt-3 text-[13px] text-muted">
+                              {!openDays.has(todayIso) && slotsFor(todayIso, mode, new Date(0)).length > 0 && `${t.booking.when.todayFull} `}
+                              {t.booking.when.closedHint}
+                            </p>
                           </div>
                           <fieldset className="min-w-0 md:border-l md:border-line md:pl-6">
                             <legend className="text-[14px] font-semibold">{where === 'pickup' ? t.booking.when.pickWindow : t.booking.when.pickTime}</legend>

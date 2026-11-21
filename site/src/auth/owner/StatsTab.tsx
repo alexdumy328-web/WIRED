@@ -8,7 +8,9 @@ import { TrendChart, type TrendRow } from './TrendChart'
 import { BOOKING_STATUSES } from './constants'
 import type { Stats } from './types'
 
-const tone = { received: 'bg-muted', diagnosis: 'bg-blue', 'waiting-parts': 'bg-gold', repairing: 'bg-gold', ready: 'bg-ok', done: 'bg-ok', cancelled: 'bg-line' } as const
+
+/** Bar fills matching the status dots (a ring there becomes a lighter fill here). */
+const BAR = { received: 'bg-muted', diagnosis: 'bg-violet/55', 'waiting-parts': 'bg-rose', repairing: 'bg-violet', ready: 'bg-ok', done: 'bg-ink/40', cancelled: 'bg-muted/40' } as const
 
 export function StatsTab() {
   const { t, lang } = useI18n()
@@ -130,7 +132,7 @@ export function StatsTab() {
         <Card>
           <h2 className="text-lg font-bold">{s.byStatus}</h2>
           <div className="mt-4">
-            <RowChart title={s.byStatus} bars={BOOKING_STATUSES.map((key) => ({ key, label: t.track.statuses[key], value: stats.byStatus[key] ?? 0, tone: tone[key] }))} />
+            <RowChart title={s.byStatus} bars={BOOKING_STATUSES.map((key) => ({ key, label: t.track.statuses[key], value: stats.byStatus[key] ?? 0, tone: BAR[key] }))} />
           </div>
         </Card>
       </div>

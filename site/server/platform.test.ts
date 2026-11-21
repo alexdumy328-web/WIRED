@@ -396,11 +396,13 @@ describe('bookings for owners and customers', () => {
     const created = await call('/api/bookings', { method: 'POST', body: withPickup })
     assert.equal(created.status, 201)
 
-    const found = await call('/api/admin/bookings?q=pickup%40example&status=received&mode=shop&from=2031-03-01&to=2031-03-31', { cookie: owner })
+    const found = await call('/api/admin/bookings?q=pickup%40example&status=received&mode=pickup&from=2031-03-01&to=2031-03-31', { cookie: owner })
     assert.equal(found.status, 200)
     assert.equal(found.body.total, 1)
     assert.match(found.body.items[0].mapLink, /google\.com\/maps/)
 
+    // A pickup is a shop job, but the workshop filter means visits only.
+    assert.equal((await call('/api/admin/bookings?q=pickup%40example&mode=shop', { cookie: owner })).body.total, 0)
     assert.equal((await call('/api/admin/bookings?from=2031-13-45', { cookie: owner })).status, 400)
 
     const week = await call('/api/admin/calendar?week=2031-03-12', { cookie: owner })

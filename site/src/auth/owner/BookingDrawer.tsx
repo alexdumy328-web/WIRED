@@ -159,7 +159,7 @@ export function BookingDrawer({ code, onClose, onChanged }: { code: string; onCl
                 </div>
                 <div>
                   <dt className="text-muted">{t.account.bookings.estimate}</dt>
-                  <dd className="font-semibold">{fmt(d.estimate, { from: booking.estimate.priceFrom, to: booking.estimate.priceTo })}</dd>
+                  <dd className="font-semibold">{estimateText(booking.estimate, d)}</dd>
                 </div>
                 {booking.finalLei != null && (
                   <div>
@@ -248,6 +248,8 @@ export function BookingDrawer({ code, onClose, onChanged }: { code: string; onCl
               <Field label={d.noteLabel}>
                 {(p) => <textarea {...p} className="field min-h-24" value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} placeholder={d.notePlaceholder} />}
               </Field>
+              {/* Pinned to the bottom of the drawer so Save never scrolls out of reach. */}
+              <div className="sticky -bottom-5 -mx-5 -mb-5 grid gap-3 border-t border-line bg-bg px-5 pt-4 pb-[max(1rem,env(safe-area-inset-bottom))] sm:-bottom-7 sm:-mx-7 sm:-mb-7 sm:px-7">
               {statusDirty &&
                 (booking.contact.email ? (
                   <label className="flex items-center gap-3 text-[15px]">
@@ -261,10 +263,18 @@ export function BookingDrawer({ code, onClose, onChanged }: { code: string; onCl
               <button type="submit" className="btn btn-gold" disabled={saving || !priceValid || (!statusDirty && !priceDirty && !note.trim())} aria-busy={saving}>
                 {d.save}
               </button>
+              </div>
             </form>
           </div>
         )}
       </aside>
     </div>
   )
+}
+
+/** "150–200 lei", "150 lei", or "after diagnosis" when the job has no list price (custom requests). */
+export function estimateText(e: { priceFrom: number; priceTo: number }, d: { estimate: string; final: string; noEstimate: string }): string {
+  if (e.priceTo <= 0) return d.noEstimate
+  if (e.priceFrom === e.priceTo) return fmt(d.final, { n: e.priceFrom })
+  return fmt(d.estimate, { from: e.priceFrom, to: e.priceTo })
 }

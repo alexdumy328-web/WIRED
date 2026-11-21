@@ -8,6 +8,7 @@ import { Card, Loading, Notice, PageShell, StatusBadge, useDateFormat } from '..
 import { refreshViewer, isStaff, type Viewer } from '../auth/viewer'
 import { openBooking } from '../lib/booking-store'
 import { linkTo, navigate } from '../lib/router'
+import { estimateText } from '../auth/owner/BookingDrawer'
 import type { Booking, BookingStatus } from '../types'
 
 type MyBooking = Omit<Booking, 'statusHistory' | 'userId'> & { timeline: { status: BookingStatus; at: string }[] }
@@ -44,7 +45,7 @@ function Account({ user }: { user: Viewer }) {
               </span>
               <div className="min-w-0">
                 <h2 className="truncate text-lg font-bold">{user.name || user.email}</h2>
-                <p className="truncate text-[14px] text-muted">{user.email}</p>
+                {user.name && <p className="truncate text-[14px] text-muted">{user.email}</p>}
               </div>
             </div>
             <dl className="mt-5 grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-[14px]">
@@ -145,7 +146,7 @@ function MyBookings() {
               </div>
               <div>
                 <dt className="text-muted">{a.bookings.estimate}</dt>
-                <dd className="font-semibold">{fmt(t.owner.detail.estimate, { from: b.estimate.priceFrom, to: b.estimate.priceTo })}</dd>
+                <dd className="font-semibold">{estimateText(b.estimate, t.owner.detail)}</dd>
               </div>
               {b.pickup && (
                 <div>

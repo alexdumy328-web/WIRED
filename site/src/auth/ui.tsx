@@ -50,21 +50,22 @@ export function Notice({ tone, children }: { tone: 'ok' | 'error' | 'info'; chil
   )
 }
 
-const statusTone: Record<BookingStatus, string> = {
+/** Status dot per stage. Violet and rose are kept for statuses; gold, green and blue mean the kind of job. */
+export const STATUS_DOT: Record<BookingStatus, string> = {
   received: 'bg-muted',
-  diagnosis: 'bg-blue',
-  'waiting-parts': 'bg-gold',
-  repairing: 'bg-gold',
+  diagnosis: 'border-2 border-violet',
+  'waiting-parts': 'bg-rose',
+  repairing: 'bg-violet',
   ready: 'bg-ok',
-  done: 'bg-ok',
-  cancelled: 'bg-line',
+  done: 'bg-ink/40',
+  cancelled: 'border border-muted',
 }
 
 export function StatusBadge({ status }: { status: BookingStatus }) {
   const { t } = useI18n()
   return (
     <span className="inline-flex items-center gap-2 whitespace-nowrap rounded-full border border-line px-2.5 py-0.5 text-[13px] font-semibold">
-      <span className={`size-2 rounded-full ${statusTone[status]}`} aria-hidden="true" />
+      <span className={`size-2 rounded-full ${STATUS_DOT[status]}`} aria-hidden="true" />
       {t.track.statuses[status]}
     </span>
   )

@@ -99,7 +99,7 @@ export type Dict = {
   booking: {
     title: string
     lead: string
-    steps: { where: string; what: string; when: string; who: string } // step names
+    steps: { where: string; what: string; when: string; whereWhen: string; who: string } // step names; whereWhen for pickup and on-site jobs
     where: { shop: string; shopHint: string; pickup: string; pickupHint: string; mobile: string; mobileHint: string }
     /** Labels for the pickup map (see components/PickupMap.tsx). */
     pickup: {
@@ -158,7 +158,7 @@ export type Dict = {
       questions: string // heading for the clarifying questions
       disclaimer: string
     }
-    when: { pickDay: string; pickDayFirst: string; pickTime: string; pickWindow: string; noSlots: string; slotGone: string; location: string; locationPlaceholder: string }
+    when: { pickDay: string; pickDayFirst: string; closedHint: string; todayFull: string; pickTime: string; pickWindow: string; noSlots: string; slotGone: string; location: string; locationPlaceholder: string }
     who: { name: string; phone: string; email: string; optional: string; consent: string }
     summary: { title: string; price: string; eta: string; free: string; diagnosisNote: string; partsExtra: string; pickup: string; repair: string }
     open: string // CTA that opens the booking popup
@@ -303,7 +303,7 @@ export type Dict = {
       total: string // "{n} bookings"
       loadMore: string
       columns: { code: string; when: string; customer: string; device: string; mode: string; status: string; price: string }
-      modes: Record<'shop' | 'mobile', string>
+      modes: Record<'shop' | 'pickup' | 'mobile', string>
       dates: string
       range: { label: string; any: string; pickEnd: string; clear: string; presets: { today: string; week: string; month: string; next7: string } }
       pickup: string
@@ -335,6 +335,8 @@ export type Dict = {
       finalLabel: string
       finalHint: string
       final: string // "{n} lei"
+      /** Estimate shown for custom requests that have no list price. */
+      noEstimate: string
       notify: string
       noEmail: string
       savedMailed: string

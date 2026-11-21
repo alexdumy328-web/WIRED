@@ -108,6 +108,8 @@ function Tracker() {
     if (!/^NT-[A-Z0-9]{4}$/.test(c)) return
     setCode(c)
     void lookup(c)
+    // The hash alone may land before the page has its height; bring the tracker into view once laid out.
+    requestAnimationFrame(() => document.getElementById('status')?.scrollIntoView({ block: 'start' }))
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on arrival
   }, [])
 
@@ -119,7 +121,9 @@ function Tracker() {
   return (
     <div>
       <h3 className="display-2 text-2xl">{t.track.title}</h3>
-      <p className="measure mt-2 text-[15px] text-muted">{t.track.lead}</p>
+      <p className="measure mt-2 text-[15px] text-muted">
+        {t.track.lead.split(/(NT-[A-Z0-9]{4})/).map((part, i) => (i % 2 ? <span key={i} className="whitespace-nowrap">{part}</span> : part))}
+      </p>
       <form ref={formRef} onSubmit={submit} className="mt-5 flex flex-col gap-3 sm:flex-row">
         <label className="sr-only" htmlFor="track-code">
           {t.track.title}
@@ -205,7 +209,7 @@ export function Status() {
         <div className="rounded-[24px] border border-line bg-surface p-5 sm:p-8">
           <TurnaroundChart />
         </div>
-        <div className="rounded-[24px] border border-line bg-surface p-5 sm:p-8">
+        <div className="rounded-[24px] border border-line bg-surface p-5 max-lg:order-first sm:p-8">
           <Tracker />
         </div>
       </div>
