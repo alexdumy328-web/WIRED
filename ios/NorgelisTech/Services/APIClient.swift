@@ -31,6 +31,15 @@ struct HealthResponse: Codable {
     var store: String?
 }
 
+struct BusyDaySummary: Codable, Hashable {
+    var total: Int
+    var pickups: Int
+}
+
+struct BusyDaysResponse: Codable {
+    var days: [String: BusyDaySummary]
+}
+
 final class APIClient: ObservableObject {
     static let shared = APIClient()
 
@@ -107,6 +116,23 @@ final class APIClient: ObservableObject {
         let (data, response) = try await session.data(from: url)
         try validateResponse(response, data: data)
         return try JSONDecoder().decode([Booking].self, data: data)
+    }
+
+    func fetchAdminBusy(from: String, to: String) async throws -> [String: BusyDaySummary] {
+        guard var components = URLComponents(url: baseURL!.appendingPathComponent("api/admin/busy"), resolvingAgainstBaseURL: true) else {
+            throw APIError.invalidURL
+        }
+        components.queryItems = [
+            URLQueryItem(name: "from", value: from),
+            URLQueryItem(name: "to", value: to)
+        ]
+        guard let url = components.url else {
+            throw APIError.invalidURL
+        }
+        let (data, response) = try await session.data(from: url)
+        try validateResponse(response, data: data)
+        let decoded = try JSONDecoder().decode(BusyDaysResponse.self, data: data)
+        return decoded.days
     }
 
     func updateBookingStatus(code: String, status: BookingStatus, note: String? = nil) async throws -> Booking {
