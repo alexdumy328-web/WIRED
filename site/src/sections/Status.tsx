@@ -113,7 +113,9 @@ function Tracker() {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on arrival
   }, [])
 
-  const idx = result ? statusOrder.indexOf(result.status) : -1
+  // An unrepairable device sits where a ready one would: it is waiting to go back.
+  const idx = result ? statusOrder.indexOf(result.status === 'unrepairable' ? 'ready' : result.status) : -1
+  const barTone = result?.status === 'unrepairable' ? 'bg-rose' : 'bg-ok'
   const when = result
     ? new Intl.DateTimeFormat(lang === 'ro' ? 'ro-RO' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Bucharest' }).format(new Date(result.updatedAt))
     : ''
@@ -164,7 +166,7 @@ function Tracker() {
               {idx >= 0 && (
                 <ol className="mt-3 flex gap-1.5" aria-label={t.track.title}>
                   {statusOrder.map((s, i) => (
-                    <li key={s} className={`h-1.5 flex-1 rounded-full ${i <= idx ? 'bg-ok' : 'bg-line'}`} title={t.track.statuses[s]} />
+                    <li key={s} className={`h-1.5 flex-1 rounded-full ${i <= idx ? barTone : 'bg-line'}`} title={t.track.statuses[s]} />
                   ))}
                 </ol>
               )}

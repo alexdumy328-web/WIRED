@@ -1,8 +1,10 @@
 import type { Collection, Db, Filter } from 'mongodb'
 import { catalog } from '../../src/data/catalog.ts'
-import type { Booking, BookingStatus, StatusEntry } from '../../src/types.ts'
-import { ACTIVE_STATUSES, COLLECTION_NAME } from '../store.ts'
-import { addDays, localDate, mondayOf, startOfLocalDay } from './time.ts'
+import type { Booking, BookingStatus, Intake, RepairNotes, StatusEntry } from '../../src/types.ts'
+import { generateCode } from '../code.ts'
+import { ACTIVE_STATUSES, COLLECTION_NAME, isDuplicateKeyError } from '../store.ts'
+import type { Counters } from './counters.ts'
+import { addDays, localDate, localYear, mondayOf, startOfLocalDay } from './time.ts'
 
 type Doc = Booking & { _id?: unknown }
 
@@ -46,14 +48,38 @@ export function ownerView(doc: Doc) {
   }
 }
 
-/** What the customer sees of their own booking: no internal notes, no user ids. */
+/**
+ * What the customer sees of their own booking: no internal notes, user or customer ids, photos,
+ * diagnosis notes or the name of whoever took the device in.
+ */
 export function customerView(doc: Doc) {
-  const { userId: _u, statusHistory, ...rest } = strip(doc)
+  const { userId: _u, customerId: _c, photoIds: _p, statusHistory, intake, repair, ...rest } = strip(doc)
   const history = statusHistory ?? [{ status: 'received' as BookingStatus, at: rest.createdAt, by: 'customer' }]
   return {
     ...rest,
+    ...(intake ? { intake: { number: intake.number, year: intake.year, receivedAt: intake.receivedAt, deviceType: intake.deviceType } } : {}),
+    ...(repair?.workDone ? { repair: { workDone: repair.workDone } } : {}),
     timeline: history.map((entry) => ({ status: entry.status, at: entry.at })),
   }
+}
+
+/** Fields typed at the counter when the device is handed in. */
+export type IntakeFields = Pick<Intake, 'deviceType'> & Partial<Pick<Intake, 'serial' | 'accessories' | 'appearance'>>
+
+export type WalkInInput = {
+  customerId: string
+  contact: { name: string; phone: string; email?: string }
+  device: { brand?: string; model?: string }
+  issue: string
+  jobIds: string[]
+  estimate: { priceFrom: number; priceTo: number }
+  lang: 'ro' | 'en'
+  intake: IntakeFields
+}
+
+/** Drops empty optional strings so cleared fields disappear instead of being stored as "". */
+function compact<T extends Record<string, unknown>>(value: T): T {
+  return Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined && v !== '')) as T
 }
 
 export type SearchQuery = {
@@ -61,6 +87,8 @@ export type SearchQuery = {
   mode?: 'shop' | 'pickup' | 'mobile'
   /** YYYY-MM-DD, shop-local, inclusive. */
   from?: string
+  /** Only jobs that have (true) or have not (false) been taken in at the counter. */
+  intake?: boolean
   to?: string
   q?: string
   limit: number
@@ -69,7 +97,7 @@ export type SearchQuery = {
 
 export type BookingAdmin = ReturnType<typeof createBookingAdmin>
 
-export function createBookingAdmin(db: Db) {
+export function createBookingAdmin(db: Db, counters?: Counters) {
   const col: Collection<Doc> = db.collection<Doc>(COLLECTION_NAME)
   let indexed: Promise<unknown> | null = null
   const ensureIndexes = () => {
@@ -77,6 +105,7 @@ export function createBookingAdmin(db: Db) {
       col.createIndex({ userId: 1 }, { name: 'userId', sparse: true }),
       col.createIndex({ 'contact.email': 1 }, { name: 'contact_email', collation: CI }),
       col.createIndex({ createdAt: -1 }, { name: 'createdAt' }),
+      col.createIndex({ 'intake.year': -1, 'intake.number': -1 }, { name: 'intake_number', partialFilterExpression: { intake: { $exists: true } } }),
     ]).catch(() => undefined)
     return indexed
   }
@@ -108,10 +137,15 @@ export function createBookingAdmin(db: Db) {
           ...(query.to ? { $lt: startOfLocalDay(addDays(query.to, 1)) } : {}),
         }
       }
+      if (query.intake !== undefined) filter.intake = { $exists: query.intake }
       const text = query.q?.trim()
+      // "12/2026" or "#12" finds a service sheet by number.
+      const sheet = text ? /^#?(\d{1,6})(?:\/(\d{4}))?$/.exec(text) : null
       if (text) {
         const rx = { $regex: escapeRegex(text), $options: 'i' }
         filter.$or = [
+          ...(sheet ? [{ 'intake.number': Number(sheet[1]), ...(sheet[2] ? { 'intake.year': Number(sheet[2]) } : {}) }] : []),
+          { 'intake.serial': rx },
           { code: rx },
           { 'contact.name': rx },
           { 'contact.email': rx },
@@ -139,17 +173,26 @@ export function createBookingAdmin(db: Db) {
      * price on its own does not. Returns null for an unknown code, and `changed: false` when the
      * request matches what is already stored.
      */
-    async update(code: string, change: { status: BookingStatus; note?: string; finalLei?: number | null }, actor: { id?: string; name: string }) {
+    async update(code: string, change: { status: BookingStatus; note?: string; finalLei?: number | null; repair?: RepairNotes }, actor: { id?: string; name: string }) {
       const wanted = code.trim().toUpperCase()
       const before = await col.findOne({ code: wanted })
       if (!before) return null
       const { status, note } = change
       const statusChanged = before.status !== status
       const priceChanged = change.finalLei !== undefined && change.finalLei !== (before.finalLei ?? null)
-      if (!statusChanged && !note && !priceChanged) return { booking: ownerView(before), from: before.status, changed: false, statusChanged: false, priceChanged: false }
+      const repair = change.repair ? compact({ ...before.repair, ...change.repair }) : undefined
+      const repairChanged = repair !== undefined && JSON.stringify(repair) !== JSON.stringify(compact({ ...before.repair }))
+      if (!statusChanged && !note && !priceChanged && !repairChanged) return { booking: ownerView(before), from: before.status, changed: false, statusChanged: false, priceChanged: false, repairChanged: false }
       const now = new Date().toISOString()
       const set: Partial<Doc> = { status, updatedAt: now }
       const unset: Record<string, ''> = {}
+      if (repairChanged) {
+        if (Object.keys(repair!).length) set.repair = repair
+        else unset.repair = ''
+      }
+      // The hand-back moment, for the warranty start and the "delivered" column.
+      if (statusChanged && status === 'done') set.deliveredAt = now
+      else if (statusChanged && before.status === 'done') unset.deliveredAt = ''
       if (priceChanged) {
         if (change.finalLei === null) unset.finalLei = ''
         else set.finalLei = change.finalLei
@@ -169,8 +212,122 @@ export function createBookingAdmin(db: Db) {
       }
       const after = await col.findOneAndUpdate({ code: wanted }, update, { returnDocument: 'after' })
       return after
-        ? { booking: ownerView(after), from: before.status, fromLei: before.finalLei ?? null, changed: true, statusChanged, priceChanged }
+        ? { booking: ownerView(after), from: before.status, fromLei: before.finalLei ?? null, changed: true, statusChanged, priceChanged, repairChanged }
         : null
+    },
+
+    /**
+     * Takes the device in at the counter: gives the booking the next service sheet number of the
+     * year and stores what was handed over. A booking is taken in once; later edits keep the number.
+     */
+    async intake(code: string, fields: IntakeFields, actor: { id?: string; name: string }) {
+      if (!counters) throw new Error('counters_missing')
+      const wanted = code.trim().toUpperCase()
+      const before = await col.findOne({ code: wanted })
+      if (!before) return { error: 'not_found' as const }
+      if (before.intake) return { error: 'already' as const, booking: ownerView(before) }
+      if (before.status === 'cancelled' || before.status === 'done') return { error: 'closed' as const }
+      const now = new Date()
+      const year = localYear(now)
+      const number = await counters.next('sheet', year)
+      const intake: Intake = compact({ ...fields, number, year, receivedAt: now.toISOString(), by: actor.name })
+      const entry: StatusEntry = { status: before.status, at: now.toISOString(), by: actor.name, ...(actor.id ? { byId: actor.id } : {}), note: `Fișa ${number}/${year}` }
+      const history = before.statusHistory ? {} : { statusHistory: [{ status: 'received' as BookingStatus, at: before.createdAt, by: 'customer' }] }
+      // The intake filter makes a double click lose cleanly instead of numbering twice. A lost race
+      // leaves a gap in the year's numbers, which the sheet list shows plainly.
+      const after = await col.findOneAndUpdate(
+        { code: wanted, intake: { $exists: false } },
+        { $set: { intake, updatedAt: now.toISOString(), ...history }, ...(before.statusHistory ? { $push: { statusHistory: entry } } : {}) },
+        { returnDocument: 'after' },
+      )
+      if (!after) {
+        const current = await col.findOne({ code: wanted })
+        return current ? { error: 'already' as const, booking: ownerView(current) } : { error: 'not_found' as const }
+      }
+      if (!before.statusHistory) await col.updateOne({ code: wanted }, { $push: { statusHistory: entry } })
+      return { booking: ownerView((await col.findOne({ code: wanted }))!) }
+    },
+
+    /** Corrects what was typed at intake. The number, date and who took it in stay. */
+    async editIntake(code: string, fields: Partial<IntakeFields>) {
+      const wanted = code.trim().toUpperCase()
+      const before = await col.findOne({ code: wanted })
+      if (!before?.intake) return null
+      const intake = compact({ ...before.intake, ...fields }) as Intake
+      const after = await col.findOneAndUpdate({ code: wanted }, { $set: { intake, updatedAt: new Date().toISOString() } }, { returnDocument: 'after' })
+      return after ? ownerView(after) : null
+    },
+
+    /**
+     * A device brought in without a booking. Creates the job already taken in: a service sheet
+     * number, the customer link and the counter fields, in one go.
+     */
+    async createWalkIn(input: WalkInInput, actor: { id?: string; name: string }) {
+      if (!counters) throw new Error('counters_missing')
+      const now = new Date()
+      const iso = now.toISOString()
+      const year = localYear(now)
+      const number = await counters.next('sheet', year)
+      for (let attempt = 0; attempt < 25; attempt += 1) {
+        const booking: Booking = {
+          mode: 'shop',
+          jobIds: input.jobIds,
+          device: compact(input.device),
+          issue: input.issue,
+          // The walk-in's own moment, to the millisecond, so it never takes a bookable slot.
+          slot: iso,
+          contact: compact(input.contact),
+          estimate: { priceFrom: input.estimate.priceFrom, priceTo: input.estimate.priceTo, etaHours: [0, 0] },
+          lang: input.lang,
+          code: generateCode(),
+          status: 'received',
+          createdAt: iso,
+          updatedAt: iso,
+          source: 'walk-in',
+          customerId: input.customerId,
+          intake: compact({ ...input.intake, number, year, receivedAt: iso, by: actor.name }) as Intake,
+          statusHistory: [{ status: 'received', at: iso, by: actor.name, ...(actor.id ? { byId: actor.id } : {}), note: `Fișa ${number}/${year}` }],
+        }
+        try {
+          await col.insertOne(booking as never)
+          return ownerView(booking)
+        } catch (error) {
+          if (!isDuplicateKeyError(error) || !/code/.test(String((error as Error).message))) throw error
+        }
+      }
+      throw new Error('Could not allocate a unique booking code')
+    },
+
+    async attachPhoto(code: string, photoId: string) {
+      await col.updateOne({ code }, { $push: { photoIds: photoId }, $set: { updatedAt: new Date().toISOString() } })
+    },
+
+    async detachPhoto(code: string, photoId: string) {
+      await col.updateOne({ code }, { $pull: { photoIds: photoId } })
+    },
+
+    async linkCustomer(code: string, customerId: string) {
+      await col.updateOne({ code }, { $set: { customerId } })
+    },
+
+    /** Every job of one customer, newest first. */
+    async forCustomer(customerId: string) {
+      const docs = await col.find({ customerId }).sort({ slot: -1 }).limit(200).toArray()
+      return docs.map(ownerView)
+    },
+
+    /** The raw booking, for documents. */
+    async raw(code: string): Promise<Booking | null> {
+      const doc = await col.findOne({ code: code.trim().toUpperCase() })
+      return doc ? strip(doc) : null
+    },
+
+    /** A customer's own booking: theirs by account, or by a verified email that matches. */
+    async ownedBy(code: string, user: { id: string; email: string; emailVerified: boolean }): Promise<Booking | null> {
+      const clauses: Filter<Doc>[] = [{ userId: user.id }]
+      if (user.emailVerified && user.email) clauses.push({ 'contact.email': user.email })
+      const doc = await col.findOne({ code: code.trim().toUpperCase(), $or: clauses }, { collation: CI })
+      return doc ? strip(doc) : null
     },
 
     /** Open bookings per shop-local day between two dates (inclusive), for the calendar dots. */
@@ -272,7 +429,8 @@ export function createBookingAdmin(db: Db) {
         const cancelled = doc.status === 'cancelled'
         // Same basis as the income chart: repair plus transport.
         if (doc.status === 'done') doneLei += charged + transport
-        else if (!cancelled) pipelineLei += mid + transport
+        // An unrepairable device brings in a diagnosis fee at most; it is not expected income.
+        else if (!cancelled && doc.status !== 'unrepairable') pipelineLei += mid + transport
 
         for (const series of [weekly, monthly]) {
           const c = bucketOf(series, created)

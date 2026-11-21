@@ -88,7 +88,7 @@ export type Dict = {
     button: string
     notFound: string
     error: string
-    statuses: Record<'received' | 'diagnosis' | 'waiting-parts' | 'repairing' | 'ready' | 'done' | 'cancelled', string>
+    statuses: Record<'received' | 'diagnosis' | 'waiting-parts' | 'repairing' | 'ready' | 'unrepairable' | 'done' | 'cancelled', string>
     updated: string // "Updated {when}"
   }
   reviews: {
@@ -242,7 +242,7 @@ export type Dict = {
       generic: string
     }
     profile: { title: string; name: string; email: string; role: string; verified: string; notVerified: string }
-    roles: Record<'customer' | 'owner' | 'dev', string>
+    roles: Record<'customer' | 'technician' | 'owner' | 'dev', string>
     dashboards: { title: string; owner: string; dev: string }
     /** Slim top bar on the owner and dev dashboards (no customer nav there). */
     adminBar: { nav: string; owner: string; dev: string; site: string }

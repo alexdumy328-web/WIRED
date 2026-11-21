@@ -15,7 +15,7 @@ type MyBooking = Omit<Booking, 'statusHistory' | 'userId'> & { timeline: { statu
 
 /** /cont: sign in, or the customer's account with their bookings. */
 export function AccountPage() {
-  return <Guard roles={['customer', 'owner', 'dev']}>{(user) => <Account user={user} />}</Guard>
+  return <Guard roles={['customer', 'technician', 'owner', 'dev']}>{(user) => <Account user={user} />}</Guard>
 }
 
 function Account({ user }: { user: Viewer }) {

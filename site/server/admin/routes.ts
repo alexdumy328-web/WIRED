@@ -4,10 +4,14 @@ import { z } from 'zod'
 import { bookingStatusSchema } from '../schema.ts'
 import { clientIp } from '../auth/session.ts'
 import { isDuplicateKeyError } from '../store.ts'
+import { isManager } from '../auth/roles.ts'
+import type { Viewer } from '../auth/session.ts'
+import { categoryOf } from '../documents/categories.ts'
 import type { PlatformDeps } from './deps.ts'
 import { localDate, isRealDate, DATE_ONLY } from './time.ts'
+import { mountWorkshop } from './workshop-routes.ts'
 
-function issues(error: z.ZodError) {
+export function issues(error: z.ZodError) {
   return error.issues.map((i) => ({ path: i.path.map(String), message: i.message, code: i.code }))
 }
 
@@ -20,6 +24,7 @@ const searchQuerySchema = z.object({
   from: dateParam.optional(),
   to: dateParam.optional(),
   q: z.string().trim().max(100).optional(),
+  intake: z.enum(['yes', 'no']).transform((v) => v === 'yes').optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),
   skip: z.coerce.number().int().min(0).max(100_000).default(0),
 })
@@ -31,9 +36,22 @@ const statusBodySchema = z.object({
   finalLei: z.number().int().min(0).max(1_000_000).nullable().optional(),
   /** Email the customer about a status change. On unless the owner unticks it. */
   notify: z.boolean().default(true),
+  /** Workshop notes. A field sent as "" is cleared; a field left out is kept. */
+  repair: z
+    .object({ diagnosis: z.string().trim().max(2000), workDone: z.string().trim().max(2000), partsUsed: z.string().trim().max(1000) })
+    .partial()
+    .strict()
+    .optional(),
 })
 
-const codeParam = z.string().trim().regex(/^NT-[A-Z0-9]{4}$/i)
+export const codeParam = z.string().trim().regex(/^NT-[A-Z0-9]{4}$/i)
+
+/** Technicians work on devices but do not see what was charged. */
+export function forViewer<T extends { finalLei?: number }>(viewer: Viewer, booking: T): T {
+  if (isManager(viewer.role)) return booking
+  const { finalLei: _hidden, ...rest } = booking
+  return rest as T
+}
 
 /** Express 5 allows async handlers; this keeps the signature short. */
 type Handler = (req: Request, res: Response) => Promise<void>
@@ -48,7 +66,15 @@ export function createAdminRouter(deps: PlatformDeps): Router {
   const adminLimit = deps.limiters.create('admin', 60_000, 240)
   const meLimit = deps.limiters.create('me', 60_000, 120)
   const statusLimit = deps.limiters.create('admin-status', 60_000, 60)
-  const ownerOrDev = sessions.requireRole('owner', 'dev')
+  const staff = sessions.requireRole('technician', 'owner', 'dev')
+  /** After `staff`: money, settings, stats, archiving and voiding are for owners and devs. */
+  const managers: express.RequestHandler = (_req, res, next) => {
+    if (!isManager(res.locals.viewer!.role)) {
+      res.status(403).json({ error: 'forbidden' })
+      return
+    }
+    next()
+  }
   const handle = (fn: Handler) => fn
 
   // ---- the signed-in user ---------------------------------------------------------------
@@ -61,7 +87,31 @@ export function createAdminRouter(deps: PlatformDeps): Router {
   router.get('/me/bookings', meLimit, sessions.requireAuth, handle(async (_req, res) => {
     const viewer = res.locals.viewer!
     res.set('Cache-Control', 'no-store')
-    res.json({ bookings: await bookings.forUser(viewer) })
+    const mine = await bookings.forUser(viewer)
+    // Each job's running warranty, so the account page can show it and offer the PDF.
+    const warranties = await deps.warranties.forBookings(mine.map((b) => b.code))
+    const byCode = new Map(warranties.map((w) => [w.bookingCode, { id: w.id, label: w.label, startsOn: w.startsOn, endsOn: w.endsOn, months: w.months, state: w.state }]))
+    res.json({ bookings: mine.map((b) => ({ ...b, ...(byCode.has(b.code) ? { warranty: byCode.get(b.code) } : {}) })) })
+  }))
+
+  router.get('/me/bookings/:code/intake.pdf', meLimit, sessions.requireAuth, handle(async (req, res) => {
+    const code = codeParam.safeParse(req.params.code)
+    const booking = code.success ? await bookings.ownedBy(code.data, res.locals.viewer!) : null
+    if (!booking?.intake) {
+      res.status(404).json({ error: 'not_found' })
+      return
+    }
+    sendPdf(res, await deps.documents.intake(booking))
+  }))
+
+  router.get('/me/warranties/:id.pdf', meLimit, sessions.requireAuth, handle(async (req, res) => {
+    const warranty = await deps.warranties.get(String(req.params.id))
+    const booking = warranty ? await bookings.ownedBy(warranty.bookingCode, res.locals.viewer!) : null
+    if (!warranty || !booking) {
+      res.status(404).json({ error: 'not_found' })
+      return
+    }
+    sendPdf(res, await deps.documents.warranty(warranty, booking))
   }))
 
   router.get('/settings/public', handle(async (_req, res) => {
@@ -71,7 +121,7 @@ export function createAdminRouter(deps: PlatformDeps): Router {
 
   // ---- owner ----------------------------------------------------------------------------
   const admin = express.Router()
-  admin.use(adminLimit, ownerOrDev)
+  admin.use(adminLimit, staff)
   admin.use((_req, res, next) => {
     res.set('Cache-Control', 'no-store')
     next()
@@ -83,7 +133,9 @@ export function createAdminRouter(deps: PlatformDeps): Router {
       res.status(400).json({ error: 'invalid', issues: issues(parsed.error) })
       return
     }
-    res.json(await bookings.search(parsed.data))
+    const viewer = res.locals.viewer!
+    const found = await bookings.search(parsed.data)
+    res.json({ ...found, items: found.items.map((b) => forViewer(viewer, b)) })
   }))
 
   admin.get('/bookings/:code', handle(async (req, res) => {
@@ -93,7 +145,17 @@ export function createAdminRouter(deps: PlatformDeps): Router {
       res.status(404).json({ error: 'not_found' })
       return
     }
-    res.json(found)
+    const [warranties, customer, current] = await Promise.all([
+      deps.warranties.forBooking(found.code),
+      found.customerId ? deps.customers.get(found.customerId) : null,
+      settings.get(),
+    ])
+    res.json({
+      ...forViewer(res.locals.viewer!, found),
+      warranties,
+      customer,
+      defaults: { warrantyMonths: current.documents.warrantyMonths[categoryOf(found)] },
+    })
   }))
 
   admin.patch('/bookings/:code/status', statusLimit, handle(async (req, res) => {
@@ -104,10 +166,14 @@ export function createAdminRouter(deps: PlatformDeps): Router {
       return
     }
     const viewer = res.locals.viewer!
-    const { status, note, finalLei, notify } = body.data
+    const { status, note, finalLei, notify, repair } = body.data
+    if (finalLei !== undefined && !isManager(viewer.role)) {
+      res.status(403).json({ error: 'forbidden', reason: 'price_is_for_owners' })
+      return
+    }
     let result: Awaited<ReturnType<typeof bookings.update>>
     try {
-      result = await bookings.update(code.data, { status, note, finalLei }, { id: viewer.id, name: viewer.name || viewer.email })
+      result = await bookings.update(code.data, { status, note, finalLei, repair }, { id: viewer.id, name: viewer.name || viewer.email })
     } catch (error) {
       // Reopening a cancelled booking whose slot someone else has taken since.
       if (isDuplicateKeyError(error)) {
@@ -129,12 +195,19 @@ export function createAdminRouter(deps: PlatformDeps): Router {
         to: status,
         note: Boolean(note),
         ...(result.priceChanged ? { finalLei: [result.fromLei, finalLei ?? null] } : {}),
+        ...(result.repairChanged ? { repair: Object.keys(repair ?? {}) } : {}),
       },
       ip: clientIp(req),
     })
-    // The customer hears about a new status, never about a note or a price edit on its own.
-    const notified = result.statusChanged && notify ? await deps.notifier.statusChanged(result.booking) : 'skipped'
-    res.json({ ...result.booking, notified })
+    // The customer hears about a new status, never about a note or a price edit on its own. On
+    // hand-back, a warranty issued while the job was ready goes along as a PDF.
+    let notified: 'sent' | 'failed' | 'skipped' = 'skipped'
+    if (result.statusChanged && notify) {
+      const valid = status === 'done' ? (await deps.warranties.forBooking(result.booking.code)).find((w) => !w.voided) : undefined
+      const attachment = valid ? await deps.documents.warranty(valid, result.booking).catch(() => null) : null
+      notified = await deps.notifier.statusChanged(result.booking, attachment ? [attachment] : undefined)
+    }
+    res.json({ ...forViewer(viewer, result.booking), notified })
   }))
 
   admin.get('/calendar', handle(async (req, res) => {
@@ -168,15 +241,16 @@ export function createAdminRouter(deps: PlatformDeps): Router {
     res.json({ date, jobs: await bookings.pickups(date) })
   }))
 
-  admin.get('/stats', handle(async (_req, res) => {
-    res.json(await bookings.stats())
+  admin.get('/stats', managers, handle(async (_req, res) => {
+    const [stats, warranties] = await Promise.all([bookings.stats(), deps.warranties.counts()])
+    res.json({ ...stats, warranties })
   }))
 
-  admin.get('/settings', handle(async (_req, res) => {
+  admin.get('/settings', managers, handle(async (_req, res) => {
     res.json(await settings.get())
   }))
 
-  admin.put('/settings', handle(async (req, res) => {
+  admin.put('/settings', managers, handle(async (req, res) => {
     const result = await settings.update(req.body)
     if (!result.ok) {
       res.status(400).json({ error: 'invalid', issues: result.issues })
@@ -193,10 +267,29 @@ export function createAdminRouter(deps: PlatformDeps): Router {
     const a = flat(result.before)
     const b = flat(result.settings)
     for (const key of Object.keys(b)) if (a[key] !== b[key]) changed[key] = [a[key]!, b[key]!]
-    await audit.record({ action: 'settings_change', actor: { id: viewer.id, email: viewer.email, role: viewer.role }, detail: { changed }, ip: clientIp(req) })
+    // Company details and terms: which fields moved, never their text.
+    const texts: string[] = []
+    for (const [k, v] of Object.entries(result.settings.company)) if (result.before.company[k as keyof typeof result.before.company] !== v) texts.push(`company.${k}`)
+    for (const k of ['intakeTerms', 'warrantyTerms'] as const) if (result.before.documents[k] !== result.settings.documents[k]) texts.push(`documents.${k}`)
+    for (const [k, v] of Object.entries(result.settings.documents.warrantyMonths)) {
+      const was = result.before.documents.warrantyMonths[k as keyof typeof result.before.documents.warrantyMonths]
+      if (was !== v) changed[`warrantyMonths.${k}`] = [was, v]
+    }
+    await audit.record({ action: 'settings_change', actor: { id: viewer.id, email: viewer.email, role: viewer.role }, detail: { changed, ...(texts.length ? { texts } : {}) }, ip: clientIp(req) })
     res.json(result.settings)
   }))
 
+  mountWorkshop(admin, deps, managers)
+
   router.use('/admin', admin)
   return router
+}
+
+export function sendPdf(res: Response, file: { filename: string; content: Uint8Array }) {
+  res.set({
+    'Content-Type': 'application/pdf',
+    'Content-Disposition': `inline; filename="${file.filename}"`,
+    'Cache-Control': 'private, no-store',
+  })
+  res.send(Buffer.from(file.content))
 }

@@ -1,6 +1,6 @@
 import { catalog } from '../src/data/catalog.ts'
 import type { Booking, BookingStatus } from '../src/types.ts'
-import type { Mail, Mailer } from './auth/outbox.ts'
+import type { Mail, MailAttachment, Mailer } from './auth/outbox.ts'
 import { maskEmail } from './security/scrub.ts'
 
 export type MailOutcome = 'sent' | 'failed' | 'skipped'
@@ -8,8 +8,12 @@ export type MailOutcome = 'sent' | 'failed' | 'skipped'
 export type Notifier = {
   /** Confirmation to the customer (when they left an email) and a heads-up to every owner address. */
   bookingCreated(booking: Booking): Promise<{ customer: MailOutcome; owner: MailOutcome }>
-  /** Tells the customer their booking moved to a new status. */
-  statusChanged(booking: Booking): Promise<MailOutcome>
+  /** Tells the customer their booking moved to a new status. A warranty PDF can ride along on "done". */
+  statusChanged(booking: Booking, attachments?: MailAttachment[]): Promise<MailOutcome>
+  /** The device was taken in at the counter: the service sheet PDF, with the tracking link. */
+  intakeReceived(booking: Booking, sheet: MailAttachment): Promise<MailOutcome>
+  /** A warranty certificate sent on its own, when it is issued after the job was closed. */
+  warrantyIssued(booking: Booking, label: string, endsOn: string, certificate: MailAttachment): Promise<MailOutcome>
 }
 
 const SHOP = 'Norgelis Tech'
@@ -35,6 +39,10 @@ function statusLine(b: Booking, lang: Lang): string {
       if (onSite) return ro ? 'Lucrarea e gata.' : 'The job is done.'
       if (delivered) return ro ? 'Aparatul tău e gata. Ți-l aducem la adresă și te sunăm înainte să plecăm.' : 'Your device is ready. We will bring it to your address and call before we set off.'
       return ro ? 'Aparatul tău e gata. Poți veni să-l ridici în programul atelierului.' : 'Your device is ready. You can pick it up during workshop hours.'
+    case 'unrepairable':
+      if (onSite) return ro ? 'Din păcate, defectul nu se poate repara la fața locului. Te sunăm să-ți explicăm ce am găsit.' : 'Sadly, the fault cannot be fixed on site. We will call to explain what we found.'
+      if (delivered) return ro ? 'Din păcate, aparatul tău nu se poate repara. Ți-l aducem înapoi și te sunăm înainte să plecăm.' : 'Sadly, your device cannot be repaired. We will bring it back and call before we set off.'
+      return ro ? 'Din păcate, aparatul tău nu se poate repara. Poți veni să-l ridici în programul atelierului.' : 'Sadly, your device cannot be repaired. You can pick it up during workshop hours.'
     case 'done':
       if (onSite) return ro ? 'Lucrarea s-a încheiat. Mulțumim că ne-ai chemat.' : 'The job is finished. Thank you for calling us.'
       if (delivered) return ro ? 'Aparatul a fost predat. Mulțumim!' : 'Your device has been handed back. Thank you!'
@@ -47,8 +55,8 @@ function statusLine(b: Booking, lang: Lang): string {
 }
 
 const statusName: Record<Lang, Record<BookingStatus, string>> = {
-  ro: { received: 'Programare primită', diagnosis: 'În diagnostic', 'waiting-parts': 'Așteptăm piesa', repairing: 'În reparație', ready: 'Gata', done: 'Predat', cancelled: 'Anulată' },
-  en: { received: 'Booking received', diagnosis: 'Being diagnosed', 'waiting-parts': 'Waiting for parts', repairing: 'Being repaired', ready: 'Ready', done: 'Handed back', cancelled: 'Cancelled' },
+  ro: { received: 'Programare primită', diagnosis: 'În diagnostic', 'waiting-parts': 'Așteptăm piesa', repairing: 'În reparație', ready: 'Gata', unrepairable: 'Nereparabil', done: 'Predat', cancelled: 'Anulată' },
+  en: { received: 'Booking received', diagnosis: 'Being diagnosed', 'waiting-parts': 'Waiting for parts', repairing: 'Being repaired', ready: 'Ready', unrepairable: 'Cannot be repaired', done: 'Handed back', cancelled: 'Cancelled' },
 }
 
 function when(slot: string, lang: Lang): string {
@@ -163,24 +171,62 @@ export function createNotifier(options: { mailer: Mailer; origin: string; ownerE
       return { customer: customer!, owner }
     },
 
-    async statusChanged(b) {
+    async intakeReceived(b, sheet) {
+      if (!b.contact.email || !b.intake) return 'skipped'
+      const ro = b.lang === 'ro'
+      const number = `${b.intake.number}/${b.intake.year}`
+      const text = ro
+        ? `Am primit aparatul tău în atelier. Fișa de service are numărul ${number} și o găsești atașată.\n\nCod: ${b.code}\nVezi starea reparației oricând: ${track(b.code)}\n\nPăstrează fișa: o folosești când ridici aparatul.\n\n${SHOP}`
+        : `We have your device in the workshop. The service sheet is number ${number} and is attached.\n\nCode: ${b.code}\nCheck the repair status any time: ${track(b.code)}\n\nKeep the sheet: you use it to collect the device.\n\n${SHOP}`
+      return send({
+        to: b.contact.email,
+        kind: 'booking:intake',
+        subject: ro ? `${SHOP}: fișa de service ${number}` : `${SHOP}: service sheet ${number}`,
+        text,
+        attachments: [sheet],
+      })
+    },
+
+    async warrantyIssued(b, label, endsOn, certificate) {
+      if (!b.contact.email) return 'skipped'
+      const ro = b.lang === 'ro'
+      const until = new Intl.DateTimeFormat(ro ? 'ro-RO' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(`${endsOn}T12:00:00Z`))
+      return send({
+        to: b.contact.email,
+        kind: 'warranty:issued',
+        subject: ro ? `${SHOP}: certificatul de garanție ${label}` : `${SHOP}: warranty certificate ${label}`,
+        text: ro
+          ? `Îți trimitem certificatul de garanție ${label} pentru lucrarea ${b.code}. Garanția e valabilă până la ${until} inclusiv.\n\nPăstrează certificatul: îl aduci împreună cu aparatul dacă apare o problemă.\n\n${SHOP}`
+          : `Here is warranty certificate ${label} for job ${b.code}. It is valid until ${until} inclusive.\n\nKeep the certificate: bring it with the device if anything goes wrong.\n\n${SHOP}`,
+        attachments: [certificate],
+      })
+    },
+
+    async statusChanged(b, attachments) {
       if (!b.contact.email) return 'skipped'
       const lang: Lang = b.lang
+      const forWhat = b.status === 'unrepairable' ? (lang === 'ro' ? 'diagnostic' : 'the diagnosis') : lang === 'ro' ? 'reparație' : 'the repair'
       const price =
-        b.finalLei != null && (b.status === 'ready' || b.status === 'done')
+        b.finalLei != null && (b.status === 'ready' || b.status === 'done' || b.status === 'unrepairable')
           ? lang === 'ro'
-            ? `\nDe plată pentru reparație: ${b.finalLei} lei${b.pickup ? `, plus transport ${b.pickup.quote.totalLei} lei` : ''}.`
-            : `\nTo pay for the repair: ${b.finalLei} lei${b.pickup ? `, plus transport ${b.pickup.quote.totalLei} lei` : ''}.`
+            ? `\nDe plată pentru ${forWhat}: ${b.finalLei} lei${b.pickup ? `, plus transport ${b.pickup.quote.totalLei} lei` : ''}.`
+            : `\nTo pay for ${forWhat}: ${b.finalLei} lei${b.pickup ? `, plus transport ${b.pickup.quote.totalLei} lei` : ''}.`
           : ''
+      const warranty = attachments?.length
+        ? lang === 'ro'
+          ? '\nAtașat găsești certificatul de garanție. Păstrează-l.'
+          : '\nYour warranty certificate is attached. Please keep it.'
+        : ''
       const text =
         lang === 'ro'
-          ? `${statusLine(b, 'ro')}${price}\n\nCod: ${b.code}\nVezi starea: ${track(b.code)}\n\n${SHOP}`
-          : `${statusLine(b, 'en')}${price}\n\nCode: ${b.code}\nSee the status: ${track(b.code)}\n\n${SHOP}`
+          ? `${statusLine(b, 'ro')}${price}${warranty}\n\nCod: ${b.code}\nVezi starea: ${track(b.code)}\n\n${SHOP}`
+          : `${statusLine(b, 'en')}${price}${warranty}\n\nCode: ${b.code}\nSee the status: ${track(b.code)}\n\n${SHOP}`
       return send({
         to: b.contact.email,
         kind: `booking:${b.status}`,
         subject: `${SHOP}: ${b.code}, ${statusName[lang][b.status].toLowerCase()}`,
         text,
+        ...(attachments?.length ? { attachments } : {}),
       })
     },
   }

@@ -1,7 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { api } from './api'
 
-export type Role = 'customer' | 'owner' | 'dev'
+export type Role = 'customer' | 'technician' | 'owner' | 'dev'
 export type Viewer = { id: string; email: string; name: string; emailVerified: boolean; role: Role }
 type State = { status: 'loading' | 'ready' | 'unavailable'; user: Viewer | null; google: boolean }
 
@@ -37,4 +37,7 @@ export function useViewer() {
   return { ...current, refresh: refreshViewer }
 }
 
-export const isStaff = (user: Viewer | null) => user?.role === 'owner' || user?.role === 'dev'
+/** Works in /admin: technicians, owners and devs. */
+export const isStaff = (user: Viewer | null) => user?.role === 'technician' || user?.role === 'owner' || user?.role === 'dev'
+/** Sees money, settings and stats, and may archive or void. */
+export const isManager = (user: Viewer | null) => user?.role === 'owner' || user?.role === 'dev'

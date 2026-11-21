@@ -49,6 +49,8 @@ await build({
   ],
   logLevel: 'info',
 })
+// The PDF fonts are read at run time next to the bundle (server/documents/pdf.ts resolves ./fonts/).
+cpSync(path.join(root, 'server', 'documents', 'fonts'), path.join(fn, 'fonts'), { recursive: true })
 writeFileSync(path.join(fn, 'package.json'), JSON.stringify({ type: 'module' }))
 writeFileSync(
   path.join(fn, '.vc-config.json'),

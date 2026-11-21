@@ -157,6 +157,7 @@ const en: Dict = {
       'waiting-parts': 'Waiting for parts',
       repairing: 'Being repaired',
       ready: 'Ready',
+      unrepairable: 'Cannot be repaired',
       done: 'Handed back',
       cancelled: 'Cancelled',
     },
@@ -398,7 +399,7 @@ const en: Dict = {
       generic: 'Something went wrong. Try again.',
     },
     profile: { title: 'Profile', name: 'Name', email: 'Email', role: 'Role', verified: 'Confirmed', notVerified: 'Not confirmed' },
-    roles: { customer: 'Customer', owner: 'Owner', dev: 'Developer' },
+    roles: { customer: 'Customer', technician: 'Technician', owner: 'Owner', dev: 'Developer' },
     dashboards: { title: 'Dashboards', owner: 'Owner dashboard', dev: 'Developer dashboard' },
     adminBar: { nav: 'Dashboards', owner: 'Owner', dev: 'Developer', site: 'View the site' },
     bookings: {

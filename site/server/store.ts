@@ -44,7 +44,7 @@ function normalizeCode(code: string): string {
   return code.trim().toUpperCase()
 }
 
-const BOOKING_OPEN: BookingStatus[] = ['received', 'diagnosis', 'waiting-parts', 'repairing', 'ready']
+const BOOKING_OPEN: BookingStatus[] = ['received', 'diagnosis', 'waiting-parts', 'repairing', 'ready', 'unrepairable']
 
 export function isDuplicateKeyError(error: unknown): boolean {
   return typeof error === 'object' && error !== null && (error as { code?: unknown }).code === 11000

@@ -28,7 +28,7 @@ const ICONS: Record<Tab, ComponentType<{ className?: string }>> = {
 /** /admin: the owner dashboard. Owners and devs only. */
 export function OwnerPage() {
   return (
-    <Guard roles={['owner', 'dev']} wide>
+    <Guard roles={['technician', 'owner', 'dev']} wide>
       {() => <Dashboard />}
     </Guard>
   )

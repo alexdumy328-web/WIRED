@@ -1,11 +1,21 @@
-export const ROLES = ['customer', 'owner', 'dev'] as const
+/** In order of rank. A technician works on devices; an owner also runs the money and settings; dev can do everything. */
+export const ROLES = ['customer', 'technician', 'owner', 'dev'] as const
 export type Role = (typeof ROLES)[number]
 
 export function isRole(value: unknown): value is Role {
   return typeof value === 'string' && (ROLES as readonly string[]).includes(value)
 }
 
-const RANK: Record<Role, number> = { customer: 0, owner: 1, dev: 2 }
+const RANK: Record<Role, number> = { customer: 0, technician: 1, owner: 2, dev: 3 }
+
+/** Roles that work in the /admin dashboard. */
+export const STAFF_ROLES = ['technician', 'owner', 'dev'] as const satisfies readonly Role[]
+/** Roles that see money, settings and stats, and may archive or void. */
+export const MANAGER_ROLES = ['owner', 'dev'] as const satisfies readonly Role[]
+
+export function isManager(role: Role): boolean {
+  return RANK[role] >= RANK.owner
+}
 
 function emailList(value: string | undefined): Set<string> {
   return new Set(
@@ -35,8 +45,8 @@ export function effectiveRole(stored: unknown, bootstrap: Role | null): Role {
 }
 
 /**
- * Who may set which role. Devs can set any role. Owners may promote customers to owner or
- * demote owners to customer, but can never grant dev or touch a dev account.
+ * Who may set which role. Devs can set any role. Owners may move accounts between customer,
+ * technician and owner, but can never grant dev or touch a dev account.
  */
 export function canAssignRole(actor: Role, targetCurrent: Role, next: Role): boolean {
   if (actor === 'dev') return true

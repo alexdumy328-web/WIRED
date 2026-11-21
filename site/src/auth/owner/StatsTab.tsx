@@ -10,7 +10,7 @@ import type { Stats } from './types'
 
 
 /** Bar fills matching the status dots (a ring there becomes a lighter fill here). */
-const BAR = { received: 'bg-muted', diagnosis: 'bg-violet/55', 'waiting-parts': 'bg-rose', repairing: 'bg-violet', ready: 'bg-ok', done: 'bg-ink/40', cancelled: 'bg-muted/40' } as const
+const BAR = { received: 'bg-muted', diagnosis: 'bg-violet/55', 'waiting-parts': 'bg-rose', repairing: 'bg-violet', ready: 'bg-ok', unrepairable: 'bg-rose/50', done: 'bg-ink/40', cancelled: 'bg-muted/40' } as const
 
 export function StatsTab() {
   const { t, lang } = useI18n()
