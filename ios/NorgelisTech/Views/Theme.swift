@@ -122,6 +122,8 @@ struct KindChip: View {
     var body: some View {
         Label(LocalizedStringKey(kind.titleKey), systemImage: kind.iconName)
             .font(.caption2.bold())
+            .lineLimit(1)
+            .fixedSize()
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
             .background(kind.color.opacity(0.14))

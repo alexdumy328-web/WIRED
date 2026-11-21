@@ -136,14 +136,18 @@ struct CustomerRootView: View {
     }
 
     private func formatDate(_ isoString: String) -> String {
-        let formatter = ISO8601DateFormatter()
-        if let date = formatter.date(from: isoString) {
-            let outFormatter = DateFormatter()
-            outFormatter.dateStyle = .medium
-            outFormatter.timeStyle = .short
-            outFormatter.locale = Locale(identifier: "ro_RO")
-            return outFormatter.string(from: date)
+        // The API sends fractional seconds ("...T10:30:00.000Z"); older values may not.
+        let withFraction = ISO8601DateFormatter()
+        withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        let plain = ISO8601DateFormatter()
+        guard let date = withFraction.date(from: isoString) ?? plain.date(from: isoString) else {
+            return isoString
         }
-        return isoString
+        let out = DateFormatter()
+        out.dateStyle = .medium
+        out.timeStyle = .short
+        out.timeZone = TimeZone(identifier: "Europe/Bucharest")
+        out.locale = Locale.current
+        return out.string(from: date)
     }
 }

@@ -95,3 +95,6 @@
 "booking.kind.label" = "Job type";
 "booking.price.label" = "Estimated price";
 "booking.price.after_diagnosis" = "After diagnosis";
+
+/* Navigation */
+"driver.action.navigate" = "Navigate";

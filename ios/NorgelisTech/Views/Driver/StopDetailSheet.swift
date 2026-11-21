@@ -61,6 +61,8 @@ struct StopDetailSheet: View {
                     .background(Color(.secondarySystemBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 16))
 
+                    NavigateMenu(stop: stop)
+
                     // Contact actions
                     HStack(spacing: 12) {
                         Button {

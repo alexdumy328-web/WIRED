@@ -5,6 +5,7 @@ struct DriverMapView: View {
     @EnvironmentObject var appState: AppState
     @Binding var selectedStop: PickupStop?
     @State private var showingStopsList: Bool = false
+    @State private var route: MKRoute?
 
     @State private var cameraPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
@@ -17,6 +18,16 @@ struct DriverMapView: View {
         appState.stops.first(where: { !$0.isCompleted })
     }
 
+    /// The stop the route leads to: the one in progress, else the next one.
+    var routeTarget: PickupStop? {
+        appState.currentEnRouteStop ?? nextStop
+    }
+
+    /// Changes when the route has to be drawn again.
+    private var routeKey: String {
+        "\(routeTarget?.id ?? "none")-\(appState.isDriverEnRoute)"
+    }
+
     var body: some View {
         ZStack(alignment: .bottom) {
             // MapKit View
@@ -24,6 +35,12 @@ struct DriverMapView: View {
                 // Shop Base
                 Marker(MockData.shopName, systemImage: "wrench.and.screwdriver.fill", coordinate: MockData.shopCoordinate)
                     .tint(.blue)
+
+                // Driving route to the current target
+                if let route {
+                    MapPolyline(route.polyline)
+                        .stroke(Theme.pickup, style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
+                }
 
                 // Customer Stops
                 ForEach(appState.stops) { stop in
@@ -127,6 +144,53 @@ struct DriverMapView: View {
         .sheet(isPresented: $showingStopsList) {
             StopsListView(selectedStop: $selectedStop)
         }
+        .task(id: routeKey) {
+            await loadRoute()
+        }
+    }
+
+    // MARK: - Route
+
+    /// Asks Apple Maps for the driving route and frames it on the map.
+    private func loadRoute() async {
+        guard let target = routeTarget else {
+            route = nil
+            return
+        }
+        let origin = appState.isDriverEnRoute ? appState.driverCoordinate : MockData.shopCoordinate
+        let request = MKDirections.Request()
+        request.source = MKMapItem(placemark: MKPlacemark(coordinate: origin))
+        request.destination = MKMapItem(placemark: MKPlacemark(coordinate: target.coordinate))
+        request.transportType = .automobile
+        do {
+            let response = try await MKDirections(request: request).calculate()
+            guard let best = response.routes.first else { return }
+            route = best
+            let rect = best.polyline.boundingMapRect
+            withAnimation {
+                // Extra room at the bottom so the card does not cover the start of the route.
+                cameraPosition = .rect(MKMapRect(
+                    x: rect.minX - rect.width * 0.25,
+                    y: rect.minY - rect.height * 0.15,
+                    width: rect.width * 1.5,
+                    height: rect.height * 1.9
+                ))
+            }
+        } catch {
+            route = nil
+        }
+    }
+
+    @ViewBuilder
+    private var routeSummary: some View {
+        if let route {
+            Label(
+                String(format: "%.1f km · ~%d min", route.distance / 1000, Int(ceil(route.expectedTravelTime / 60))),
+                systemImage: "arrow.triangle.turn.up.right.circle.fill"
+            )
+            .font(.footnote.bold())
+            .foregroundColor(Theme.pickup)
+        }
     }
 
     // MARK: - Subcards
@@ -172,9 +236,13 @@ struct DriverMapView: View {
                     .lineLimit(2)
             }
 
+            routeSummary
+
             Divider()
 
             HStack(spacing: 12) {
+                NavigateMenu(stop: stop)
+
                 // Call button
                 Button {
                     callCustomer(phone: stop.customerPhone)
@@ -186,19 +254,19 @@ struct DriverMapView: View {
                         .background(Color(.secondarySystemBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
+            }
 
-                // Primary "Plec spre client" Action Button
-                Button {
-                    appState.startTripToStop(stop)
-                } label: {
-                    Label(LocalizedStringKey("driver.action.start"), systemImage: "location.fill")
-                        .font(.headline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(Color.accentColor)
-                        .foregroundColor(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
+            // Primary "Plec spre client" Action Button
+            Button {
+                appState.startTripToStop(stop)
+            } label: {
+                Label(LocalizedStringKey("driver.action.start"), systemImage: "location.fill")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(Color.accentColor)
+                    .foregroundColor(.white)
+                    .clipShape(RoundedRectangle(cornerRadius: 12))
             }
         }
         .padding(16)
@@ -238,6 +306,10 @@ struct DriverMapView: View {
                         .foregroundColor(.secondary)
                 }
             }
+
+            routeSummary
+
+            NavigateMenu(stop: stop)
 
             HStack(spacing: 10) {
                 Image(systemName: "antenna.radiowaves.left.and.right")

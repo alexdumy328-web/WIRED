@@ -128,8 +128,8 @@ struct OwnerRootView: View {
                     .font(.subheadline.bold())
                     .padding(.horizontal, 8)
                     .padding(.vertical, 3)
-                    .background(booking.kind.color.opacity(0.14))
-                    .foregroundColor(booking.kind.color)
+                    .background(Color(.tertiarySystemFill))
+                    .foregroundColor(.primary)
                     .clipShape(Capsule())
 
                 KindChip(kind: booking.kind)

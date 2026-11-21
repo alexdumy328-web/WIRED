@@ -19,7 +19,7 @@ Why XcodeGen:
 ## Requirements
 
 - macOS 15+
-- Xcode 16+ (iOS 18+ SDK)
+- Xcode 16 or newer with an iOS 18+ simulator runtime (built and tested on Xcode 27.2, iOS 27.2)
 - XcodeGen: `brew install xcodegen`
 
 ## Generate, Build, and Run
@@ -31,14 +31,23 @@ xcodegen generate
 ```
 Produces `NorgelisTech.xcodeproj`.
 
-### 2. Build from command line
+### 2. Build for the simulator
 ```bash
 cd ios
 xcodebuild \
   -project NorgelisTech.xcodeproj \
   -scheme NorgelisTech \
-  -destination 'platform=iOS Simulator,name=iPhone 16 Pro' \
+  -destination 'platform=iOS Simulator,name=iPhone 18 Pro' \
+  -derivedDataPath build \
   build
+```
+Use any simulator name that `xcrun simctl list devices available` shows. If it lists no iOS runtime, install one with `xcodebuild -downloadPlatform iOS` (about 8 GB).
+
+### 2b. Install and launch on a booted simulator
+```bash
+xcrun simctl boot "iPhone 18 Pro"        # skip if already booted
+xcrun simctl install booted build/Build/Products/Debug-iphonesimulator/NorgelisTech.app
+xcrun simctl launch booted ro.norgelis.app
 ```
 
 ### 3. Run in Xcode
@@ -92,6 +101,16 @@ ios/
         ├── en.lproj/Localizable.strings # English text
         └── Assets.xcassets/             # App icon (site favicon mark) and AccentColor
 ```
+
+## Driver navigation
+
+- The map draws the real driving route (Apple Maps directions) from the workshop to the next stop, or from the driver's position to the stop in progress. The card shows distance and travel time.
+- **Navigate** opens a menu with Waze and Apple Maps. Waze starts turn-by-turn through `waze://`. When Waze is not installed it opens the `waze.com/ul` link, which offers the App Store. `LSApplicationQueriesSchemes` lists `waze` so the app can check for it.
+- Navigate is on the map card, on the active trip card and in the stop detail sheet.
+
+## Screenshots
+
+`docs/screenshots/` holds simulator captures: `driver.png` (route and Navigate), `owner.png`, `customer.png` and `home-icon.png` (the app icon on the home screen).
 
 ## Look and feel
 

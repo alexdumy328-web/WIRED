@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		047B823A3625EB3EEE0FCC4E /* Navigator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA16DC80F7CEDFCB578E1CC /* Navigator.swift */; };
 		05F575A00ACB2716907FB760 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7A82FC4C6942C2F99279E9 /* RootView.swift */; };
 		1AC760ABFE4AE732C04BA9D8 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D528A3E819AA56AAD606D18 /* AppState.swift */; };
 		1CDAD0A55AB50EEE2100EA77 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 462B015C55EABD0771F7A9DA /* Assets.xcassets */; };
@@ -58,6 +59,7 @@
 		9567685E983F5201FB3CCE24 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
 		98C6305B2534614EEAA5D4E3 /* NorgelisTechApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NorgelisTechApp.swift; sourceTree = "<group>"; };
 		C983DB6E573338D7BD9CDFD4 /* OwnerBookingDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerBookingDetailView.swift; sourceTree = "<group>"; };
+		CAA16DC80F7CEDFCB578E1CC /* Navigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigator.swift; sourceTree = "<group>"; };
 		CAA5805A99415F6558829339 /* DriverLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverLocation.swift; sourceTree = "<group>"; };
 		D8DDD17F647B3F57FCC9C051 /* MockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockData.swift; sourceTree = "<group>"; };
 		EC5769863689A4328D6595CD /* RolePickerBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RolePickerBar.swift; sourceTree = "<group>"; };
@@ -167,6 +169,7 @@
 				6F9450E7F038C309CBD57807 /* APIClient.swift */,
 				9567685E983F5201FB3CCE24 /* LocationService.swift */,
 				D8DDD17F647B3F57FCC9C051 /* MockData.swift */,
+				CAA16DC80F7CEDFCB578E1CC /* Navigator.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -265,6 +268,7 @@
 				C0D25EA8D6A9AB2EA4D387EE /* LiveTrackingView.swift in Sources */,
 				1EF5F50F2C147A6447D11369 /* LocationService.swift in Sources */,
 				8308E6FACF83657FA86A9CC5 /* MockData.swift in Sources */,
+				047B823A3625EB3EEE0FCC4E /* Navigator.swift in Sources */,
 				230CDEB9E924E65FC0427472 /* NorgelisTechApp.swift in Sources */,
 				435FD6A59E8F2D19538D60A9 /* OwnerBookingDetailView.swift in Sources */,
 				C17FE74D90DD98C7DB56EF8E /* OwnerRootView.swift in Sources */,

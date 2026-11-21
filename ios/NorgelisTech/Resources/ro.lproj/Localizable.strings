@@ -95,3 +95,6 @@
 "booking.kind.label" = "Tip lucrare";
 "booking.price.label" = "Preț estimat";
 "booking.price.after_diagnosis" = "După diagnostic";
+
+/* Navigation */
+"driver.action.navigate" = "Navighează";
