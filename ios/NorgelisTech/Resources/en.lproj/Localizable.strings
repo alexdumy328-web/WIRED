@@ -1,0 +1,89 @@
+/* English Localization */
+
+/* General & App */
+"app.title" = "Norgelis Tech";
+"app.subtitle" = "Electronics Repair & Diagnostics Iași";
+"common.close" = "Close";
+"common.save" = "Save";
+"common.cancel" = "Cancel";
+"common.refresh" = "Refresh";
+"common.loading" = "Loading...";
+"common.search" = "Search";
+"common.retry" = "Retry";
+"common.error" = "Error";
+"common.ok" = "OK";
+"common.urgent" = "URGENT";
+
+/* Role Picker */
+"role.picker.title" = "Dev Role:";
+"role.driver" = "Driver";
+"role.owner" = "Owner";
+"role.customer" = "Customer";
+"role.settings" = "Dev Settings";
+
+/* Booking Statuses */
+"status.received" = "Booking received";
+"status.diagnosis" = "Diagnosis";
+"status.waiting-parts" = "Waiting for parts";
+"status.repairing" = "Repairing";
+"status.ready" = "Ready for pickup / delivery";
+"status.done" = "Completed";
+"status.cancelled" = "Cancelled";
+
+/* Driver Area */
+"driver.title" = "Driver Dashboard";
+"driver.stops.title" = "Today's Stops";
+"driver.stops.remaining" = "%d stops remaining";
+"driver.action.start" = "I'm on my way";
+"driver.action.en_route" = "Driving to customer...";
+"driver.action.complete_stop" = "Complete Stop";
+"driver.pickup.type.both" = "Pickup & Return";
+"driver.pickup.type.pickup" = "Device pickup";
+"driver.pickup.type.dropoff" = "Repaired device drop-off";
+"driver.stop.address" = "Customer Address";
+"driver.stop.contact" = "Customer Contact";
+"driver.stop.call" = "Call";
+"driver.stop.navigate" = "Navigate";
+"driver.tracking.active" = "Live GPS Active";
+"driver.tracking.inactive" = "GPS Inactive";
+"driver.shop.location" = "Norgelis Tech Workshop (Base)";
+
+/* Owner Area */
+"owner.title" = "Workshop & Owner Dashboard";
+"owner.stats.active_repairs" = "Active repairs";
+"owner.stats.today_pickups" = "Today's pickups";
+"owner.stats.driver_status" = "Driver status";
+"owner.driver.idle" = "At workshop";
+"owner.driver.driving" = "Driving to %@";
+"owner.driver.eta" = "Estimated arrival: ~%d min";
+"owner.bookings.all" = "All";
+"owner.bookings.active" = "In Progress";
+"owner.bookings.pickups" = "Pickups";
+"owner.bookings.ready" = "Ready";
+"owner.booking.device" = "Device:";
+"owner.booking.issue" = "Reported issue:";
+"owner.booking.slot" = "Scheduled slot:";
+"owner.booking.code" = "Booking code";
+"owner.booking.update_status" = "Update status";
+
+/* Customer Area */
+"customer.title" = "Repair Tracking";
+"customer.lookup.placeholder" = "Booking code (e.g. NT-4K7Q)";
+"customer.lookup.button" = "Check Status";
+"customer.booking.details" = "Booking Details";
+"customer.driver.on_the_way" = "The driver is heading your way!";
+"customer.driver.eta" = "Estimated arrival time: ~%d minutes";
+"customer.driver.live_badge" = "DRIVER EN ROUTE";
+"customer.driver.waiting" = "Pickup is scheduled. Live driver tracking will be available once the driver departs.";
+"customer.no_active_bookings" = "No booking looked up yet.";
+
+/* Dev Settings */
+"settings.title" = "Development & API Settings";
+"settings.api_base_url" = "API Server URL:";
+"settings.preset.localhost" = "Local (localhost:8787)";
+"settings.preset.production" = "Production (norgelis.ro)";
+"settings.mock_data" = "Use Mock Data";
+"settings.mock_location" = "Simulate Driver GPS Movement";
+"settings.health.test" = "Test API Connection";
+"settings.health.success" = "Successfully connected to backend!";
+"settings.health.failed" = "Connection failed:";

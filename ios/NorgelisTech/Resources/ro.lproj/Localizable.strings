@@ -1,0 +1,89 @@
+/* Romanian Localization (Default) */
+
+/* General & App */
+"app.title" = "Norgelis Tech";
+"app.subtitle" = "Service Electronică & Diagnosticare Iași";
+"common.close" = "Închide";
+"common.save" = "Salvează";
+"common.cancel" = "Anulează";
+"common.refresh" = "Actualizează";
+"common.loading" = "Se încarcă...";
+"common.search" = "Caută";
+"common.retry" = "Reîncearcă";
+"common.error" = "Eroare";
+"common.ok" = "OK";
+"common.urgent" = "URGENT";
+
+/* Role Picker */
+"role.picker.title" = "Rol dezvoltare:";
+"role.driver" = "Șofer";
+"role.owner" = "Proprietar";
+"role.customer" = "Client";
+"role.settings" = "Setări Dev";
+
+/* Booking Statuses */
+"status.received" = "Programare primită";
+"status.diagnosis" = "Diagnosticare";
+"status.waiting-parts" = "În așteptare piese";
+"status.repairing" = "În reparație";
+"status.ready" = "Gata de ridicare / livrare";
+"status.done" = "Finalizat";
+"status.cancelled" = "Anulat";
+
+/* Driver Area */
+"driver.title" = "Panou Șofer";
+"driver.stops.title" = "Opriri astăzi";
+"driver.stops.remaining" = "%d opriri rămase";
+"driver.action.start" = "Plec spre client";
+"driver.action.en_route" = "În deplasare spre client...";
+"driver.action.complete_stop" = "Finalizează oprirea";
+"driver.pickup.type.both" = "Preluare & Returnare";
+"driver.pickup.type.pickup" = "Preluare aparat";
+"driver.pickup.type.dropoff" = "Livrare aparat reparat";
+"driver.stop.address" = "Adresă client";
+"driver.stop.contact" = "Contact client";
+"driver.stop.call" = "Apelează";
+"driver.stop.navigate" = "Navighează";
+"driver.tracking.active" = "Transmisie GPS activă";
+"driver.tracking.inactive" = "Transmisie GPS oprită";
+"driver.shop.location" = "Atelier Norgelis Tech (Baza)";
+
+/* Owner Area */
+"owner.title" = "Panou Atelier & Proprietar";
+"owner.stats.active_repairs" = "Reparații active";
+"owner.stats.today_pickups" = "Preluări astăzi";
+"owner.stats.driver_status" = "Stare șofer";
+"owner.driver.idle" = "La atelier";
+"owner.driver.driving" = "În cursă spre %@";
+"owner.driver.eta" = "Sosire estimată: ~%d min";
+"owner.bookings.all" = "Toate";
+"owner.bookings.active" = "În lucru";
+"owner.bookings.pickups" = "Preluări";
+"owner.bookings.ready" = "Gata";
+"owner.booking.device" = "Aparat:";
+"owner.booking.issue" = "Defect semnalat:";
+"owner.booking.slot" = "Interval programat:";
+"owner.booking.code" = "Cod programare";
+"owner.booking.update_status" = "Actualizează status";
+
+/* Customer Area */
+"customer.title" = "Urmărire Reparație";
+"customer.lookup.placeholder" = "Cod programare (ex: NT-4K7Q)";
+"customer.lookup.button" = "Verifică starea";
+"customer.booking.details" = "Detalii programare";
+"customer.driver.on_the_way" = "Șoferul a plecat spre tine!";
+"customer.driver.eta" = "Timp estimat de sosire: ~%d minute";
+"customer.driver.live_badge" = "ȘOFER ÎN MIȘCARE";
+"customer.driver.waiting" = "Preluarea este programată. Vei putea urmări șoferul în timp real când pleacă spre tine.";
+"customer.no_active_bookings" = "Nicio programare căutată încă.";
+
+/* Dev Settings */
+"settings.title" = "Setări Dezvoltare & API";
+"settings.api_base_url" = "URL Server API:";
+"settings.preset.localhost" = "Local (localhost:8787)";
+"settings.preset.production" = "Producție (norgelis.ro)";
+"settings.mock_data" = "Folosește date simulate (Mock)";
+"settings.mock_location" = "Simulează deplasare GPS șofer";
+"settings.health.test" = "Verifică conexiunea API";
+"settings.health.success" = "Conectat cu succes la backend!";
+"settings.health.failed" = "Conexiune eșuată:";

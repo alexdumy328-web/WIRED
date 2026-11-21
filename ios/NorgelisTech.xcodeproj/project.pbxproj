@@ -1,0 +1,483 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		05F575A00ACB2716907FB760 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D7A82FC4C6942C2F99279E9 /* RootView.swift */; };
+		1AC760ABFE4AE732C04BA9D8 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1D528A3E819AA56AAD606D18 /* AppState.swift */; };
+		1CDAD0A55AB50EEE2100EA77 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 462B015C55EABD0771F7A9DA /* Assets.xcassets */; };
+		1EF5F50F2C147A6447D11369 /* LocationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9567685E983F5201FB3CCE24 /* LocationService.swift */; };
+		230CDEB9E924E65FC0427472 /* NorgelisTechApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 98C6305B2534614EEAA5D4E3 /* NorgelisTechApp.swift */; };
+		3D3165897A45E51291C3A266 /* DevSettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72F75513ADD4CD691582923D /* DevSettingsSheet.swift */; };
+		435FD6A59E8F2D19538D60A9 /* OwnerBookingDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C983DB6E573338D7BD9CDFD4 /* OwnerBookingDetailView.swift */; };
+		4519977934CD9C31C3CA532D /* RolePickerBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC5769863689A4328D6595CD /* RolePickerBar.swift */; };
+		591C64F7A941A983B0CFC84B /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F9450E7F038C309CBD57807 /* APIClient.swift */; };
+		597500261874022043B4F9F3 /* DriverRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83445BA20548B7813B954853 /* DriverRootView.swift */; };
+		7EDB37648B1B3461F210AFCB /* Booking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06EFA63EEE20BF9E1E6E267B /* Booking.swift */; };
+		81C0FE3B41335B32C708E3E0 /* CustomerRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B2977F4C90C063355A975DA /* CustomerRootView.swift */; };
+		81FE8E5DFCD4E641B2E50969 /* DriverRadarCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C9FD522D1BB4B6E50601C26 /* DriverRadarCard.swift */; };
+		8308E6FACF83657FA86A9CC5 /* MockData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8DDD17F647B3F57FCC9C051 /* MockData.swift */; };
+		910D14E22F58AEA2A88290D4 /* PickupStop.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9B75631B70726E898394D09 /* PickupStop.swift */; };
+		9738947027AECA048659316C /* DriverMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A0E6CEFF8D69F1691135AC9 /* DriverMapView.swift */; };
+		997B5905150D427A06FB0750 /* BookingStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE3FA3DC62554F3205AFF3A /* BookingStatus.swift */; };
+		A650A5E2D90AACF480D57073 /* StopsListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 329441B426EC90221423E628 /* StopsListView.swift */; };
+		B95AF1EF4E204ABEF36BA85B /* StopDetailSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1180090AAB5086406E35E454 /* StopDetailSheet.swift */; };
+		C0D25EA8D6A9AB2EA4D387EE /* LiveTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48031E51F98DBE94D86C491D /* LiveTrackingView.swift */; };
+		C17FE74D90DD98C7DB56EF8E /* OwnerRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B2DF236626B8F383298F113 /* OwnerRootView.swift */; };
+		EE9DBEB75D0F670C145F67CE /* UserRole.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76D5D7DD84DBCD740F891576 /* UserRole.swift */; };
+		F72A69D2E336759028C9C241 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 86979048417B5AC785D532E3 /* Localizable.strings */; };
+		FC09F290C0966AE3E004B7A5 /* DriverLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA5805A99415F6558829339 /* DriverLocation.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		06EFA63EEE20BF9E1E6E267B /* Booking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Booking.swift; sourceTree = "<group>"; };
+		1180090AAB5086406E35E454 /* StopDetailSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopDetailSheet.swift; sourceTree = "<group>"; };
+		1B2977F4C90C063355A975DA /* CustomerRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerRootView.swift; sourceTree = "<group>"; };
+		1B2DF236626B8F383298F113 /* OwnerRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerRootView.swift; sourceTree = "<group>"; };
+		1D528A3E819AA56AAD606D18 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
+		1D7A82FC4C6942C2F99279E9 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		2C9FD522D1BB4B6E50601C26 /* DriverRadarCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverRadarCard.swift; sourceTree = "<group>"; };
+		329441B426EC90221423E628 /* StopsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsListView.swift; sourceTree = "<group>"; };
+		462B015C55EABD0771F7A9DA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		48031E51F98DBE94D86C491D /* LiveTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTrackingView.swift; sourceTree = "<group>"; };
+		48336DE168DAF09A9A71DBB2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		490BBE9E5083DA924198FE98 /* ro */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ro; path = ro.lproj/Localizable.strings; sourceTree = "<group>"; };
+		51A2018910D7CD120FB281BE /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
+		6A0E6CEFF8D69F1691135AC9 /* DriverMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverMapView.swift; sourceTree = "<group>"; };
+		6F9450E7F038C309CBD57807 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		72F75513ADD4CD691582923D /* DevSettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevSettingsSheet.swift; sourceTree = "<group>"; };
+		76D5D7DD84DBCD740F891576 /* UserRole.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRole.swift; sourceTree = "<group>"; };
+		7BE3FA3DC62554F3205AFF3A /* BookingStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingStatus.swift; sourceTree = "<group>"; };
+		83445BA20548B7813B954853 /* DriverRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverRootView.swift; sourceTree = "<group>"; };
+		9567685E983F5201FB3CCE24 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
+		98C6305B2534614EEAA5D4E3 /* NorgelisTechApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NorgelisTechApp.swift; sourceTree = "<group>"; };
+		C983DB6E573338D7BD9CDFD4 /* OwnerBookingDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerBookingDetailView.swift; sourceTree = "<group>"; };
+		CAA5805A99415F6558829339 /* DriverLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverLocation.swift; sourceTree = "<group>"; };
+		D8DDD17F647B3F57FCC9C051 /* MockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockData.swift; sourceTree = "<group>"; };
+		EC5769863689A4328D6595CD /* RolePickerBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RolePickerBar.swift; sourceTree = "<group>"; };
+		F9B75631B70726E898394D09 /* PickupStop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PickupStop.swift; sourceTree = "<group>"; };
+		FA9EDBE10D1C2BDA839A40A9 /* NorgelisTech.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = NorgelisTech.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		151F0B4F429A6076D80DEDDE /* App */ = {
+			isa = PBXGroup;
+			children = (
+				1D528A3E819AA56AAD606D18 /* AppState.swift */,
+				98C6305B2534614EEAA5D4E3 /* NorgelisTechApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		34528FFBE1EF4546D663DEF2 = {
+			isa = PBXGroup;
+			children = (
+				C71A9E327CA75E0C99829916 /* NorgelisTech */,
+				E7587A80E502535B6D6B8D62 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		427972A518A13C11E8C9D982 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				462B015C55EABD0771F7A9DA /* Assets.xcassets */,
+				48336DE168DAF09A9A71DBB2 /* Info.plist */,
+				86979048417B5AC785D532E3 /* Localizable.strings */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
+		6DAEA5D5D897A0739A6FD0B5 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				06EFA63EEE20BF9E1E6E267B /* Booking.swift */,
+				7BE3FA3DC62554F3205AFF3A /* BookingStatus.swift */,
+				CAA5805A99415F6558829339 /* DriverLocation.swift */,
+				F9B75631B70726E898394D09 /* PickupStop.swift */,
+				76D5D7DD84DBCD740F891576 /* UserRole.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		710D4B2E334EF3553037DE87 /* Customer */ = {
+			isa = PBXGroup;
+			children = (
+				1B2977F4C90C063355A975DA /* CustomerRootView.swift */,
+				48031E51F98DBE94D86C491D /* LiveTrackingView.swift */,
+			);
+			path = Customer;
+			sourceTree = "<group>";
+		};
+		93A8313031B77F1F4B22E1DA /* Owner */ = {
+			isa = PBXGroup;
+			children = (
+				2C9FD522D1BB4B6E50601C26 /* DriverRadarCard.swift */,
+				C983DB6E573338D7BD9CDFD4 /* OwnerBookingDetailView.swift */,
+				1B2DF236626B8F383298F113 /* OwnerRootView.swift */,
+			);
+			path = Owner;
+			sourceTree = "<group>";
+		};
+		A7EE10EE1445F576F499E49E /* Driver */ = {
+			isa = PBXGroup;
+			children = (
+				6A0E6CEFF8D69F1691135AC9 /* DriverMapView.swift */,
+				83445BA20548B7813B954853 /* DriverRootView.swift */,
+				1180090AAB5086406E35E454 /* StopDetailSheet.swift */,
+				329441B426EC90221423E628 /* StopsListView.swift */,
+			);
+			path = Driver;
+			sourceTree = "<group>";
+		};
+		BA91D4EE75C38B38A500DA74 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				72F75513ADD4CD691582923D /* DevSettingsSheet.swift */,
+				EC5769863689A4328D6595CD /* RolePickerBar.swift */,
+				1D7A82FC4C6942C2F99279E9 /* RootView.swift */,
+				710D4B2E334EF3553037DE87 /* Customer */,
+				A7EE10EE1445F576F499E49E /* Driver */,
+				93A8313031B77F1F4B22E1DA /* Owner */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		C71A9E327CA75E0C99829916 /* NorgelisTech */ = {
+			isa = PBXGroup;
+			children = (
+				151F0B4F429A6076D80DEDDE /* App */,
+				6DAEA5D5D897A0739A6FD0B5 /* Models */,
+				427972A518A13C11E8C9D982 /* Resources */,
+				DED067C7295D79519E8659EF /* Services */,
+				BA91D4EE75C38B38A500DA74 /* Views */,
+			);
+			path = NorgelisTech;
+			sourceTree = "<group>";
+		};
+		DED067C7295D79519E8659EF /* Services */ = {
+			isa = PBXGroup;
+			children = (
+				6F9450E7F038C309CBD57807 /* APIClient.swift */,
+				9567685E983F5201FB3CCE24 /* LocationService.swift */,
+				D8DDD17F647B3F57FCC9C051 /* MockData.swift */,
+			);
+			path = Services;
+			sourceTree = "<group>";
+		};
+		E7587A80E502535B6D6B8D62 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				FA9EDBE10D1C2BDA839A40A9 /* NorgelisTech.app */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		B14495B27D6FBEE5F0AF4200 /* NorgelisTech */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3101EB0BC847E3E0EB1F1B18 /* Build configuration list for PBXNativeTarget "NorgelisTech" */;
+			buildPhases = (
+				055904F25027C915D23B9AAD /* Sources */,
+				6BD7EB1DCA764C9F9FD43DD7 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = NorgelisTech;
+			packageProductDependencies = (
+			);
+			productName = NorgelisTech;
+			productReference = FA9EDBE10D1C2BDA839A40A9 /* NorgelisTech.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		F73F77ABFCE3E36BDEF8EF6B /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					B14495B27D6FBEE5F0AF4200 = {
+						DevelopmentTeam = "";
+						ProvisioningStyle = Automatic;
+					};
+				};
+			};
+			buildConfigurationList = 61640D04CE220127D413C0BC /* Build configuration list for PBXProject "NorgelisTech" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+				ro,
+			);
+			mainGroup = 34528FFBE1EF4546D663DEF2;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = E7587A80E502535B6D6B8D62 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				B14495B27D6FBEE5F0AF4200 /* NorgelisTech */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		6BD7EB1DCA764C9F9FD43DD7 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				1CDAD0A55AB50EEE2100EA77 /* Assets.xcassets in Resources */,
+				F72A69D2E336759028C9C241 /* Localizable.strings in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		055904F25027C915D23B9AAD /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				591C64F7A941A983B0CFC84B /* APIClient.swift in Sources */,
+				1AC760ABFE4AE732C04BA9D8 /* AppState.swift in Sources */,
+				7EDB37648B1B3461F210AFCB /* Booking.swift in Sources */,
+				997B5905150D427A06FB0750 /* BookingStatus.swift in Sources */,
+				81C0FE3B41335B32C708E3E0 /* CustomerRootView.swift in Sources */,
+				3D3165897A45E51291C3A266 /* DevSettingsSheet.swift in Sources */,
+				FC09F290C0966AE3E004B7A5 /* DriverLocation.swift in Sources */,
+				9738947027AECA048659316C /* DriverMapView.swift in Sources */,
+				81FE8E5DFCD4E641B2E50969 /* DriverRadarCard.swift in Sources */,
+				597500261874022043B4F9F3 /* DriverRootView.swift in Sources */,
+				C0D25EA8D6A9AB2EA4D387EE /* LiveTrackingView.swift in Sources */,
+				1EF5F50F2C147A6447D11369 /* LocationService.swift in Sources */,
+				8308E6FACF83657FA86A9CC5 /* MockData.swift in Sources */,
+				230CDEB9E924E65FC0427472 /* NorgelisTechApp.swift in Sources */,
+				435FD6A59E8F2D19538D60A9 /* OwnerBookingDetailView.swift in Sources */,
+				C17FE74D90DD98C7DB56EF8E /* OwnerRootView.swift in Sources */,
+				910D14E22F58AEA2A88290D4 /* PickupStop.swift in Sources */,
+				4519977934CD9C31C3CA532D /* RolePickerBar.swift in Sources */,
+				05F575A00ACB2716907FB760 /* RootView.swift in Sources */,
+				B95AF1EF4E204ABEF36BA85B /* StopDetailSheet.swift in Sources */,
+				A650A5E2D90AACF480D57073 /* StopsListView.swift in Sources */,
+				EE9DBEB75D0F670C145F67CE /* UserRole.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXVariantGroup section */
+		86979048417B5AC785D532E3 /* Localizable.strings */ = {
+			isa = PBXVariantGroup;
+			children = (
+				51A2018910D7CD120FB281BE /* en */,
+				490BBE9E5083DA924198FE98 /* ro */,
+			);
+			name = Localizable.strings;
+			sourceTree = "<group>";
+		};
+/* End PBXVariantGroup section */
+
+/* Begin XCBuildConfiguration section */
+		5A393070C7D2502B01924BD8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		7B2857E3DEB93B6B992F2E5C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_KEY_UIBackgroundModes = location;
+				INFOPLIST_FILE = NorgelisTech/Resources/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ro.norgelis.app;
+				PRODUCT_NAME = NorgelisTech;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		7FA3F874FDAD57AEF7D65138 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		E6C98B310066B790DB53A827 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = "";
+				GENERATE_INFOPLIST_KEY_UIBackgroundModes = location;
+				INFOPLIST_FILE = NorgelisTech/Resources/Info.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ro.norgelis.app;
+				PRODUCT_NAME = NorgelisTech;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		3101EB0BC847E3E0EB1F1B18 /* Build configuration list for PBXNativeTarget "NorgelisTech" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				E6C98B310066B790DB53A827 /* Debug */,
+				7B2857E3DEB93B6B992F2E5C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		61640D04CE220127D413C0BC /* Build configuration list for PBXProject "NorgelisTech" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				7FA3F874FDAD57AEF7D65138 /* Debug */,
+				5A393070C7D2502B01924BD8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = F73F77ABFCE3E36BDEF8EF6B /* Project object */;
+}
