@@ -60,11 +60,8 @@ struct DevSettingsSheet: View {
                     }
                 }
 
-                Section(header: Text("console.dev.title"), footer: Text("console.dev.cookie_hint")) {
+                Section(header: Text("console.dev.title")) {
                     Toggle("console.more.sample_data", isOn: $apiClient.useMockData)
-                    SecureField("console.dev.cookie", text: $apiClient.sessionCookie)
-                        .autocorrectionDisabled()
-                        .textInputAutocapitalization(.never)
                 }
 
                 Section(header: Text("Simulator & Tracking GPS")) {

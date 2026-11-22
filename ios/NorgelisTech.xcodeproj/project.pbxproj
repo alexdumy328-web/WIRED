@@ -22,8 +22,10 @@
 		3D3165897A45E51291C3A266 /* DevSettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72F75513ADD4CD691582923D /* DevSettingsSheet.swift */; };
 		448AAFCFCF4F26AC7235874E /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28F395CC0D785227DA003BA9 /* Theme.swift */; };
 		4519977934CD9C31C3CA532D /* RolePickerBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC5769863689A4328D6595CD /* RolePickerBar.swift */; };
+		52BCFBEC1B4C6AD577F6F342 /* AuthStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F490C116CE536750005103B5 /* AuthStore.swift */; };
 		591C64F7A941A983B0CFC84B /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F9450E7F038C309CBD57807 /* APIClient.swift */; };
 		597500261874022043B4F9F3 /* DriverRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83445BA20548B7813B954853 /* DriverRootView.swift */; };
+		622CAFB467E74BB0851A8B32 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3896954FFA3703713D5C4351 /* Keychain.swift */; };
 		6CF8CE6EF19764C20E9DE5D9 /* TodayTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495E2C25CA64217A0F3E6D7D /* TodayTab.swift */; };
 		790A1645A7E50040D2B6C833 /* OwnerRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D4696B0900390557FCF1713 /* OwnerRepository.swift */; };
 		7CC74CF685AB94766B0E213C /* OwnerSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 953E62233030FCCBC2F56EBD /* OwnerSettingsView.swift */; };
@@ -33,6 +35,7 @@
 		8308E6FACF83657FA86A9CC5 /* MockData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8DDD17F647B3F57FCC9C051 /* MockData.swift */; };
 		83443F4690E191BF8F8087DF /* WalkInSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF761FFCE7EA85614AFBB148 /* WalkInSheet.swift */; };
 		8369297C3EF3ADC95AE7A5FA /* BookingDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF4F52A82B63EE6E6057D6DF /* BookingDetailView.swift */; };
+		894408347FDA4C7330B38DD6 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 439DE18833CEDA36EC475B5B /* SignInView.swift */; };
 		8FAA4F5CFECD9906BBDFED92 /* Workshop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 803335B3567628905CF47352 /* Workshop.swift */; };
 		910D14E22F58AEA2A88290D4 /* PickupStop.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9B75631B70726E898394D09 /* PickupStop.swift */; };
 		92AB8E26661B88696CFC9CCE /* CustomersTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BCECAFE4A76C03232FB6945 /* CustomersTab.swift */; };
@@ -59,8 +62,10 @@
 		28F395CC0D785227DA003BA9 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		2C9FD522D1BB4B6E50601C26 /* DriverRadarCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverRadarCard.swift; sourceTree = "<group>"; };
 		329441B426EC90221423E628 /* StopsListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StopsListView.swift; sourceTree = "<group>"; };
+		3896954FFA3703713D5C4351 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
 		389D14886ED1B0F664D2FFD8 /* ShopCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopCalendar.swift; sourceTree = "<group>"; };
 		3F2FE5D9B2D194AA3D12A691 /* MockOwnerRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockOwnerRepository.swift; sourceTree = "<group>"; };
+		439DE18833CEDA36EC475B5B /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
 		462B015C55EABD0771F7A9DA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		48031E51F98DBE94D86C491D /* LiveTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTrackingView.swift; sourceTree = "<group>"; };
 		48336DE168DAF09A9A71DBB2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -91,11 +96,20 @@
 		DF4F52A82B63EE6E6057D6DF /* BookingDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingDetailView.swift; sourceTree = "<group>"; };
 		DF761FFCE7EA85614AFBB148 /* WalkInSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkInSheet.swift; sourceTree = "<group>"; };
 		EC5769863689A4328D6595CD /* RolePickerBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RolePickerBar.swift; sourceTree = "<group>"; };
+		F490C116CE536750005103B5 /* AuthStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthStore.swift; sourceTree = "<group>"; };
 		F9B75631B70726E898394D09 /* PickupStop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PickupStop.swift; sourceTree = "<group>"; };
 		FA9EDBE10D1C2BDA839A40A9 /* NorgelisTech.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = NorgelisTech.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXGroup section */
+		04A9173E5E0D8ED7D90D00DE /* Auth */ = {
+			isa = PBXGroup;
+			children = (
+				439DE18833CEDA36EC475B5B /* SignInView.swift */,
+			);
+			path = Auth;
+			sourceTree = "<group>";
+		};
 		151F0B4F429A6076D80DEDDE /* App */ = {
 			isa = PBXGroup;
 			children = (
@@ -190,6 +204,7 @@
 				EC5769863689A4328D6595CD /* RolePickerBar.swift */,
 				1D7A82FC4C6942C2F99279E9 /* RootView.swift */,
 				28F395CC0D785227DA003BA9 /* Theme.swift */,
+				04A9173E5E0D8ED7D90D00DE /* Auth */,
 				710D4B2E334EF3553037DE87 /* Customer */,
 				A7EE10EE1445F576F499E49E /* Driver */,
 				93A8313031B77F1F4B22E1DA /* Owner */,
@@ -213,6 +228,8 @@
 			isa = PBXGroup;
 			children = (
 				6F9450E7F038C309CBD57807 /* APIClient.swift */,
+				F490C116CE536750005103B5 /* AuthStore.swift */,
+				3896954FFA3703713D5C4351 /* Keychain.swift */,
 				9567685E983F5201FB3CCE24 /* LocationService.swift */,
 				D8DDD17F647B3F57FCC9C051 /* MockData.swift */,
 				3F2FE5D9B2D194AA3D12A691 /* MockOwnerRepository.swift */,
@@ -307,6 +324,7 @@
 			files = (
 				591C64F7A941A983B0CFC84B /* APIClient.swift in Sources */,
 				1AC760ABFE4AE732C04BA9D8 /* AppState.swift in Sources */,
+				52BCFBEC1B4C6AD577F6F342 /* AuthStore.swift in Sources */,
 				7EDB37648B1B3461F210AFCB /* Booking.swift in Sources */,
 				8369297C3EF3ADC95AE7A5FA /* BookingDetailView.swift in Sources */,
 				997B5905150D427A06FB0750 /* BookingStatus.swift in Sources */,
@@ -318,6 +336,7 @@
 				81FE8E5DFCD4E641B2E50969 /* DriverRadarCard.swift in Sources */,
 				597500261874022043B4F9F3 /* DriverRootView.swift in Sources */,
 				EB0418BD46AF3D47D20ECEB8 /* JobsTab.swift in Sources */,
+				622CAFB467E74BB0851A8B32 /* Keychain.swift in Sources */,
 				C0D25EA8D6A9AB2EA4D387EE /* LiveTrackingView.swift in Sources */,
 				1EF5F50F2C147A6447D11369 /* LocationService.swift in Sources */,
 				8308E6FACF83657FA86A9CC5 /* MockData.swift in Sources */,
@@ -334,6 +353,7 @@
 				05F575A00ACB2716907FB760 /* RootView.swift in Sources */,
 				32E0EA95F804DAE0FBC7F273 /* ScheduleTab.swift in Sources */,
 				12F4BEF22E3E5C239C4E3D24 /* ShopCalendar.swift in Sources */,
+				894408347FDA4C7330B38DD6 /* SignInView.swift in Sources */,
 				312E7B32A5AF2F3A6D7B9A5A /* StatsTab.swift in Sources */,
 				B95AF1EF4E204ABEF36BA85B /* StopDetailSheet.swift in Sources */,
 				A650A5E2D90AACF480D57073 /* StopsListView.swift in Sources */,

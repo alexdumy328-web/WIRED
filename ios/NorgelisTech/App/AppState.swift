@@ -6,6 +6,7 @@ final class AppState: ObservableObject {
     @Published var selectedRole: UserRole = .driver
     @Published var isDevRolePickerVisible: Bool = true
     @Published var isSettingsPresented: Bool = false
+    @Published var isAccountPresented: Bool = false
 
     // Driver tracking state
     @Published var stops: [PickupStop] = MockData.driverStops

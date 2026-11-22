@@ -2,6 +2,7 @@ import SwiftUI
 
 struct RolePickerBar: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var auth: AuthStore
 
     var body: some View {
         HStack(spacing: 12) {
@@ -12,6 +13,18 @@ struct RolePickerBar: View {
                 }
             }
             .pickerStyle(.segmented)
+
+            Button {
+                appState.isAccountPresented = true
+            } label: {
+                Image(systemName: auth.isSignedIn ? "person.crop.circle.fill" : "person.crop.circle")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(auth.isSignedIn ? Color.accentColor : Color.secondary)
+                    .padding(6)
+                    .background(Color(.secondarySystemBackground))
+                    .clipShape(Circle())
+            }
+            .accessibilityLabel(Text("auth.account.title"))
 
             Button {
                 appState.isSettingsPresented = true

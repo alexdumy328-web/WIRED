@@ -4,8 +4,26 @@ import SwiftUI
 struct OwnerConsoleView: View {
     @EnvironmentObject var store: OwnerStore
     @EnvironmentObject var apiClient: APIClient
+    @EnvironmentObject var auth: AuthStore
+
+    /// Live data needs a staff login. Sample data does not.
+    private var needsLogin: Bool {
+        !apiClient.useMockData && auth.viewer?.isStaff != true
+    }
 
     var body: some View {
+        if needsLogin {
+            if auth.loaded {
+                StaffLoginRequired()
+            } else {
+                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        } else {
+            console
+        }
+    }
+
+    private var console: some View {
         TabView(selection: $store.tab) {
             TodayTab()
                 .tabItem { Label("console.tab.today", systemImage: "sun.max.fill") }
@@ -23,7 +41,7 @@ struct OwnerConsoleView: View {
                 .tabItem { Label("console.tab.more", systemImage: "ellipsis.circle.fill") }
                 .tag(OwnerStore.Tab.more)
         }
-        .task(id: apiClient.useMockData) { await store.bootstrap() }
+        .task(id: "\(apiClient.useMockData)-\(auth.viewer?.id ?? "")") { await store.bootstrap() }
     }
 }
 

@@ -10,6 +10,8 @@ enum APIError: LocalizedError {
     case unauthorized
     case forbidden
     case conflict(String)
+    /// A refused sign-in call. `code` is Better Auth's error code, when it sent one.
+    case auth(status: Int, code: String?)
 
     var errorDescription: String? {
         switch self {
@@ -29,6 +31,8 @@ enum APIError: LocalizedError {
             return "Nu ești autentificat. Lipește cookie-ul de sesiune în Setări dezvoltare."
         case .forbidden:
             return "Nu ai dreptul să faci această acțiune."
+        case .auth(let status, _):
+            return "Autentificarea a eșuat (HTTP \(status))."
         case .conflict(let code):
             return "Acțiunea nu a putut fi făcută (\(code))."
         }
@@ -63,11 +67,6 @@ final class APIClient: ObservableObject {
         }
     }
 
-    /// Dev only. Pastes the Better Auth session cookie so the admin routes answer. Never committed.
-    @Published var sessionCookie: String {
-        didSet { UserDefaults.standard.set(sessionCookie, forKey: "norgelis_session_cookie") }
-    }
-
     /// Owner console and driver run on built-in sample data until this is off.
     @Published var useMockData: Bool {
         didSet { UserDefaults.standard.set(useMockData, forKey: "norgelis_use_mock") }
@@ -75,12 +74,62 @@ final class APIClient: ObservableObject {
 
     private let session: URLSession
 
+    // MARK: - Session cookies
+
+    /// Better Auth cookies from the last sign-in. Kept in the Keychain, sent by hand on every call.
+    private var cookies: [String: String]
+    private static let cookieAccount = "cookies"
+
+    private static func loadCookies() -> [String: String] {
+        guard let data = Keychain.load(account: cookieAccount),
+              let dict = try? JSONDecoder().decode([String: String].self, from: data) else { return [:] }
+        return dict
+    }
+
+    private func persistCookies() {
+        if cookies.isEmpty {
+            Keychain.delete(account: Self.cookieAccount)
+        } else if let data = try? JSONEncoder().encode(cookies) {
+            Keychain.save(data, account: Self.cookieAccount)
+        }
+    }
+
+    var hasSession: Bool { cookies.keys.contains { $0.hasSuffix("session_token") } }
+
+    func clearSession() {
+        cookies = [:]
+        persistCookies()
+    }
+
+    private var cookieHeader: String {
+        cookies.map { "\($0.key)=\($0.value)" }.sorted().joined(separator: "; ")
+    }
+
+    private func store(from response: HTTPURLResponse, url: URL) {
+        let fields = response.allHeaderFields.reduce(into: [String: String]()) { out, pair in
+            if let k = pair.key as? String, let v = pair.value as? String { out[k] = v }
+        }
+        var changed = false
+        for cookie in HTTPCookie.cookies(withResponseHeaderFields: fields, for: url) {
+            let expired = cookie.value.isEmpty || (cookie.expiresDate.map { $0 < Date() } ?? false)
+            if expired { changed = cookies.removeValue(forKey: cookie.name) != nil || changed }
+            else { cookies[cookie.name] = cookie.value; changed = true }
+        }
+        if changed { persistCookies() }
+    }
+
+    /// The API's own address as an Origin, the way a browser on that site would send it.
+    private var originString: String? {
+        guard let url = baseURL, let scheme = url.scheme, let host = url.host else { return nil }
+        return url.port.map { "\(scheme)://\(host):\($0)" } ?? "\(scheme)://\(host)"
+    }
+
     init(session: URLSession = .shared) {
         self.session = session
         let savedURL = UserDefaults.standard.string(forKey: "norgelis_api_base_url")
         self.baseURLString = savedURL ?? Self.buildDefaultURL
 
-        self.sessionCookie = UserDefaults.standard.string(forKey: "norgelis_session_cookie") ?? ""
+        self.cookies = Self.loadCookies()
         self.useMockData = UserDefaults.standard.object(forKey: "norgelis_use_mock") as? Bool ?? true
     }
 
@@ -156,8 +205,16 @@ final class APIClient: ObservableObject {
         guard let url = components.url else { throw APIError.invalidURL }
         var request = URLRequest(url: url)
         request.httpMethod = method
+        request.httpShouldHandleCookies = false
         request.setValue("application/json", forHTTPHeaderField: "Accept")
-        if !sessionCookie.isEmpty { request.setValue(sessionCookie, forHTTPHeaderField: "Cookie") }
+        // Emails are written in this language.
+        request.setValue(Locale.current.language.languageCode?.identifier == "en" ? "en" : "ro", forHTTPHeaderField: "x-nt-lang")
+        let header = cookieHeader
+        if !header.isEmpty {
+            request.setValue(header, forHTTPHeaderField: "Cookie")
+            // Better Auth checks the Origin of calls that carry cookies. A phone has no page origin, so use the API's own.
+            if path.hasPrefix("api/auth"), let origin = originString { request.setValue(origin, forHTTPHeaderField: "Origin") }
+        }
         if let body {
             request.setValue("application/json", forHTTPHeaderField: "Content-Type")
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
@@ -168,6 +225,14 @@ final class APIClient: ObservableObject {
             (data, response) = try await session.data(for: request)
         } catch {
             throw APIError.networkError(error)
+        }
+        if let http = response as? HTTPURLResponse {
+            store(from: http, url: url)
+            if path.hasPrefix("api/auth"), !(200...299).contains(http.statusCode) {
+                let code = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["code"] as? String
+                    ?? (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["message"] as? String
+                throw APIError.auth(status: http.statusCode, code: code)
+            }
         }
         try validateResponse(response, data: data)
         return data

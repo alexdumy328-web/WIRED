@@ -27,5 +27,8 @@ struct RootView: View {
         .sheet(isPresented: $appState.isSettingsPresented) {
             DevSettingsSheet()
         }
+        .sheet(isPresented: $appState.isAccountPresented) {
+            AccountView()
+        }
     }
 }
