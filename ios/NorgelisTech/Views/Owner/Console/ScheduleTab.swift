@@ -52,9 +52,7 @@ struct ScheduleTab: View {
             .sheet(item: $open) { ref in BookingDetailSheet(code: ref.id) }
             .sheet(isPresented: $showWalkIn) { WalkInSheet { code in open = JobRef(id: code) } }
         }
-        .task(id: store.version) { await load() }
-        .task(id: ShopCalendar.mondayOf(day)) { await load() }
-        .task(id: day) { await loadPickups() }
+        .task(id: "\(store.version)|\(day)") { await load() }
     }
 
     // MARK: - Day strip

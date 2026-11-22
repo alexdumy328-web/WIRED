@@ -132,11 +132,18 @@ final class DriverRoutePlanner: ObservableObject {
         return leg.time * min(1, metersLeft / leg.distance)
     }
 
+    /// True when the first planned leg leads to this stop, so the numbers on screen are about it.
+    func hasRoute(to stopID: String) -> Bool {
+        !isPlanning && legs.first?.id == stopID
+    }
+
     /// Minutes to the next stop, rounded up.
     var etaMinutes: Int { max(1, Int(ceil(secondsLeftOnFirstLeg / 60))) }
 
     /// When the driver should reach a planned stop, counting the time left on the first leg and a stop at each one before it.
     func arrival(of stopID: String, from now: Date = Date()) -> Date? {
+        // While the legs are being planned again the old times belong to the old order.
+        guard !isPlanning else { return nil }
         var seconds = 0.0
         for (i, leg) in legs.enumerated() {
             seconds += i == 0 ? secondsLeftOnFirstLeg : leg.time
@@ -148,6 +155,7 @@ final class DriverRoutePlanner: ObservableObject {
 
     /// Distance and drive time for the leg that ends at a stop.
     func leg(to stopID: String) -> (meters: Double, seconds: TimeInterval)? {
+        guard !isPlanning else { return nil }
         guard let i = legs.firstIndex(where: { $0.id == stopID }) else { return nil }
         let leg = legs[i]
         return i == 0 ? (metersLeft, secondsLeftOnFirstLeg) : (leg.distance, leg.time)

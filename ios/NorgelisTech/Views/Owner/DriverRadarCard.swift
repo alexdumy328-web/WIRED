@@ -16,7 +16,7 @@ struct DriverRadarCard: View {
                                 .scaleEffect(appState.isDriverEnRoute ? 1.5 : 1.0)
                         )
 
-                    Text(appState.isDriverEnRoute ? "ȘOFER ÎN MIȘCARE" : "ȘOFER LA ATELIER")
+                    Text(LocalizedStringKey(appState.isDriverEnRoute ? "radar.moving" : "radar.at_shop"))
                         .font(.caption.bold())
                         .foregroundColor(appState.isDriverEnRoute ? Theme.ok : Theme.shop)
                 }
@@ -36,7 +36,7 @@ struct DriverRadarCard: View {
 
             if appState.isDriverEnRoute, let stop = appState.currentEnRouteStop {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("Destinație: \(stop.address)")
+                    Text("radar.destination \(stop.address)")
                         .font(.headline)
                         .lineLimit(1)
                     Text("Client: \(stop.customerName) • Cod: \(stop.bookingCode)")
@@ -44,7 +44,7 @@ struct DriverRadarCard: View {
                         .foregroundColor(.secondary)
                 }
             } else {
-                Text("Șoferul este în așteptare la sediul din Iași.")
+                Text("radar.waiting")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }

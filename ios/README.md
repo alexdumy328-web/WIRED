@@ -131,13 +131,27 @@ Roles follow the server. A technician works on devices and never sees `finalLei`
 `OwnerRepository` has two implementations.
 
 - **Sample data** (default). `MockOwnerRepository` keeps believable data around today's date in memory. Every flow works offline, and changes vanish on restart. More → Preview as switches the role.
-- **Live API.** Turn off Sample data, set the base URL in Dev settings, and paste a Better Auth session cookie into the Session cookie field. The cookie stays on the phone (UserDefaults) and never enters git. Without it the admin routes answer 401.
+- **Live API.** Turn off Sample data, set the base URL in Dev settings, then sign in from the person icon at the top. Sign-in uses the website's Better Auth routes (email code, password, sign-up with email confirmation, password reset). The session cookies are kept in the iOS Keychain, are cleared when the base URL changes, and never enter git. Google sign-in is not in the app yet, because it needs a server-side handoff.
 
 Not built yet. Intake photo capture and viewing (the count shows), and push notifications. PDFs (service sheet, warranty) download and share only against the live API, since the server makes them.
 
 ## Screenshots
 
 `docs/screenshots/` holds simulator captures. `driver.png` shows the route, Navigate and recenter buttons on Liquid Glass. `console-today.png`, `console-schedule.png`, `console-stats.png` and `console-job.png` show the owner console. `customer.png` and `home-icon.png` show the customer lookup and the app icon.
+
+### Signing in against a local backend
+
+Better Auth rejects any call that carries a cookie unless its `Origin` is one it trusts, which is the website's own origin (`BETTER_AUTH_URL`, or `APP_ORIGINS`; in dev that is `http://localhost:5173`). A phone has no page origin, so the app sends one from the build setting `NORGELIS_SITE_ORIGIN`. Without it, sign-in still works, but sign-out answers 403 and the app warns that the server session may still be valid.
+
+```bash
+xcodebuild ... NORGELIS_API_BASE_URL=http://192.168.1.20:8790 NORGELIS_SITE_ORIGIN=http://localhost:5173 build
+```
+
+Both settings are passed on the command line, so a LAN address never enters git.
+
+### Driver location
+
+The driver map asks for location (when in use) the first time it opens. A real phone follows its own GPS during a trip. Only the simulator drives a fake car along the planned route. Sharing the position with the server waits for `POST /api/driver/location` to exist, so nothing is sent today.
 
 ## Look and feel
 

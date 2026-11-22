@@ -23,6 +23,8 @@ struct RolePickerBar: View {
                     .padding(6)
                     .background(Color(.secondarySystemBackground))
                     .clipShape(Circle())
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
             }
             .accessibilityLabel(Text("auth.account.title"))
 
@@ -35,7 +37,10 @@ struct RolePickerBar: View {
                     .padding(8)
                     .background(Color(.secondarySystemBackground))
                     .clipShape(Circle())
+                    .frame(minWidth: 44, minHeight: 44)
+                    .contentShape(Rectangle())
             }
+            .accessibilityLabel(Text("settings.title"))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 8)

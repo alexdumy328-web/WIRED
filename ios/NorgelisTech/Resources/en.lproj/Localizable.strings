@@ -381,3 +381,37 @@
 "driver.done.title" = "All stops are done";
 "driver.done.subtitle" = "Head back to the workshop.";
 "driver.done.navigate" = "Navigate to the workshop";
+
+/* Review fixes */
+"error.invalid_url" = "Invalid URL for the API server.";
+"error.network" = "Network error: %@";
+"error.invalid_response" = "Unexpected server response (HTTP %lld).";
+"error.decoding" = "The data received could not be read: %@";
+"error.server" = "Server error: %@";
+"error.not_found" = "Not found.";
+"error.unauthorized" = "Your session has expired or is missing. Sign in again.";
+"error.forbidden" = "You are not allowed to do this.";
+"error.auth" = "Sign-in failed (HTTP %lld).";
+"error.conflict" = "The action could not be done (%@).";
+"customer.lookup.title" = "Check your repair status";
+"customer.lookup.not_found" = "No booking has this code. Check it and try again.";
+"customer.pickup.scheduled" = "Pickup / delivery scheduled";
+"customer.booking.date" = "Booking date";
+"customer.booking.issue" = "Reported issue";
+"customer.pickup.address" = "Pickup / delivery address";
+"customer.pickup.cost %lld" = "Transport cost: %lld lei";
+"customer.live.arrival %lld" = "Arriving in ~%lld min";
+"customer.live.driver" = "Norgelis driver";
+"customer.live.your_address" = "Your address";
+"customer.live.heading %@" = "The driver is heading to %@.";
+"radar.moving" = "DRIVER ON THE MOVE";
+"radar.at_shop" = "DRIVER AT THE WORKSHOP";
+"radar.destination %@" = "Destination: %@";
+"radar.waiting" = "The driver is waiting at the workshop in Iasi.";
+"console.job.confirm_title" = "Email the customer?";
+"console.job.confirm_save" = "Save and send the email";
+"console.job.confirm_message %@" = "%@ will get an email about the new status.";
+"console.customers.archive_title" = "Archive this customer?";
+"console.customers.archive_message %@" = "%@ leaves the customer list. You can restore them from the archive.";
+"auth.account.sign_out_warning_title" = "Signed out on this phone only";
+"auth.account.sign_out_warning" = "The server could not end the session. It may still be valid elsewhere.";

@@ -28,6 +28,25 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
         locationManager.requestWhenInUseAuthorization()
     }
 
+    /// Asks for permission the first time, and takes one position fix so the plan starts where the driver is.
+    func prepare() {
+        switch locationManager.authorizationStatus {
+        case .notDetermined:
+            locationManager.requestWhenInUseAuthorization()
+        case .authorizedWhenInUse, .authorizedAlways:
+            if !isUpdatingLocation { locationManager.requestLocation() }
+        default:
+            break
+        }
+    }
+
+    /// A trip asked to track before permission was answered. Starts once it is granted.
+    private var wantsTracking = false
+    private var wantsBackground = true
+    private var isAuthorized: Bool {
+        locationManager.authorizationStatus == .authorizedWhenInUse || locationManager.authorizationStatus == .authorizedAlways
+    }
+
     func requestAlwaysPermission() {
         locationManager.requestAlwaysAuthorization()
     }
@@ -35,8 +54,18 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
     // MARK: - Tracking Management
 
     func startTracking(allowBackground: Bool = true) {
+        wantsTracking = true
+        wantsBackground = allowBackground
+        guard isAuthorized else {
+            if locationManager.authorizationStatus == .notDetermined { locationManager.requestWhenInUseAuthorization() }
+            return
+        }
+        beginUpdates()
+    }
+
+    private func beginUpdates() {
         #if os(iOS)
-        if allowBackground {
+        if wantsBackground {
             // Background location updates capability
             // Note: requires "location" in UIBackgroundModes in Info.plist
             locationManager.allowsBackgroundLocationUpdates = true
@@ -52,6 +81,7 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
     }
 
     func stopTracking() {
+        wantsTracking = false
         locationManager.stopUpdatingLocation()
         locationManager.stopUpdatingHeading()
         #if os(iOS)
@@ -155,6 +185,8 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
         DispatchQueue.main.async {
             self.authorizationStatus = manager.authorizationStatus
+            guard self.isAuthorized else { return }
+            if self.wantsTracking { self.beginUpdates() } else { manager.requestLocation() }
         }
     }
 

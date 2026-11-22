@@ -8,7 +8,8 @@ final class OwnerStore: ObservableObject {
         case today, jobs, customers, schedule, more
     }
 
-    @Published var role: StaffRole = .dev
+    /// Starts as the least access. Sample data raises it to dev, and a live sign-in sets what the server says.
+    @Published var role: StaffRole = .technician
     @Published var tab: Tab = .today
     @Published var counts: StaffCounts?
     /// Bumped on every write. Screens reload when it changes.
@@ -21,7 +22,10 @@ final class OwnerStore: ObservableObject {
 
     init(api: APIClient) {
         self.api = api
+        if api.useMockData { role = .dev }
     }
+
+    private var lastWasSample: Bool?
 
     var repo: OwnerRepository {
         api.useMockData ? MockOwnerRepository.shared : LiveOwnerRepository(api: api)
@@ -33,15 +37,21 @@ final class OwnerStore: ObservableObject {
     func bootstrap() async {
         lastError = nil
         if api.useMockData {
+            if lastWasSample == false { role = .dev }
             await MockOwnerRepository.shared.setRole(role)
         } else {
+            // Least access until the server answers.
+            role = .technician
             do {
                 role = try await repo.role()
             } catch {
                 lastError = error.localizedDescription
             }
         }
+        lastWasSample = api.useMockData
         await refreshCounts()
+        // Everything on screen came from the other source. Load it again.
+        version += 1
     }
 
     func chooseMockRole(_ newRole: StaffRole) {

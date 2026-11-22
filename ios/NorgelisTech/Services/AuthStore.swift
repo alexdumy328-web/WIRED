@@ -48,8 +48,14 @@ final class AuthStore: ObservableObject {
 
     private let api: APIClient
 
+    private var sessionObserver: NSObjectProtocol?
+
     init(api: APIClient) {
         self.api = api
+        // The server said the saved session is no good. Drop it here too.
+        sessionObserver = NotificationCenter.default.addObserver(forName: .sessionExpired, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in await self?.refresh() }
+        }
     }
 
     var isSignedIn: Bool { viewer != nil }
@@ -69,6 +75,11 @@ final class AuthStore: ObservableObject {
             if me.user == nil { api.clearSession() }
         } catch APIError.networkError {
             // Offline: keep what we had.
+        } catch APIError.unauthorized {
+            viewer = nil
+            api.clearSession()
+        } catch is CancellationError {
+            // A newer refresh is running.
         } catch {
             viewer = nil
         }
@@ -112,11 +123,19 @@ final class AuthStore: ObservableObject {
         try await call { try await self.api.requestVoid("POST", "api/auth/email-otp/reset-password", body: ["email": email, "otp": code, "password": password]) }
     }
 
-    func signOut() async {
-        // Best effort. The phone forgets the session either way.
-        try? await api.requestVoid("POST", "api/auth/sign-out", body: [:])
+    /// Signs out on this phone either way. Returns false when the server could not end the session,
+    /// so the person knows it may still be valid elsewhere.
+    @discardableResult
+    func signOut() async -> Bool {
+        var ended = true
+        do {
+            try await api.requestVoid("POST", "api/auth/sign-out", body: [:])
+        } catch {
+            ended = false
+        }
         api.clearSession()
         viewer = nil
+        return ended
     }
 
     // MARK: - Errors
@@ -135,14 +154,15 @@ final class AuthStore: ObservableObject {
 
     private static func problem(status: Int, code: String?) -> AuthProblem {
         let c = (code ?? "").uppercased()
-        if status == 403 || c.contains("NOT_VERIFIED") { return .unverified }
+        // Match the code first: Better Auth also answers 403 for too many attempts and for a refused Origin.
+        if c.contains("ORIGIN") { return .other }
         if status == 429 || c.contains("TOO_MANY") { return .tooMany }
+        if c.contains("NOT_VERIFIED") { return .unverified }
         if c.contains("OTP") || c.contains("INVALID_CODE") || c.contains("EXPIRED") { return .wrongCode }
         if c.contains("ALREADY_EXISTS") || c.contains("USER_ALREADY") { return .exists }
         if c.contains("PASSWORD_TOO") { return .weakPassword }
         if c.contains("MAIL_UNAVAILABLE") || status == 503 { return .mailUnavailable }
         if status == 401 || c.contains("INVALID_EMAIL_OR_PASSWORD") || c.contains("INVALID_PASSWORD") { return .invalidLogin }
-        if status == 400 { return .wrongCode }
         return .other
     }
 }

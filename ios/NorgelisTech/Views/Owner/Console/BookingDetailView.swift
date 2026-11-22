@@ -55,6 +55,7 @@ struct BookingDetailView: View {
     @State private var showIntake = false
     @State private var showWarranty = false
     @State private var share: ShareItem?
+    @State private var confirmSave = false
 
     var body: some View {
         Group {
@@ -150,7 +151,8 @@ struct BookingDetailView: View {
                 Toggle("console.job.notify", isOn: $notify)
             }
             Button {
-                Task { await save(b) }
+                // A status that ends the job emails the customer. Ask first, naming who gets it.
+                if willEmailAboutEnding(b) { confirmSave = true } else { Task { await save(b) } }
             } label: {
                 HStack {
                     if saving { ProgressView().padding(.trailing, 4) }
@@ -158,6 +160,12 @@ struct BookingDetailView: View {
                 }
             }
             .disabled(saving || !hasChanges(b))
+            .confirmationDialog("console.job.confirm_title", isPresented: $confirmSave, titleVisibility: .visible) {
+                Button("console.job.confirm_save") { Task { await save(b) } }
+                Button("common.cancel", role: .cancel) {}
+            } message: {
+                Text("console.job.confirm_message \(b.contact?.name ?? "")")
+            }
             if let message {
                 Label(message, systemImage: messageIsError ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")
                     .font(.footnote)
@@ -296,6 +304,12 @@ struct BookingDetailView: View {
     }
 
     // MARK: - Logic
+
+    /// Cancelled, cannot be repaired or done, with "email the customer" on and an address to send to.
+    private func willEmailAboutEnding(_ b: Booking) -> Bool {
+        guard status != b.status, notify, b.contact?.email?.isEmpty == false else { return false }
+        return status == .cancelled || status == .unrepairable || status == .done
+    }
 
     private func hasChanges(_ b: Booking) -> Bool {
         status != b.status

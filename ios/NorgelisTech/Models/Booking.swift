@@ -7,7 +7,7 @@ struct DeviceDetails: Codable, Hashable {
 
     var displayName: String {
         let items = [brand, model, year].compactMap { $0 }.filter { !$0.isEmpty }
-        return items.isEmpty ? "Dispozitiv nespecificat" : items.joined(separator: " ")
+        return items.isEmpty ? String(localized: "console.job.no_device") : items.joined(separator: " ")
     }
 }
 

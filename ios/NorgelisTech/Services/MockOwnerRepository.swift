@@ -508,14 +508,14 @@ extension MockOwnerRepository {
                      createdAt: day(-60, 10), updatedAt: day(last, 10), archived: nil, jobs: jobs, open: open, lastVisit: day(last, 10))
         }
         let customers = [
-            customer("c0000000000000000000a001", "Andrei Popescu", "+40 721 123 456", "andrei@example.com", .whatsapp, jobs: 3, open: 1, last: 0),
-            customer("c0000000000000000000a002", "Elena Ionescu", "+40 740 987 654", "elena@example.com", .phone, jobs: 1, open: 1, last: 0, address: "Bd. Carol I nr. 14, Iași"),
-            customer("c0000000000000000000a003", "Mihai Dumitrescu", "+40 733 555 777", nil, .sms, jobs: 2, open: 1, last: 0),
-            customer("c0000000000000000000a004", "Ioana Radu", "+40 755 112 233", "ioana@example.com", .email, jobs: 1, open: 1, last: 0),
-            customer("c0000000000000000000a005", "Radu Marin", "+40 744 200 300", nil, .phone, jobs: 1, open: 1, last: 0, notes: "Vine de obicei seara."),
-            customer("c0000000000000000000a006", "Digital Print SRL", "+40 232 555 010", "office@digitalprint.example", .email, jobs: 2, open: 1, last: 1,
+            customer("c0000000000000000000a001", "Andrei Popescu", "+40 700 000 001", "andrei@example.com", .whatsapp, jobs: 3, open: 1, last: 0),
+            customer("c0000000000000000000a002", "Elena Ionescu", "+40 700 000 002", "elena@example.com", .phone, jobs: 1, open: 1, last: 0, address: "Bd. Carol I nr. 14, Iași"),
+            customer("c0000000000000000000a003", "Mihai Dumitrescu", "+40 700 000 003", nil, .sms, jobs: 2, open: 1, last: 0),
+            customer("c0000000000000000000a004", "Ioana Radu", "+40 700 000 004", "ioana@example.com", .email, jobs: 1, open: 1, last: 0),
+            customer("c0000000000000000000a005", "Radu Marin", "+40 700 000 005", nil, .phone, jobs: 1, open: 1, last: 0, notes: "Vine de obicei seara."),
+            customer("c0000000000000000000a006", "Digital Print SRL", "+40 700 000 006", "office@digitalprint.example", .email, jobs: 2, open: 1, last: 1,
                      company: CompanyRef(name: "Digital Print SRL", cui: "RO12345678", regCom: "J22/1234/2019")),
-            customer("c0000000000000000000a007", "Maria Tudor", "+40 722 810 920", "maria@example.com", .whatsapp, jobs: 2, open: 0, last: -5),
+            customer("c0000000000000000000a007", "Maria Tudor", "+40 700 000 007", "maria@example.com", .whatsapp, jobs: 2, open: 0, last: -5),
         ]
 
         func pickup(_ address: String, _ lat: Double, _ lon: Double, _ trips: PickupTrips, urgent: Bool, lei: Double, km: Double) -> PickupDetails {

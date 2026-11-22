@@ -33,3 +33,5 @@ targets:
         GENERATE_INFOPLIST_KEY_UIBackgroundModes: "location"
         # Override on the command line, for example NORGELIS_API_BASE_URL=http://192.168.1.20:8790
         NORGELIS_API_BASE_URL: ""
+        # The website origin Better Auth trusts (BETTER_AUTH_URL or APP_ORIGINS), for example http://localhost:5173 in dev.
+        NORGELIS_SITE_ORIGIN: ""

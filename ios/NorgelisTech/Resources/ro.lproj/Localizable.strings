@@ -381,3 +381,37 @@
 "driver.done.title" = "Toate opririle sunt gata";
 "driver.done.subtitle" = "Întoarce-te la atelier.";
 "driver.done.navigate" = "Navighează la atelier";
+
+/* Review fixes */
+"error.invalid_url" = "URL invalid pentru serverul API.";
+"error.network" = "Eroare de rețea: %@";
+"error.invalid_response" = "Răspuns neașteptat de la server (HTTP %lld).";
+"error.decoding" = "Datele primite nu au putut fi citite: %@";
+"error.server" = "Eroare de server: %@";
+"error.not_found" = "Nu am găsit ce căutai.";
+"error.unauthorized" = "Sesiunea a expirat sau lipsește. Intră în cont din nou.";
+"error.forbidden" = "Nu ai dreptul să faci această acțiune.";
+"error.auth" = "Autentificarea a eșuat (HTTP %lld).";
+"error.conflict" = "Acțiunea nu a putut fi făcută (%@).";
+"customer.lookup.title" = "Verifică starea reparației";
+"customer.lookup.not_found" = "Nu există nicio programare cu acest cod. Verifică și încearcă din nou.";
+"customer.pickup.scheduled" = "Ridicare / livrare programată";
+"customer.booking.date" = "Data programării";
+"customer.booking.issue" = "Problema raportată";
+"customer.pickup.address" = "Adresa de ridicare / livrare";
+"customer.pickup.cost %lld" = "Cost transport: %lld lei";
+"customer.live.arrival %lld" = "Sosire în ~%lld min";
+"customer.live.driver" = "Șofer Norgelis";
+"customer.live.your_address" = "Adresa ta";
+"customer.live.heading %@" = "Șoferul se deplasează spre %@.";
+"radar.moving" = "ȘOFER ÎN MIȘCARE";
+"radar.at_shop" = "ȘOFER LA ATELIER";
+"radar.destination %@" = "Destinație: %@";
+"radar.waiting" = "Șoferul așteaptă la atelier, în Iași.";
+"console.job.confirm_title" = "Anunți clientul?";
+"console.job.confirm_save" = "Salvează și trimite emailul";
+"console.job.confirm_message %@" = "%@ primește un email despre noua stare.";
+"console.customers.archive_title" = "Arhivezi clientul?";
+"console.customers.archive_message %@" = "%@ dispare din lista de clienți. Îl poți restaura din arhivă.";
+"auth.account.sign_out_warning_title" = "Ieșit doar de pe acest telefon";
+"auth.account.sign_out_warning" = "Serverul nu a putut închide sesiunea. Poate fi încă valabilă pe alt dispozitiv.";

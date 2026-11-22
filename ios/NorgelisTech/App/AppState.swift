@@ -23,6 +23,9 @@ final class AppState: ObservableObject {
     @Published var bookings: [Booking] = MockData.bookings
     @Published var currentCustomerBooking: Booking?
     @Published var customerSearchQuery: String = "NT-4K7Q"
+    /// What the last lookup said, in words, when it found nothing.
+    @Published var customerLookupError: String?
+    @Published var customerLookupBusy = false
 
     // Services
     let locationService = LocationService.shared
@@ -30,10 +33,13 @@ final class AppState: ObservableObject {
     let planner = DriverRoutePlanner()
     private var cancellables = Set<AnyCancellable>()
     private var tripTask: Task<Void, Never>?
+    /// Where the current plan starts, so a real position fix far from it replans.
+    private var lastPlanOrigin = MockData.shopCoordinate
 
     init() {
         // Default to first booking for customer view convenience
-        self.currentCustomerBooking = MockData.bookings.first
+        // Sample data shows a demo booking. Live data starts empty, so nobody sees someone else's job.
+        self.currentCustomerBooking = APIClient.shared.useMockData ? MockData.bookings.first : nil
 
         // Follow the driver: position, progress on the route and ETA.
         locationService.$currentLocation
@@ -42,10 +48,18 @@ final class AppState: ObservableObject {
             .sink { [weak self] coord in
                 MainActor.assumeIsolated {
                     guard let self else { return }
-                    self.driverCoordinate = coord
+                    let here = CLLocation(latitude: coord.latitude, longitude: coord.longitude)
                     if self.isDriverEnRoute {
+                        self.driverCoordinate = coord
                         self.planner.update(driver: coord)
-                        self.etaMinutes = self.planner.etaMinutes
+                        if self.planner.hasRoute(to: self.currentEnRouteStop?.id ?? "") { self.etaMinutes = self.planner.etaMinutes }
+                    } else {
+                        // Idle fix. A position far from Iasi (a simulator's default city) would make planning fail, so ignore it.
+                        let shop = CLLocation(latitude: MockData.shopCoordinate.latitude, longitude: MockData.shopCoordinate.longitude)
+                        let origin = CLLocation(latitude: self.lastPlanOrigin.latitude, longitude: self.lastPlanOrigin.longitude)
+                        guard here.distance(from: shop) < 150_000, here.distance(from: origin) > 300 else { return }
+                        self.driverCoordinate = coord
+                        self.replan()
                     }
                 }
             }
@@ -68,6 +82,7 @@ final class AppState: ObservableObject {
 
     /// Plans the legs again from where the driver is, through the remaining stops in order.
     func replan() {
+        lastPlanOrigin = driverCoordinate
         planner.plan(origin: driverCoordinate, stops: remainingStops)
     }
 
@@ -95,12 +110,10 @@ final class AppState: ObservableObject {
         currentEnRouteStop = target
         isDriverEnRoute = true
         focusedStopID = nil
-        etaMinutes = max(1, planner.etaMinutes)
 
         // Real location service with background mode enabled.
         locationService.startTracking(allowBackground: true)
 
-        // On a simulator there is no GPS movement, so drive the car along the planned route.
         tripTask?.cancel()
         tripTask = Task { [weak self] in
             guard let self else { return }
@@ -110,6 +123,8 @@ final class AppState: ObservableObject {
                 waited += 0.1
             }
             guard !Task.isCancelled, self.isDriverEnRoute, self.currentEnRouteStop?.id == target.id else { return }
+            #if targetEnvironment(simulator)
+            // A simulator has no GPS movement, so drive the car along the planned route. A real phone uses its own position.
             let path = self.planner.firstLegCoordinates
             if path.count > 1 {
                 let seconds = min(45, max(20, self.planner.firstLegSeconds / 10))
@@ -117,19 +132,9 @@ final class AppState: ObservableObject {
             } else {
                 self.locationService.startSimulation(from: self.driverCoordinate, to: target.coordinate, durationSeconds: 25)
             }
-            self.etaMinutes = self.planner.etaMinutes
-
-            // Phase 2: POST /api/driver/location
-            let payload = DriverLocationPayload(
-                driverId: "driver-alex",
-                bookingCode: target.bookingCode,
-                latitude: self.driverCoordinate.latitude,
-                longitude: self.driverCoordinate.longitude,
-                heading: 90.0,
-                speedKmh: 40.0,
-                timestamp: Date()
-            )
-            try? await self.apiClient.sendDriverLocation(payload)
+            #endif
+            if self.planner.hasRoute(to: target.id) { self.etaMinutes = self.planner.etaMinutes }
+            // Sharing the position with the server waits for POST /api/driver/location to exist (see README).
         }
     }
 
@@ -169,18 +174,24 @@ final class AppState: ObservableObject {
     func searchBooking(code: String) {
         let trimmed = code.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         customerSearchQuery = trimmed
+        customerLookupError = nil
 
-        if let found = bookings.first(where: { $0.code.uppercased() == trimmed }) {
+        // Sample bookings only answer in sample mode.
+        if apiClient.useMockData, let found = bookings.first(where: { $0.code.uppercased() == trimmed }) {
             currentCustomerBooking = found
-        } else {
-            // Attempt API call if reachable
-            Task { @MainActor in
-                do {
-                    let remoteBooking = try await apiClient.fetchBooking(code: trimmed)
-                    self.currentCustomerBooking = remoteBooking
-                } catch {
-                    print("[Customer] Search failed for \(trimmed): \(error.localizedDescription)")
-                }
+            return
+        }
+        // A new lookup never keeps the old result on screen.
+        currentCustomerBooking = nil
+        customerLookupBusy = true
+        Task { @MainActor in
+            defer { self.customerLookupBusy = false }
+            do {
+                self.currentCustomerBooking = try await apiClient.fetchBooking(code: trimmed)
+            } catch APIError.notFound {
+                self.customerLookupError = String(localized: "customer.lookup.not_found")
+            } catch {
+                self.customerLookupError = error.localizedDescription
             }
         }
     }

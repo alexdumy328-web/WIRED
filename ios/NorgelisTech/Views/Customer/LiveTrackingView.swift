@@ -28,7 +28,7 @@ struct LiveTrackingView: View {
 
                 Spacer()
 
-                Text("Sosire în ~\(appState.etaMinutes) min")
+                Text("customer.live.arrival \(appState.etaMinutes)")
                     .font(.subheadline.bold())
                     .foregroundColor(Theme.pickup)
             }
@@ -39,11 +39,11 @@ struct LiveTrackingView: View {
             // MapKit view showing driver approaching customer
             Map(position: $cameraPosition) {
                 // Customer destination marker
-                Marker("Adresa ta", systemImage: "house.fill", coordinate: stop.coordinate)
+                Marker(String(localized: "customer.live.your_address"), systemImage: "house.fill", coordinate: stop.coordinate)
                     .tint(Theme.danger)
 
                 // Live driver position marker
-                Annotation("Șofer Norgelis", coordinate: appState.driverCoordinate) {
+                Annotation(String(localized: "customer.live.driver"), coordinate: appState.driverCoordinate) {
                     ZStack {
                         Circle()
                             .fill(Color.blue.opacity(0.2))
@@ -64,7 +64,7 @@ struct LiveTrackingView: View {
             VStack(alignment: .leading, spacing: 10) {
                 Text(LocalizedStringKey("customer.driver.on_the_way"))
                     .font(.headline)
-                Text("Șoferul se deplasează spre \(stop.address).")
+                Text("customer.live.heading \(stop.address)")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
             }

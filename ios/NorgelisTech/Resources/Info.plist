@@ -27,6 +27,13 @@
     <true/>
     <key>UILaunchScreen</key>
     <dict/>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
     <key>UISupportedInterfaceOrientations</key>
     <array>
         <string>UIInterfaceOrientationPortrait</string>
@@ -44,7 +51,7 @@
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>Norgelis Tech folosește locația pentru navigație și pentru a indica poziția pe hartă în timpul preluărilor și livrărilor.</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-    <string>Norgelis Tech necesită acces continuu la locație în fundal pentru a transmite în timp real poziția șoferului și estimarea sosirii către atelier și client în timpul cursei.</string>
+    <string>Norgelis Tech folosește locația ca să calculeze traseul și ora de sosire în timpul unei curse, chiar dacă ecranul se stinge.</string>
 
     <!-- Background Location Capability -->
     <key>UIBackgroundModes</key>
@@ -55,6 +62,9 @@
     <!-- Default API address for this build. Empty means http://localhost:8787. -->
     <key>NorgelisAPIBaseURL</key>
     <string>$(NORGELIS_API_BASE_URL)</string>
+    <!-- The website's own origin, for the Origin header Better Auth checks. Empty falls back to the API address. -->
+    <key>NorgelisSiteOrigin</key>
+    <string>$(NORGELIS_SITE_ORIGIN)</string>
     <key>NSLocalNetworkUsageDescription</key>
     <string>Norgelis Tech se conectează la serverul atelierului din rețeaua locală în timpul dezvoltării.</string>
 

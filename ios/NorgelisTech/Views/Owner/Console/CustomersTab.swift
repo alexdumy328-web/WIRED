@@ -48,10 +48,8 @@ struct CustomersTab: View {
                 CustomerFormSheet(customer: nil) { _ in store.changed() }
             }
         }
-        .task(id: store.version) { await reload() }
-        .task(id: archived) { await reload() }
-        .task(id: text) {
-            try? await Task.sleep(nanoseconds: 300_000_000)
+        .task(id: "\(store.version)|\(archived)|\(text)") {
+            if !text.isEmpty { try? await Task.sleep(nanoseconds: 300_000_000) }
             if !Task.isCancelled { await reload() }
         }
     }
@@ -106,6 +104,7 @@ struct CustomerDetailView: View {
     @State private var showWalkIn = false
     @State private var open: JobRef?
     @State private var message: String?
+    @State private var confirmArchive = false
 
     var body: some View {
         Group {
@@ -166,7 +165,7 @@ struct CustomerDetailView: View {
             if store.role.isManager {
                 Section {
                     Button(role: c.archived == true ? nil : .destructive) {
-                        Task { await archive(c) }
+                        if c.archived == true { Task { await archive(c) } } else { confirmArchive = true }
                     } label: {
                         Label(LocalizedStringKey(c.archived == true ? "console.customers.restore" : "console.customers.archive"),
                               systemImage: c.archived == true ? "tray.and.arrow.up" : "archivebox")
@@ -174,6 +173,12 @@ struct CustomerDetailView: View {
                 }
             }
             if let message { Section { Text(message).foregroundColor(Theme.danger) } }
+        }
+        .confirmationDialog("console.customers.archive_title", isPresented: $confirmArchive, titleVisibility: .visible) {
+            Button("console.customers.archive", role: .destructive) { Task { await archive(c) } }
+            Button("common.cancel", role: .cancel) {}
+        } message: {
+            Text("console.customers.archive_message \(c.name)")
         }
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) { Button(LocalizedStringKey("console.customers.edit")) { showEdit = true } }

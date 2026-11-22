@@ -10,7 +10,7 @@ struct CustomerRootView: View {
                 VStack(spacing: 20) {
                     // Search Card
                     VStack(alignment: .leading, spacing: 12) {
-                        Text("Verifică starea reparației")
+                        Text("customer.lookup.title")
                             .font(.headline)
 
                         HStack {
@@ -39,6 +39,19 @@ struct CustomerRootView: View {
                     .background(Color(.secondarySystemBackground))
                     .clipShape(RoundedRectangle(cornerRadius: 16))
 
+                    if appState.customerLookupBusy {
+                        ProgressView().padding()
+                    }
+                    if let message = appState.customerLookupError {
+                        Label(message, systemImage: "magnifyingglass")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                            .padding()
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .background(Color(.secondarySystemBackground))
+                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                    }
+
                     // Active booking result
                     if let booking = appState.currentCustomerBooking {
                         // Live Tracking Card (if driver is on the way to this booking)
@@ -49,7 +62,7 @@ struct CustomerRootView: View {
                         } else if booking.hasPickup {
                             // Driver not en route yet info
                             VStack(alignment: .leading, spacing: 8) {
-                                Label("Preluare / Livrare programată", systemImage: "clock.badge.checkmark.fill")
+                                Label("customer.pickup.scheduled", systemImage: "clock.badge.checkmark.fill")
                                     .font(.subheadline.bold())
                                     .foregroundColor(Theme.pickup)
                                 Text(LocalizedStringKey("customer.driver.waiting"))
@@ -76,7 +89,7 @@ struct CustomerRootView: View {
                             Divider()
 
                             VStack(alignment: .leading, spacing: 8) {
-                                LabeledContent("Dispozitiv", value: booking.device?.displayName ?? "Nespecificat")
+                                LabeledContent("console.job.device_label", value: booking.device?.displayName ?? String(localized: "console.job.no_device"))
                                 HStack {
                                     Text(LocalizedStringKey("booking.kind.label"))
                                     Spacer()
@@ -86,11 +99,11 @@ struct CustomerRootView: View {
                                     PriceRow(estimate: estimate)
                                 }
                                 if let slot = booking.slot {
-                                    LabeledContent("Data programării", value: formatDate(slot))
+                                    LabeledContent("customer.booking.date", value: formatDate(slot))
                                 }
                                 if let issue = booking.issue {
                                     VStack(alignment: .leading, spacing: 4) {
-                                        Text("Problemă reclamată:")
+                                        Text("customer.booking.issue")
                                             .font(.caption)
                                             .foregroundColor(.secondary)
                                         Text(issue)
@@ -102,14 +115,14 @@ struct CustomerRootView: View {
                             if let pickup = booking.pickup {
                                 Divider()
                                 VStack(alignment: .leading, spacing: 6) {
-                                    Label("Adresă preluare / livrare", systemImage: "mappin.circle.fill")
+                                    Label("customer.pickup.address", systemImage: "mappin.circle.fill")
                                         .font(.subheadline.bold())
                                     Text(pickup.address)
                                         .font(.subheadline)
                                         .foregroundColor(.secondary)
 
                                     if let quote = pickup.quote, let total = quote.totalLei {
-                                        Text("Cost transport: \(Int(total)) lei")
+                                        Text("customer.pickup.cost \(Int(total))")
                                             .font(.caption.bold())
                                             .foregroundColor(Theme.pickup)
                                     }

@@ -11,15 +11,16 @@ enum PanelDetent {
 /// A floating bottom panel with three heights. Drag the top of it to change height.
 struct DriverPanel<Header: View, Content: View>: View {
     @Binding var detent: PanelDetent
-    let peekHeight: CGFloat
     let header: Header
     let content: Content
 
     @GestureState private var drag: CGFloat = 0
+    /// Height of the handle and header, measured, so large text sizes never push a button out of the peek.
+    @State private var headerHeight: CGFloat = 170
+    private var peekHeight: CGFloat { headerHeight }
 
-    init(detent: Binding<PanelDetent>, peekHeight: CGFloat, @ViewBuilder header: () -> Header, @ViewBuilder content: () -> Content) {
+    init(detent: Binding<PanelDetent>, @ViewBuilder header: () -> Header, @ViewBuilder content: () -> Content) {
         self._detent = detent
-        self.peekHeight = peekHeight
         self.header = header()
         self.content = content()
     }
@@ -47,6 +48,7 @@ struct DriverPanel<Header: View, Content: View>: View {
                         .padding(.bottom, 6)
                     header
                 }
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
                 .contentShape(Rectangle())
                 .gesture(
                     DragGesture(minimumDistance: 4)
@@ -88,6 +90,8 @@ struct CloseButton: View {
                 .frame(width: 32, height: 32)
                 .background(.glassFill)
                 .clipShape(Circle())
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .accessibilityLabel(Text(label))
@@ -502,7 +506,8 @@ struct DriverTripHeader: View {
             HStack(alignment: .top, spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text("\(appState.etaMinutes)").font(.system(size: 38, weight: .bold, design: .rounded)).monospacedDigit()
+                        Text(planner.hasRoute(to: stop.id) ? "\(appState.etaMinutes)" : "–")
+                            .font(.system(size: 38, weight: .bold, design: .rounded)).monospacedDigit()
                         Text("min").font(.title3.bold())
                         if let arrive = planner.arrival(of: stop.id) {
                             Text("driver.trip.arrive \(DriveFormat.clock(arrive))").font(.subheadline).foregroundColor(.secondary)

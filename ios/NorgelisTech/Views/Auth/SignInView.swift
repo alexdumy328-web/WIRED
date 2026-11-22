@@ -293,6 +293,7 @@ struct AccountView: View {
     @EnvironmentObject var auth: AuthStore
     @EnvironmentObject var ownerStore: OwnerStore
     @Environment(\.dismiss) private var dismiss
+    @State private var signOutWarning = false
 
     var body: some View {
         NavigationStack {
@@ -318,8 +319,9 @@ struct AccountView: View {
                         Section {
                             Button(role: .destructive) {
                                 Task {
-                                    await auth.signOut()
+                                    let ended = await auth.signOut()
                                     ownerStore.changed()
+                                    if !ended { signOutWarning = true }
                                 }
                             } label: {
                                 Label("auth.account.sign_out", systemImage: "rectangle.portrait.and.arrow.right")
@@ -329,6 +331,11 @@ struct AccountView: View {
                 } else {
                     SignInView()
                 }
+            }
+            .alert("auth.account.sign_out_warning_title", isPresented: $signOutWarning) {
+                Button("common.ok", role: .cancel) {}
+            } message: {
+                Text("auth.account.sign_out_warning")
             }
             .navigationTitle(LocalizedStringKey("auth.account.title"))
             .navigationBarTitleDisplayMode(.inline)

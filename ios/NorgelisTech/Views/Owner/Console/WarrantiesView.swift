@@ -86,10 +86,8 @@ struct WarrantiesView: View {
         } message: {
             Text("console.warranty.void_hint")
         }
-        .task(id: store.version) { await load() }
-        .task(id: state) { await load() }
-        .task(id: text) {
-            try? await Task.sleep(nanoseconds: 300_000_000)
+        .task(id: "\(store.version)|\(state ?? "")|\(text)") {
+            if !text.isEmpty { try? await Task.sleep(nanoseconds: 300_000_000) }
             if !Task.isCancelled { await load() }
         }
     }

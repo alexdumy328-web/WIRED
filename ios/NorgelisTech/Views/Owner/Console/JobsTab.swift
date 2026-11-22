@@ -89,11 +89,9 @@ struct JobsTab: View {
             .sheet(item: $open) { ref in BookingDetailSheet(code: ref.id) }
             .sheet(isPresented: $showWalkIn) { WalkInSheet { code in open = JobRef(id: code) } }
         }
-        .task(id: store.version) { await reload() }
-        .task(id: "\(chip)|\(mode?.rawValue ?? "")") { await reload() }
-        .task(id: text) {
-            // Wait for a pause in typing.
-            try? await Task.sleep(nanoseconds: 300_000_000)
+        .task(id: "\(store.version)|\(chip)|\(mode?.rawValue ?? "")|\(text)") {
+            // One load per change. Wait for a pause in typing.
+            if !text.isEmpty { try? await Task.sleep(nanoseconds: 300_000_000) }
             if !Task.isCancelled { await reload() }
         }
         .onChange(of: store.jobsFilter) { _, new in

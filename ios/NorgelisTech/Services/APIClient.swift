@@ -16,27 +16,32 @@ enum APIError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .invalidURL:
-            return "URL invalid pentru serverul API."
+            return String(localized: "error.invalid_url")
         case .networkError(let error):
-            return "Eroare de rețea: \(error.localizedDescription)"
+            return String(format: String(localized: "error.network"), error.localizedDescription)
         case .invalidResponse(let statusCode):
-            return "Răspuns server neașteptat (HTTP \(statusCode))."
+            return String(format: String(localized: "error.invalid_response"), statusCode)
         case .decodingError(let error):
-            return "Eroare la procesarea datelor primite: \(error.localizedDescription)"
+            return String(format: String(localized: "error.decoding"), error.localizedDescription)
         case .serverError(let message):
-            return "Eroare server: \(message)"
+            return String(format: String(localized: "error.server"), message)
         case .notFound:
-            return "Programarea nu a fost găsită."
+            return String(localized: "error.not_found")
         case .unauthorized:
-            return "Nu ești autentificat. Lipește cookie-ul de sesiune în Setări dezvoltare."
+            return String(localized: "error.unauthorized")
         case .forbidden:
-            return "Nu ai dreptul să faci această acțiune."
+            return String(localized: "error.forbidden")
         case .auth(let status, _):
-            return "Autentificarea a eșuat (HTTP \(status))."
+            return String(format: String(localized: "error.auth"), status)
         case .conflict(let code):
-            return "Acțiunea nu a putut fi făcută (\(code))."
+            return String(format: String(localized: "error.conflict"), code)
         }
     }
+}
+
+extension Notification.Name {
+    /// The server refused a saved session. The auth store reacts by signing out here too.
+    static let sessionExpired = Notification.Name("norgelis.sessionExpired")
 }
 
 struct HealthResponse: Codable {
@@ -64,6 +69,8 @@ final class APIClient: ObservableObject {
     @Published var baseURLString: String {
         didSet {
             UserDefaults.standard.set(baseURLString, forKey: "norgelis_api_base_url")
+            // A saved session belongs to one server. Never send it to another address.
+            if Self.origin(of: oldValue) != Self.origin(of: baseURLString) { clearSession() }
         }
     }
 
@@ -78,6 +85,7 @@ final class APIClient: ObservableObject {
 
     /// Better Auth cookies from the last sign-in. Kept in the Keychain, sent by hand on every call.
     private var cookies: [String: String]
+    private let cookieLock = NSLock()
     private static let cookieAccount = "cookies"
 
     private static func loadCookies() -> [String: String] {
@@ -94,21 +102,27 @@ final class APIClient: ObservableObject {
         }
     }
 
-    var hasSession: Bool { cookies.keys.contains { $0.hasSuffix("session_token") } }
+    var hasSession: Bool {
+        cookieLock.lock(); defer { cookieLock.unlock() }
+        return cookies.keys.contains { $0.hasSuffix("session_token") }
+    }
 
     func clearSession() {
+        cookieLock.lock(); defer { cookieLock.unlock() }
         cookies = [:]
         persistCookies()
     }
 
     private var cookieHeader: String {
-        cookies.map { "\($0.key)=\($0.value)" }.sorted().joined(separator: "; ")
+        cookieLock.lock(); defer { cookieLock.unlock() }
+        return cookies.map { "\($0.key)=\($0.value)" }.sorted().joined(separator: "; ")
     }
 
     private func store(from response: HTTPURLResponse, url: URL) {
         let fields = response.allHeaderFields.reduce(into: [String: String]()) { out, pair in
             if let k = pair.key as? String, let v = pair.value as? String { out[k] = v }
         }
+        cookieLock.lock(); defer { cookieLock.unlock() }
         var changed = false
         for cookie in HTTPCookie.cookies(withResponseHeaderFields: fields, for: url) {
             let expired = cookie.value.isEmpty || (cookie.expiresDate.map { $0 < Date() } ?? false)
@@ -118,10 +132,19 @@ final class APIClient: ObservableObject {
         if changed { persistCookies() }
     }
 
-    /// The API's own address as an Origin, the way a browser on that site would send it.
-    private var originString: String? {
-        guard let url = baseURL, let scheme = url.scheme, let host = url.host else { return nil }
+    /// "scheme://host:port" of an address, or nil.
+    private static func origin(of address: String) -> String? {
+        guard let url = URL(string: address), let scheme = url.scheme, let host = url.host else { return nil }
         return url.port.map { "\(scheme)://\(host):\($0)" } ?? "\(scheme)://\(host)"
+    }
+
+    /// The Origin Better Auth must see. It only accepts the website's own origin (BETTER_AUTH_URL or APP_ORIGINS),
+    /// which a build sets as NORGELIS_SITE_ORIGIN. Without it the API's own address is the best guess.
+    private var originString: String? {
+        if let site = Bundle.main.object(forInfoDictionaryKey: "NorgelisSiteOrigin") as? String, !site.isEmpty {
+            return Self.origin(of: site)
+        }
+        return Self.origin(of: baseURLString)
     }
 
     init(session: URLSession = .shared) {
@@ -224,10 +247,16 @@ final class APIClient: ObservableObject {
         do {
             (data, response) = try await session.data(for: request)
         } catch {
+            // A superseded request is not a network problem.
+            if (error as? URLError)?.code == .cancelled { throw CancellationError() }
             throw APIError.networkError(error)
         }
         if let http = response as? HTTPURLResponse {
             store(from: http, url: url)
+            if http.statusCode == 401, !path.hasPrefix("api/auth"), hasSession {
+                clearSession()
+                NotificationCenter.default.post(name: .sessionExpired, object: nil)
+            }
             if path.hasPrefix("api/auth"), !(200...299).contains(http.statusCode) {
                 let code = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["code"] as? String
                     ?? (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["message"] as? String
@@ -244,7 +273,8 @@ final class APIClient: ObservableObject {
         }
         let (data, response) = try await session.data(from: url)
         try validateResponse(response, data: data)
-        return try JSONDecoder().decode([Booking].self, from: data)
+        struct Envelope: Decodable { var bookings: [Booking] }
+        return try JSONDecoder().decode(Envelope.self, from: data).bookings
     }
 
     func fetchAdminBusy(from: String, to: String) async throws -> [String: BusyDaySummary] {

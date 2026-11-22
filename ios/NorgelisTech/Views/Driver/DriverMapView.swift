@@ -48,6 +48,7 @@ struct DriverMapView: View {
 
             panel
         }
+        .task { locationService.prepare() }
         .onChange(of: planner.legs.first?.id) { _, _ in
             if tripStop == nil { fitRoute() }
         }
@@ -94,8 +95,11 @@ struct DriverMapView: View {
                             isNext: stop.id == appState.nextStop?.id,
                             isSelected: stop.id == appState.focusedStopID
                         )
+                        .frame(minWidth: 44, minHeight: 44)
+                        .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(Text("\(appState.number(of: stop).map { "\($0). " } ?? "")\(stop.customerName), \(stop.address)"))
                 }
             }
 
@@ -115,7 +119,6 @@ struct DriverMapView: View {
             }
         }
         .mapControls { MapCompass() }
-        .onTapGesture { if appState.focusedStopID != nil { closeStop() } }
     }
 
     // MARK: - Panel
@@ -123,19 +126,19 @@ struct DriverMapView: View {
     @ViewBuilder
     private var panel: some View {
         if let stop = tripStop {
-            DriverPanel(detent: $detent, peekHeight: 168) {
+            DriverPanel(detent: $detent) {
                 DriverTripHeader(planner: planner, stop: stop)
             } content: {
                 StopDetailContent(planner: planner, stop: stop)
             }
         } else if let stop = appState.focusedStop {
-            DriverPanel(detent: $detent, peekHeight: 158) {
+            DriverPanel(detent: $detent) {
                 StopDetailHeader(planner: planner, stop: stop, onClose: closeStop)
             } content: {
                 StopDetailContent(planner: planner, stop: stop)
             }
         } else {
-            DriverPanel(detent: $detent, peekHeight: appState.nextStop == nil ? 190 : 204) {
+            DriverPanel(detent: $detent) {
                 DriverListHeader(planner: planner, onOpen: focus)
             } content: {
                 DriverStopList(planner: planner, onOpen: focus)
