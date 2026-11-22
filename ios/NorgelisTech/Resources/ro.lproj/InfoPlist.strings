@@ -1,0 +1,4 @@
+"CFBundleDisplayName" = "Norgelis Tech";
+"NSLocationWhenInUseUsageDescription" = "Norgelis Tech folosește locația pentru navigație și pentru a indica poziția pe hartă în timpul preluărilor și livrărilor.";
+"NSLocationAlwaysAndWhenInUseUsageDescription" = "Norgelis Tech folosește locația ca să calculeze traseul și ora de sosire în timpul unei curse, chiar dacă ecranul se stinge.";
+"NSLocalNetworkUsageDescription" = "Norgelis Tech se conectează la serverul atelierului din rețeaua locală în timpul dezvoltării.";

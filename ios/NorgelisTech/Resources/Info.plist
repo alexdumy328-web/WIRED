@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>ro</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>ro</string>
+        <string>en</string>
+    </array>
+    <key>CFBundleDisplayName</key>
+    <string>Norgelis Tech</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleName</key>
+    <string>$(PRODUCT_NAME)</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>1.0</string>
+    <key>CFBundleVersion</key>
+    <string>1</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>UILaunchScreen</key>
+    <dict/>
+    <key>UISupportedInterfaceOrientations~ipad</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationPortraitUpsideDown</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+        <string>UIInterfaceOrientationLandscapeLeft</string>
+        <string>UIInterfaceOrientationLandscapeRight</string>
+    </array>
+
+    <!-- Lets the app ask whether Waze is installed -->
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>waze</string>
+    </array>
+
+    <!-- Location Permission Descriptions (Romanian primary) -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Norgelis Tech folosește locația pentru navigație și pentru a indica poziția pe hartă în timpul preluărilor și livrărilor.</string>
+    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+    <string>Norgelis Tech folosește locația ca să calculeze traseul și ora de sosire în timpul unei curse, chiar dacă ecranul se stinge.</string>
+
+    <!-- Background Location Capability -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>location</string>
+    </array>
+
+    <!-- Default API address for this build. Empty means http://localhost:8787. -->
+    <key>NorgelisAPIBaseURL</key>
+    <string>$(NORGELIS_API_BASE_URL)</string>
+    <!-- The website's own origin, for the Origin header Better Auth checks. Empty falls back to the API address. -->
+    <key>NorgelisSiteOrigin</key>
+    <string>$(NORGELIS_SITE_ORIGIN)</string>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>Norgelis Tech se conectează la serverul atelierului din rețeaua locală în timpul dezvoltării.</string>
+
+    <!-- Local network & HTTP for dev server localhost:8787 -->
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
+    </dict>
+</dict>
+</plist>
