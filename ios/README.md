@@ -137,21 +137,7 @@ Not built yet. Intake photo capture and viewing (the count shows), and push noti
 
 ## Screenshots
 
-`docs/screenshots/` holds simulator captures. `driver.png` shows the route, Navigate and recenter buttons on Liquid Glass. `console-today.png`, `console-schedule.png`, `console-stats.png` and `console-job.png` show the owner console. `customer.png` and `home-icon.png` show the customer lookup and the app icon.
-
-### Signing in against a local backend
-
-Better Auth rejects any call that carries a cookie unless its `Origin` is one it trusts, which is the website's own origin (`BETTER_AUTH_URL`, or `APP_ORIGINS`; in dev that is `http://localhost:5173`). A phone has no page origin, so the app sends one from the build setting `NORGELIS_SITE_ORIGIN`. Without it, sign-in still works, but sign-out answers 403 and the app warns that the server session may still be valid.
-
-```bash
-xcodebuild ... NORGELIS_API_BASE_URL=http://192.168.1.20:8790 NORGELIS_SITE_ORIGIN=http://localhost:5173 build
-```
-
-Both settings are passed on the command line, so a LAN address never enters git.
-
-### Driver location
-
-The driver map asks for location (when in use) the first time it opens. A real phone follows its own GPS during a trip. Only the simulator drives a fake car along the planned route. Sharing the position with the server waits for `POST /api/driver/location` to exist, so nothing is sent today.
+`docs/screenshots/` holds simulator captures. `driver-list.png`, `driver-stop.png` and `driver-trip.png` show the driver panel (stop list, one stop with its X, and a trip with the turn banner and slide to confirm). `sign-in.png` shows sign-in. `console-today.png`, `console-job.png`, `console-schedule.png` and `console-stats.png` show the owner console. `customer.png` and `home-icon.png` show the customer lookup and the app icon.
 
 ## Look and feel
 
