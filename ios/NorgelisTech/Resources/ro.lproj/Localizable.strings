@@ -358,3 +358,26 @@
 "auth.staff.no_access_title" = "Fără acces";
 "auth.staff.no_access" = "Consola atelierului e pentru tehnicieni și proprietari. Contul tău e de client.";
 "console.more.sample_off" = "Consola vorbește cu serverul din Setări dezvoltare. Intră în cont cu pictograma persoană, sus.";
+
+/* Driver panel */
+"driver.panel.close" = "Închide";
+"driver.summary %lld" = "%lld opriri rămase";
+"driver.list.upcoming" = "Următoarele opriri";
+"driver.list.done" = "Finalizate";
+"driver.list.reorder" = "Reordonează";
+"driver.list.done_button" = "Gata";
+"driver.stop.make_next" = "Mută pe primul loc";
+"driver.stop.window" = "Interval";
+"driver.stop.booking" = "Programare";
+"driver.stop.completed" = "Finalizată";
+"driver.stop.pending" = "De făcut";
+"driver.trip.arrive %@" = "sosire %@";
+"driver.trip.slide" = "Glisează când ai ajuns";
+"driver.trip.cancel" = "Anulează cursa";
+"driver.trip.cancel_title" = "Anulezi cursa?";
+"driver.trip.cancel_message %@" = "Oprești cursa spre %@. Oprirea rămâne pe listă.";
+"driver.trip.keep" = "Continuă cursa";
+"driver.step.arrive" = "Ai ajuns la destinație";
+"driver.done.title" = "Toate opririle sunt gata";
+"driver.done.subtitle" = "Întoarce-te la atelier.";
+"driver.done.navigate" = "Navighează la atelier";

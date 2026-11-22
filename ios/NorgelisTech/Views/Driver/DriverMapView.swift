@@ -1,12 +1,14 @@
 import SwiftUI
 import MapKit
 
+/// The driver's day on a map: numbered stops, the planned legs, and one panel for everything else.
 struct DriverMapView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var locationService: LocationService
-    @Binding var selectedStop: PickupStop?
-    @State private var showingStopsList: Bool = false
-    @State private var route: MKRoute?
+    @ObservedObject var planner: DriverRoutePlanner
+
+    @State private var detent: PanelDetent = .peek
+    @State private var following = true
 
     @State private var cameraPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
@@ -15,171 +17,161 @@ struct DriverMapView: View {
         )
     )
 
-    var nextStop: PickupStop? {
-        appState.stops.first(where: { !$0.isCompleted })
-    }
-
-    /// The stop the route leads to: the one in progress, else the next one.
-    var routeTarget: PickupStop? {
-        appState.currentEnRouteStop ?? nextStop
-    }
-
-    /// Changes when the route has to be drawn again.
-    private var routeKey: String {
-        "\(routeTarget?.id ?? "none")-\(appState.isDriverEnRoute)"
-    }
+    private var tripStop: PickupStop? { appState.isDriverEnRoute ? appState.currentEnRouteStop : nil }
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // MapKit View
-            Map(position: $cameraPosition) {
-                // Shop Base
-                Marker(MockData.shopName, systemImage: "wrench.and.screwdriver.fill", coordinate: MockData.shopCoordinate)
-                    .tint(.blue)
+            map
 
-                // Driving route to the current target
-                if let route {
-                    MapPolyline(route.polyline)
-                        .stroke(Theme.pickup, style: StrokeStyle(lineWidth: 6, lineCap: .round, lineJoin: .round))
+            // Top: the next turn while driving, otherwise a one-line summary
+            VStack(spacing: 10) {
+                if let stop = tripStop, let maneuver = planner.maneuver {
+                    StepBanner(maneuver: maneuver, destination: stop.address)
+                        .padding(.horizontal, 12)
+                        .transition(.move(edge: .top).combined(with: .opacity))
                 }
-
-                // Customer Stops
-                ForEach(appState.stops) { stop in
-                    Annotation("", coordinate: stop.coordinate) {
-                        Button {
-                            selectedStop = stop
-                        } label: {
-                            StopPin(stop: stop)
-                        }
-                    }
-                }
-
-                // Driver's Live Position
-                if appState.isDriverEnRoute {
-                    Annotation("Șofer Norgelis", coordinate: appState.driverCoordinate) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.blue.opacity(0.25))
-                                .frame(width: 50, height: 50)
-                            Circle()
-                                .fill(Color.blue.opacity(0.5))
-                                .frame(width: 36, height: 36)
-                            Image(systemName: "car.fill")
-                                .font(.system(size: 18, weight: .bold))
-                                .foregroundColor(.white)
-                                .frame(width: 30, height: 30)
-                                .background(Circle().fill(Color.blue))
-                                .shadow(radius: 3)
-                        }
-                    }
-                }
-            }
-            .mapControls {
-                MapCompass()
-                MapScaleView()
-            }
-
-            // Top Action Controls Overlay
-            VStack {
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(LocalizedStringKey("driver.title"))
-                            .font(.headline)
-                        Text(String(format: NSLocalizedString("driver.stops.remaining", comment: ""), appState.stops.filter { !$0.isCompleted }.count))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
-                    .glassCard(radius: 14)
-
-                    Spacer()
-
-                    Button {
-                        showingStopsList = true
-                    } label: {
-                        Label("Listă opriri", systemImage: "list.bullet")
-                            .font(.subheadline.bold())
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .glassCard(radius: 20)
-                    }
-                }
-                .padding(.horizontal, 16)
-                .padding(.top, 10)
-
                 Spacer()
             }
+            .padding(.top, 8)
+            .animation(.easeInOut(duration: 0.25), value: tripStop?.id)
 
-            // Recenter controls, under the top bar so nothing covers them
+            // Recenter controls
             VStack {
                 HStack {
                     Spacer()
                     recenterControls
                 }
-                .padding(.horizontal, 16)
-                .padding(.top, 66)
-
+                .padding(.horizontal, 14)
+                .padding(.top, tripStop == nil ? 12 : 92)
                 Spacer()
             }
 
-            // Bottom Driver Control Card
-            VStack(spacing: 0) {
-                if appState.isDriverEnRoute, let stop = appState.currentEnRouteStop {
-                    // Active Navigation Mode Card
-                    activeNavigationCard(stop: stop)
-                } else if let stop = nextStop {
-                    // Next Scheduled Stop Card
-                    nextStopCard(stop: stop)
+            panel
+        }
+        .onChange(of: planner.legs.first?.id) { _, _ in
+            if tripStop == nil { fitRoute() }
+        }
+        .onChange(of: appState.driverCoordinate.latitude) { _, _ in
+            guard tripStop != nil, following else { return }
+            withAnimation(.linear(duration: 0.45)) {
+                cameraPosition = .region(MKCoordinateRegion(
+                    center: appState.driverCoordinate,
+                    span: MKCoordinateSpan(latitudeDelta: 0.012, longitudeDelta: 0.012)
+                ))
+            }
+        }
+        .onChange(of: appState.isDriverEnRoute) { _, going in
+            following = true
+            detent = .peek
+            if !going { fitRoute() }
+        }
+    }
+
+    // MARK: - Map
+
+    private var map: some View {
+        Map(position: $cameraPosition) {
+            Marker(MockData.shopName, systemImage: "wrench.and.screwdriver.fill", coordinate: MockData.shopCoordinate)
+                .tint(.blue)
+
+            // The first leg is the road ahead; later legs are faint and dashed.
+            ForEach(Array(planner.legs.enumerated()), id: \.element.id) { index, leg in
+                if index == 0 {
+                    MapPolyline(coordinates: leg.coordinates)
+                        .stroke(Theme.pickup, style: StrokeStyle(lineWidth: 7, lineCap: .round, lineJoin: .round))
                 } else {
-                    // All stops done card
-                    allCompletedCard
+                    MapPolyline(coordinates: leg.coordinates)
+                        .stroke(Theme.pickup.opacity(0.45), style: StrokeStyle(lineWidth: 4, lineCap: .round, lineJoin: .round, dash: [2, 7]))
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 20)
+
+            ForEach(appState.stops) { stop in
+                Annotation("", coordinate: stop.coordinate) {
+                    Button { focus(stop) } label: {
+                        StopPin(
+                            stop: stop,
+                            number: appState.number(of: stop),
+                            isNext: stop.id == appState.nextStop?.id,
+                            isSelected: stop.id == appState.focusedStopID
+                        )
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+
+            if appState.isDriverEnRoute {
+                Annotation("", coordinate: appState.driverCoordinate) {
+                    ZStack {
+                        Circle().fill(Color.blue.opacity(0.22)).frame(width: 54, height: 54)
+                        Image(systemName: "car.fill")
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(width: 34, height: 34)
+                            .background(Circle().fill(Color.blue))
+                            .overlay(Circle().stroke(Color.white, lineWidth: 2.5))
+                            .shadow(radius: 3)
+                    }
+                }
+            }
         }
-        .sheet(isPresented: $showingStopsList) {
-            StopsListView(selectedStop: $selectedStop)
-        }
-        .task(id: routeKey) {
-            await loadRoute()
+        .mapControls { MapCompass() }
+        .onTapGesture { if appState.focusedStopID != nil { closeStop() } }
+    }
+
+    // MARK: - Panel
+
+    @ViewBuilder
+    private var panel: some View {
+        if let stop = tripStop {
+            DriverPanel(detent: $detent, peekHeight: 168) {
+                DriverTripHeader(planner: planner, stop: stop)
+            } content: {
+                StopDetailContent(planner: planner, stop: stop)
+            }
+        } else if let stop = appState.focusedStop {
+            DriverPanel(detent: $detent, peekHeight: 158) {
+                StopDetailHeader(planner: planner, stop: stop, onClose: closeStop)
+            } content: {
+                StopDetailContent(planner: planner, stop: stop)
+            }
+        } else {
+            DriverPanel(detent: $detent, peekHeight: appState.nextStop == nil ? 190 : 204) {
+                DriverListHeader(planner: planner, onOpen: focus)
+            } content: {
+                DriverStopList(planner: planner, onOpen: focus)
+            }
         }
     }
 
-    // MARK: - Route
+    // MARK: - Camera and focus
 
-    /// Asks Apple Maps for the driving route and frames it on the map.
-    private func loadRoute() async {
-        guard let target = routeTarget else {
-            route = nil
-            return
-        }
-        let origin = appState.isDriverEnRoute ? appState.driverCoordinate : MockData.shopCoordinate
-        let request = MKDirections.Request()
-        request.source = MKMapItem(placemark: MKPlacemark(coordinate: origin))
-        request.destination = MKMapItem(placemark: MKPlacemark(coordinate: target.coordinate))
-        request.transportType = .automobile
-        do {
-            let response = try await MKDirections(request: request).calculate()
-            guard let best = response.routes.first else { return }
-            route = best
-            fitRoute()
-        } catch {
-            route = nil
+    private func focus(_ stop: PickupStop) {
+        appState.focusedStopID = stop.id
+        detent = .mid
+        following = false
+        // Put the stop in the upper half, above the panel.
+        withAnimation {
+            cameraPosition = .region(MKCoordinateRegion(
+                center: CLLocationCoordinate2D(latitude: stop.coordinate.latitude - 0.0025, longitude: stop.coordinate.longitude),
+                span: MKCoordinateSpan(latitudeDelta: 0.012, longitudeDelta: 0.012)
+            ))
         }
     }
 
-    // MARK: - Recenter
+    private func closeStop() {
+        appState.focusedStopID = nil
+        detent = .peek
+        fitRoute()
+    }
 
-    /// Frames the whole route. Extra room at the bottom so the card does not cover its start.
+    /// Frames the road ahead, with room at the bottom for the panel.
     private func fitRoute() {
-        guard let route else { return }
-        let rect = route.polyline.boundingMapRect
+        guard let leg = planner.legs.first else { return }
+        let rect = leg.route.polyline.boundingMapRect
         withAnimation {
             cameraPosition = .rect(MKMapRect(
                 x: rect.minX - rect.width * 0.25,
-                y: rect.minY - rect.height * 0.15,
+                y: rect.minY - rect.height * 0.2,
                 width: rect.width * 1.5,
                 height: rect.height * 1.9
             ))
@@ -195,23 +187,25 @@ struct DriverMapView: View {
         }
     }
 
-    /// The driver: the live position on a trip, else the last GPS fix, else the workshop.
     private var driverPosition: CLLocationCoordinate2D {
         if appState.isDriverEnRoute { return appState.driverCoordinate }
-        return locationService.currentLocation?.coordinate ?? MockData.shopCoordinate
+        return locationService.currentLocation?.coordinate ?? appState.driverCoordinate
     }
 
     private var recenterControls: some View {
         VStack(spacing: 0) {
             recenterButton(icon: "arrow.up.left.and.arrow.down.right", label: "driver.map.fit_route") {
-                if route != nil { fitRoute() } else { center(on: MockData.shopCoordinate) }
+                following = false
+                if planner.legs.isEmpty { center(on: MockData.shopCoordinate) } else { fitRoute() }
             }
             Divider().frame(width: 28)
             recenterButton(icon: "location.fill", label: "driver.map.center_driver") {
+                following = true
                 center(on: driverPosition)
             }
             Divider().frame(width: 28)
             recenterButton(icon: "wrench.and.screwdriver.fill", label: "driver.map.center_shop") {
+                following = false
                 center(on: MockData.shopCoordinate)
             }
         }
@@ -227,217 +221,42 @@ struct DriverMapView: View {
         .foregroundColor(.primary)
         .accessibilityLabel(Text(label))
     }
-
-    @ViewBuilder
-    private var routeSummary: some View {
-        if let route {
-            Label(
-                String(format: "%.1f km · ~%d min", route.distance / 1000, Int(ceil(route.expectedTravelTime / 60))),
-                systemImage: "arrow.triangle.turn.up.right.circle.fill"
-            )
-            .font(.footnote.bold())
-            .foregroundColor(Theme.pickup)
-        }
-    }
-
-    // MARK: - Subcards
-
-    @ViewBuilder
-    private func nextStopCard(stop: PickupStop) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                HStack(spacing: 6) {
-                    Image(systemName: "clock.fill")
-                        .foregroundColor(.secondary)
-                    Text(stop.scheduledTime)
-                        .font(.subheadline.bold())
-                }
-
-                Spacer()
-
-                Text(LocalizedStringKey(stop.type.localizedTitleKey))
-                    .font(.caption.bold())
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 3)
-                    .background(Theme.pickup.opacity(0.15))
-                    .foregroundColor(Theme.pickup)
-                    .clipShape(Capsule())
-
-                if stop.isUrgent {
-                    Text(LocalizedStringKey("common.urgent"))
-                        .font(.caption2.bold())
-                        .padding(.horizontal, 6)
-                        .padding(.vertical, 3)
-                        .background(Theme.danger)
-                        .foregroundColor(.white)
-                        .clipShape(Capsule())
-                }
-            }
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(stop.customerName)
-                    .font(.headline)
-                Text(stop.address)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .lineLimit(2)
-            }
-
-            routeSummary
-
-            Divider()
-
-            HStack(spacing: 12) {
-                NavigateMenu(stop: stop)
-
-                // Call button
-                Button {
-                    callCustomer(phone: stop.customerPhone)
-                } label: {
-                    Label(LocalizedStringKey("driver.stop.call"), systemImage: "phone.fill")
-                        .font(.subheadline.bold())
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 12)
-                        .background(.glassFill)
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                }
-            }
-
-            // Primary "Plec spre client" Action Button
-            Button {
-                appState.startTripToStop(stop)
-            } label: {
-                Label(LocalizedStringKey("driver.action.start"), systemImage: "location.fill")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 14)
-                    .background(Color.accentColor)
-                    .foregroundColor(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-        }
-        .padding(16)
-        .glassCard()
-    }
-
-    @ViewBuilder
-    private func activeNavigationCard(stop: PickupStop) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(Theme.ok)
-                            .frame(width: 8, height: 8)
-                        Text(LocalizedStringKey("driver.action.en_route"))
-                            .font(.caption.bold())
-                            .foregroundColor(Theme.ok)
-                    }
-
-                    Text(stop.address)
-                        .font(.headline)
-                        .lineLimit(1)
-                }
-
-                Spacer()
-
-                // Live ETA Badge
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text("~\(appState.etaMinutes) min")
-                        .font(.title2.bold())
-                        .foregroundColor(Theme.pickup)
-                    Text("Timp estimat")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
-                }
-            }
-
-            routeSummary
-
-            NavigateMenu(stop: stop)
-
-            HStack(spacing: 10) {
-                Image(systemName: "antenna.radiowaves.left.and.right")
-                    .foregroundColor(Theme.pickup)
-                Text(LocalizedStringKey("driver.tracking.active"))
-                    .font(.footnote)
-                    .foregroundColor(.secondary)
-            }
-
-            // Finish Stop Button
-            Button {
-                appState.completeCurrentStop()
-            } label: {
-                Label(LocalizedStringKey("driver.action.complete_stop"), systemImage: "checkmark.circle.fill")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 12)
-                    .background(Theme.ok)
-                    .foregroundColor(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
-            }
-        }
-        .padding(16)
-        .glassCard()
-    }
-
-    private var allCompletedCard: some View {
-        VStack(spacing: 8) {
-            Image(systemName: "checkmark.seal.fill")
-                .font(.system(size: 32))
-                .foregroundColor(Theme.ok)
-            Text("Toate opririle au fost finalizate!")
-                .font(.headline)
-            Text("Felicitări! Întoarce-te la atelierul Norgelis Tech.")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(20)
-        .glassCard()
-    }
-
-    private func callCustomer(phone: String) {
-        let clean = phone.replacingOccurrences(of: " ", with: "")
-        if let url = URL(string: "tel://\(clean)") {
-            #if os(iOS)
-            UIApplication.shared.open(url)
-            #endif
-        }
-    }
 }
 
-/// Round map pin for a stop. One shape for every state, so nothing pokes out of a circle.
+/// Round map pin for a stop. Shows its place in today's order, the next one is larger.
 struct StopPin: View {
     let stop: PickupStop
+    var number: Int?
+    var isNext = false
+    var isSelected = false
 
     private var tint: Color {
         if stop.isCompleted { return .gray }
         return stop.isUrgent ? Theme.danger : Theme.pickup
     }
 
-    private var icon: String {
-        if stop.isCompleted { return "checkmark" }
-        return stop.isUrgent ? "exclamationmark" : "mappin"
-    }
-
     var body: some View {
-        VStack(spacing: 3) {
-            Image(systemName: icon)
-                .font(.system(size: 15, weight: .heavy))
-                .foregroundColor(.white)
-                .frame(width: 32, height: 32)
-                .background(Circle().fill(tint))
-                .overlay(Circle().stroke(Color.white, lineWidth: 2.5))
-                .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
-
-            Text(stop.bookingCode)
-                .font(.system(size: 10, weight: .bold))
-                .foregroundColor(.primary)
-                .padding(.horizontal, 5)
-                .padding(.vertical, 1)
-                .background(Color(.systemBackground).opacity(0.9))
-                .clipShape(Capsule())
+        let size: CGFloat = isNext || isSelected ? 38 : 30
+        ZStack {
+            if isNext && !stop.isCompleted {
+                Circle().fill(tint.opacity(0.22)).frame(width: size + 18, height: size + 18)
+            }
+            ZStack {
+                if stop.isCompleted {
+                    Image(systemName: "checkmark").font(.system(size: size * 0.42, weight: .heavy))
+                } else if let number {
+                    Text("\(number)").font(.system(size: size * 0.5, weight: .heavy)).monospacedDigit()
+                } else {
+                    Image(systemName: "mappin").font(.system(size: size * 0.42, weight: .heavy))
+                }
+            }
+            .foregroundColor(.white)
+            .frame(width: size, height: size)
+            .background(Circle().fill(tint))
+            .overlay(Circle().stroke(Color.white, lineWidth: isSelected ? 4 : 2.5))
+            .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
         }
+        .animation(.spring(response: 0.3, dampingFraction: 0.75), value: isNext)
+        .animation(.spring(response: 0.3, dampingFraction: 0.75), value: isSelected)
     }
 }

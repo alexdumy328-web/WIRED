@@ -358,3 +358,26 @@
 "auth.staff.no_access_title" = "No access";
 "auth.staff.no_access" = "The workshop console is for technicians and owners. Your account is a customer account.";
 "console.more.sample_off" = "The console talks to the server in Dev settings. Sign in with the person icon at the top.";
+
+/* Driver panel */
+"driver.panel.close" = "Close";
+"driver.summary %lld" = "%lld stops left";
+"driver.list.upcoming" = "Upcoming stops";
+"driver.list.done" = "Done";
+"driver.list.reorder" = "Reorder";
+"driver.list.done_button" = "Done";
+"driver.stop.make_next" = "Make this the next stop";
+"driver.stop.window" = "Time";
+"driver.stop.booking" = "Booking";
+"driver.stop.completed" = "Completed";
+"driver.stop.pending" = "To do";
+"driver.trip.arrive %@" = "arrive %@";
+"driver.trip.slide" = "Slide when you arrive";
+"driver.trip.cancel" = "Cancel trip";
+"driver.trip.cancel_title" = "Cancel this trip?";
+"driver.trip.cancel_message %@" = "This stops the trip to %@. The stop stays on your list.";
+"driver.trip.keep" = "Keep driving";
+"driver.step.arrive" = "You have arrived";
+"driver.done.title" = "All stops are done";
+"driver.done.subtitle" = "Head back to the workshop.";
+"driver.done.navigate" = "Navigate to the workshop";

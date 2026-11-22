@@ -87,12 +87,7 @@ struct DevSettingsSheet: View {
 
                 Section(header: Text("Date de test (Mock)")) {
                     Button(role: .destructive) {
-                        appState.stops = MockData.driverStops
-                        appState.bookings = MockData.bookings
-                        appState.currentCustomerBooking = MockData.bookings.first
-                        appState.isDriverEnRoute = false
-                        appState.currentEnRouteStop = nil
-                        locationService.stopTracking()
+                        appState.resetDriverDemo()
                     } label: {
                         Label("Resetează la datele inițiale", systemImage: "arrow.counterclockwise")
                     }
