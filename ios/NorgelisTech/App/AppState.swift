@@ -22,7 +22,7 @@ final class AppState: ObservableObject {
     // Bookings state for Owner and Customer
     @Published var bookings: [Booking] = MockData.bookings
     @Published var currentCustomerBooking: Booking?
-    @Published var customerSearchQuery: String = "NT-4K7Q"
+    @Published var customerSearchQuery: String = APIClient.shared.useMockData ? "NT-4K7Q" : ""
     /// What the last lookup said, in words, when it found nothing.
     @Published var customerLookupError: String?
     @Published var customerLookupBusy = false
@@ -33,6 +33,7 @@ final class AppState: ObservableObject {
     let planner = DriverRoutePlanner()
     private var cancellables = Set<AnyCancellable>()
     private var tripTask: Task<Void, Never>?
+    private var lookupTask: Task<Void, Never>?
     /// Where the current plan starts, so a real position fix far from it replans.
     private var lastPlanOrigin = MockData.shopCoordinate
 
@@ -49,18 +50,35 @@ final class AppState: ObservableObject {
                 MainActor.assumeIsolated {
                     guard let self else { return }
                     let here = CLLocation(latitude: coord.latitude, longitude: coord.longitude)
+                    // A position far from Iasi is a simulator's default city or garbage. Never follow it.
+                    let shop = CLLocation(latitude: MockData.shopCoordinate.latitude, longitude: MockData.shopCoordinate.longitude)
+                    guard here.distance(from: shop) < 150_000 else { return }
                     if self.isDriverEnRoute {
                         self.driverCoordinate = coord
                         self.planner.update(driver: coord)
                         if self.planner.hasRoute(to: self.currentEnRouteStop?.id ?? "") { self.etaMinutes = self.planner.etaMinutes }
                     } else {
-                        // Idle fix. A position far from Iasi (a simulator's default city) would make planning fail, so ignore it.
-                        let shop = CLLocation(latitude: MockData.shopCoordinate.latitude, longitude: MockData.shopCoordinate.longitude)
+                        // Idle fix: replan only when the driver really moved.
                         let origin = CLLocation(latitude: self.lastPlanOrigin.latitude, longitude: self.lastPlanOrigin.longitude)
-                        guard here.distance(from: shop) < 150_000, here.distance(from: origin) > 300 else { return }
+                        guard here.distance(from: origin) > 300 else { return }
                         self.driverCoordinate = coord
                         self.replan()
                     }
+                }
+            }
+            .store(in: &cancellables)
+
+        // Switching between sample and live data must not leave the other source's booking on screen.
+        apiClient.$useMockData
+            .dropFirst()
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] sample in
+                MainActor.assumeIsolated {
+                    guard let self else { return }
+                    self.lookupTask?.cancel()
+                    self.customerLookupBusy = false
+                    self.customerLookupError = nil
+                    self.currentCustomerBooking = sample ? MockData.bookings.first : nil
                 }
             }
             .store(in: &cancellables)
@@ -175,24 +193,37 @@ final class AppState: ObservableObject {
         let trimmed = code.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         customerSearchQuery = trimmed
         customerLookupError = nil
+        lookupTask?.cancel()
 
-        // Sample bookings only answer in sample mode.
-        if apiClient.useMockData, let found = bookings.first(where: { $0.code.uppercased() == trimmed }) {
-            currentCustomerBooking = found
+        // Sample mode answers from the sample list only and never touches the network.
+        if apiClient.useMockData {
+            if let found = bookings.first(where: { $0.code.uppercased() == trimmed }) {
+                currentCustomerBooking = found
+            } else {
+                currentCustomerBooking = nil
+                customerLookupError = String(localized: "customer.lookup.not_found")
+            }
             return
         }
+
         // A new lookup never keeps the old result on screen.
         currentCustomerBooking = nil
         customerLookupBusy = true
-        Task { @MainActor in
-            defer { self.customerLookupBusy = false }
+        lookupTask = Task { @MainActor in
             do {
-                self.currentCustomerBooking = try await apiClient.fetchBooking(code: trimmed)
+                let found = try await apiClient.fetchBooking(code: trimmed)
+                guard !Task.isCancelled, self.customerSearchQuery == trimmed else { return }
+                self.currentCustomerBooking = found
+            } catch is CancellationError {
+                return
             } catch APIError.notFound {
+                guard !Task.isCancelled, self.customerSearchQuery == trimmed else { return }
                 self.customerLookupError = String(localized: "customer.lookup.not_found")
             } catch {
+                guard !Task.isCancelled, self.customerSearchQuery == trimmed else { return }
                 self.customerLookupError = error.localizedDescription
             }
+            if self.customerSearchQuery == trimmed { self.customerLookupBusy = false }
         }
     }
 
@@ -201,7 +232,7 @@ final class AppState: ObservableObject {
         tripTask?.cancel()
         stops = MockData.driverStops
         bookings = MockData.bookings
-        currentCustomerBooking = MockData.bookings.first
+        currentCustomerBooking = apiClient.useMockData ? MockData.bookings.first : nil
         isDriverEnRoute = false
         currentEnRouteStop = nil
         focusedStopID = nil

@@ -75,8 +75,12 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
         }
         #endif
 
+        #if targetEnvironment(simulator)
+        // The simulator's own location is a fixed city. The fake drive supplies the position instead.
+        #else
         locationManager.startUpdatingLocation()
         locationManager.startUpdatingHeading()
+        #endif
         isUpdatingLocation = true
     }
 

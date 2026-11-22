@@ -70,7 +70,11 @@ final class APIClient: ObservableObject {
         didSet {
             UserDefaults.standard.set(baseURLString, forKey: "norgelis_api_base_url")
             // A saved session belongs to one server. Never send it to another address.
-            if Self.origin(of: oldValue) != Self.origin(of: baseURLString) { clearSession() }
+            if Self.origin(of: oldValue) != Self.origin(of: baseURLString) {
+                clearSession()
+                // The signed-in person belonged to the old server. Let the auth state catch up.
+                NotificationCenter.default.post(name: .sessionExpired, object: nil)
+            }
         }
     }
 
@@ -141,7 +145,9 @@ final class APIClient: ObservableObject {
     /// The Origin Better Auth must see. It only accepts the website's own origin (BETTER_AUTH_URL or APP_ORIGINS),
     /// which a build sets as NORGELIS_SITE_ORIGIN. Without it the API's own address is the best guess.
     private var originString: String? {
-        if let site = Bundle.main.object(forInfoDictionaryKey: "NorgelisSiteOrigin") as? String, !site.isEmpty {
+        // The build's site origin belongs to the build's own server. Another address gets its own origin.
+        if let site = Bundle.main.object(forInfoDictionaryKey: "NorgelisSiteOrigin") as? String, !site.isEmpty,
+           Self.origin(of: baseURLString) == Self.origin(of: Self.buildDefaultURL) {
             return Self.origin(of: site)
         }
         return Self.origin(of: baseURLString)
@@ -252,7 +258,8 @@ final class APIClient: ObservableObject {
             throw APIError.networkError(error)
         }
         if let http = response as? HTTPURLResponse {
-            store(from: http, url: url)
+            // A reply from before the base URL changed must not put its cookies back.
+            if Self.origin(of: url.absoluteString) == Self.origin(of: baseURLString) { store(from: http, url: url) }
             if http.statusCode == 401, !path.hasPrefix("api/auth"), hasSession {
                 clearSession()
                 NotificationCenter.default.post(name: .sessionExpired, object: nil)
@@ -268,13 +275,9 @@ final class APIClient: ObservableObject {
     }
 
     func fetchMyBookings() async throws -> [Booking] {
-        guard let url = baseURL?.appendingPathComponent("api/me/bookings") else {
-            throw APIError.invalidURL
-        }
-        let (data, response) = try await session.data(from: url)
-        try validateResponse(response, data: data)
         struct Envelope: Decodable { var bookings: [Booking] }
-        return try JSONDecoder().decode(Envelope.self, from: data).bookings
+        let reply: Envelope = try await request("GET", "api/me/bookings")
+        return reply.bookings
     }
 
     func fetchAdminBusy(from: String, to: String) async throws -> [String: BusyDaySummary] {

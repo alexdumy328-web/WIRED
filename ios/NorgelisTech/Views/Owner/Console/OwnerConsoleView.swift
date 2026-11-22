@@ -41,7 +41,7 @@ struct OwnerConsoleView: View {
                 .tabItem { Label("console.tab.more", systemImage: "ellipsis.circle.fill") }
                 .tag(OwnerStore.Tab.more)
         }
-        .task(id: "\(apiClient.useMockData)-\(auth.viewer?.id ?? "")") { await store.bootstrap() }
+        .task(id: "\(apiClient.useMockData)-\(apiClient.baseURLString)-\(auth.viewer?.id ?? "")") { await store.bootstrap() }
     }
 }
 

@@ -2,7 +2,7 @@ import SwiftUI
 
 struct CustomerRootView: View {
     @EnvironmentObject var appState: AppState
-    @State private var inputCode: String = "NT-4K7Q"
+    @State private var inputCode: String = APIClient.shared.useMockData ? "NT-4K7Q" : ""
 
     var body: some View {
         NavigationStack {
@@ -29,10 +29,11 @@ struct CustomerRootView: View {
                                 Image(systemName: "magnifyingglass")
                                     .font(.headline)
                                     .foregroundColor(.white)
-                                    .padding(12)
+                                    .frame(minWidth: 44, minHeight: 44)
                                     .background(Color.accentColor)
                                     .clipShape(RoundedRectangle(cornerRadius: 10))
                             }
+                            .accessibilityLabel(Text("customer.search.button"))
                         }
                     }
                     .padding(16)
@@ -133,7 +134,7 @@ struct CustomerRootView: View {
                         .background(Color(.secondarySystemBackground))
                         .clipShape(RoundedRectangle(cornerRadius: 16))
 
-                    } else {
+                    } else if !appState.customerLookupBusy && appState.customerLookupError == nil {
                         Text(LocalizedStringKey("customer.no_active_bookings"))
                             .foregroundColor(.secondary)
                             .padding()

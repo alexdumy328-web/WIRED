@@ -39,7 +39,7 @@ struct DriverRadarCard: View {
                     Text("radar.destination \(stop.address)")
                         .font(.headline)
                         .lineLimit(1)
-                    Text("Client: \(stop.customerName) • Cod: \(stop.bookingCode)")
+                    Text("radar.client \(stop.customerName) \(stop.bookingCode)")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }

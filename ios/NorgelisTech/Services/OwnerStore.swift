@@ -44,10 +44,14 @@ final class OwnerStore: ObservableObject {
             role = .technician
             do {
                 role = try await repo.role()
+            } catch is CancellationError {
+                return
             } catch {
                 lastError = error.localizedDescription
             }
         }
+        // A newer bootstrap superseded this one. Leave its state alone.
+        guard !Task.isCancelled else { return }
         lastWasSample = api.useMockData
         await refreshCounts()
         // Everything on screen came from the other source. Load it again.

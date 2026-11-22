@@ -415,3 +415,21 @@
 "console.customers.archive_message %@" = "%@ dispare din lista de clienți. Îl poți restaura din arhivă.";
 "auth.account.sign_out_warning_title" = "Ieșit doar de pe acest telefon";
 "auth.account.sign_out_warning" = "Serverul nu a putut închide sesiunea. Poate fi încă valabilă pe alt dispozitiv.";
+
+/* Review 9 round 2 */
+"customer.search.button" = "Caută";
+"console.schedule.prev_week" = "Săptămâna trecută";
+"console.schedule.next_week" = "Săptămâna viitoare";
+"radar.client %@ %@" = "Client: %1$@ • Cod: %2$@";
+"dev.gps.title" = "Simulator și GPS";
+"dev.gps.status" = "Stare autorizare GPS";
+"dev.gps.request" = "Cere permisiunea de locație";
+"dev.gps.background" = "Mod fundal declarat";
+"dev.gps.background_note" = "Capabilitatea de fundal „UIBackgroundModes: location” e activă în Info.plist.";
+"dev.gps.denied" = "Refuzat";
+"dev.gps.restricted" = "Restricționat";
+"dev.gps.not_asked" = "Nesolicitat";
+"dev.gps.unknown" = "Necunoscut";
+"dev.mock.title" = "Date de test";
+"dev.mock.reset" = "Resetează la datele inițiale";
+"dev.health.ok %@" = "Conectat! Store: %@";

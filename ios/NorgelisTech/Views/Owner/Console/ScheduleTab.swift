@@ -46,6 +46,7 @@ struct ScheduleTab: View {
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showWalkIn = true } label: { Image(systemName: "plus") }
+                        .accessibilityLabel(Text("console.walkin.title"))
                 }
             }
             .refreshable { await load() }
@@ -60,11 +61,13 @@ struct ScheduleTab: View {
     private var strip: some View {
         VStack(spacing: 10) {
             HStack {
-                Button { day = ShopCalendar.addDays(day, -7) } label: { Image(systemName: "chevron.left") }
+                Button { day = ShopCalendar.addDays(day, -7) } label: { Image(systemName: "chevron.left").frame(minWidth: 44, minHeight: 44) }
+                    .accessibilityLabel(Text("console.schedule.prev_week"))
                 Spacer()
                 Text(ShopCalendar.medium(day)).font(.headline)
                 Spacer()
-                Button { day = ShopCalendar.addDays(day, 7) } label: { Image(systemName: "chevron.right") }
+                Button { day = ShopCalendar.addDays(day, 7) } label: { Image(systemName: "chevron.right").frame(minWidth: 44, minHeight: 44) }
+                    .accessibilityLabel(Text("console.schedule.next_week"))
             }
             HStack(spacing: 6) {
                 ForEach(week?.days ?? placeholderDays, id: \.date) { d in

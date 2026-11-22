@@ -64,32 +64,32 @@ struct DevSettingsSheet: View {
                     Toggle("console.more.sample_data", isOn: $apiClient.useMockData)
                 }
 
-                Section(header: Text("Simulator & Tracking GPS")) {
+                Section(header: Text("dev.gps.title")) {
                     HStack {
-                        Text("Stare autorizare GPS:")
+                        Text("dev.gps.status")
                         Spacer()
                         Text(authStatusText)
                             .foregroundColor(.secondary)
                     }
 
                     if locationService.authorizationStatus == .notDetermined {
-                        Button("Solicită permisiune locație") {
+                        Button("dev.gps.request") {
                             locationService.requestWhenInUsePermission()
                         }
                     }
 
-                    Toggle("Background Mode declarat", isOn: .constant(true))
+                    Toggle("dev.gps.background", isOn: .constant(true))
                         .disabled(true)
-                    Text("Capabilitatea de fundal 'UIBackgroundModes: location' este activată în Info.plist.")
+                    Text("dev.gps.background_note")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
 
-                Section(header: Text("Date de test (Mock)")) {
+                Section(header: Text("dev.mock.title")) {
                     Button(role: .destructive) {
                         appState.resetDriverDemo()
                     } label: {
-                        Label("Resetează la datele inițiale", systemImage: "arrow.counterclockwise")
+                        Label("dev.mock.reset", systemImage: "arrow.counterclockwise")
                     }
                 }
             }
@@ -111,10 +111,10 @@ struct DevSettingsSheet: View {
         switch locationService.authorizationStatus {
         case .authorizedAlways: return "Always"
         case .authorizedWhenInUse: return "When In Use"
-        case .denied: return "Refuzat"
-        case .restricted: return "Restricționat"
-        case .notDetermined: return "Nesolicitat"
-        @unknown default: return "Necunoscut"
+        case .denied: return String(localized: "dev.gps.denied")
+        case .restricted: return String(localized: "dev.gps.restricted")
+        case .notDetermined: return String(localized: "dev.gps.not_asked")
+        @unknown default: return String(localized: "dev.gps.unknown")
         }
     }
 
@@ -128,7 +128,7 @@ struct DevSettingsSheet: View {
                 await MainActor.run {
                     isTestingConnection = false
                     isSuccess = true
-                    apiStatusMessage = "Conectat! Store: \(health.store ?? "necunoscut")"
+                    apiStatusMessage = String(format: String(localized: "dev.health.ok %@"), health.store ?? String(localized: "dev.gps.unknown"))
                 }
             } catch {
                 await MainActor.run {

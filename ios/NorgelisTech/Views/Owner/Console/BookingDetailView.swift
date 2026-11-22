@@ -164,7 +164,7 @@ struct BookingDetailView: View {
                 Button("console.job.confirm_save") { Task { await save(b) } }
                 Button("common.cancel", role: .cancel) {}
             } message: {
-                Text("console.job.confirm_message \(b.contact?.name ?? "")")
+                Text("console.job.confirm_message \(b.contact?.name.flatMap { $0.isEmpty ? nil : $0 } ?? b.contact?.email ?? "")")
             }
             if let message {
                 Label(message, systemImage: messageIsError ? "exclamationmark.triangle.fill" : "checkmark.circle.fill")

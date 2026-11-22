@@ -415,3 +415,21 @@
 "console.customers.archive_message %@" = "%@ leaves the customer list. You can restore them from the archive.";
 "auth.account.sign_out_warning_title" = "Signed out on this phone only";
 "auth.account.sign_out_warning" = "The server could not end the session. It may still be valid elsewhere.";
+
+/* Review 9 round 2 */
+"customer.search.button" = "Search";
+"console.schedule.prev_week" = "Previous week";
+"console.schedule.next_week" = "Next week";
+"radar.client %@ %@" = "Customer: %1$@ • Code: %2$@";
+"dev.gps.title" = "Simulator and GPS";
+"dev.gps.status" = "GPS authorization";
+"dev.gps.request" = "Ask for location permission";
+"dev.gps.background" = "Background mode declared";
+"dev.gps.background_note" = "The background capability “UIBackgroundModes: location” is on in Info.plist.";
+"dev.gps.denied" = "Denied";
+"dev.gps.restricted" = "Restricted";
+"dev.gps.not_asked" = "Not asked";
+"dev.gps.unknown" = "Unknown";
+"dev.mock.title" = "Sample data";
+"dev.mock.reset" = "Reset to the starting data";
+"dev.health.ok %@" = "Connected! Store: %@";
