@@ -78,9 +78,16 @@ final class APIClient: ObservableObject {
     init(session: URLSession = .shared) {
         self.session = session
         let savedURL = UserDefaults.standard.string(forKey: "norgelis_api_base_url")
-        self.baseURLString = savedURL ?? "http://localhost:8787"
+        self.baseURLString = savedURL ?? Self.buildDefaultURL
+
         self.sessionCookie = UserDefaults.standard.string(forKey: "norgelis_session_cookie") ?? ""
         self.useMockData = UserDefaults.standard.object(forKey: "norgelis_use_mock") as? Bool ?? true
+    }
+
+    /// The build's default address (`NorgelisAPIBaseURL` in Info.plist), else localhost.
+    private static var buildDefaultURL: String {
+        let configured = Bundle.main.object(forInfoDictionaryKey: "NorgelisAPIBaseURL") as? String
+        return configured.flatMap { $0.isEmpty ? nil : $0 } ?? "http://localhost:8787"
     }
 
     var baseURL: URL? {

@@ -434,6 +434,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				NORGELIS_API_BASE_URL = "";
 				PRODUCT_BUNDLE_IDENTIFIER = ro.norgelis.app;
 				PRODUCT_NAME = NorgelisTech;
 				SDKROOT = iphoneos;
@@ -521,6 +522,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
+				NORGELIS_API_BASE_URL = "";
 				PRODUCT_BUNDLE_IDENTIFIER = ro.norgelis.app;
 				PRODUCT_NAME = NorgelisTech;
 				SDKROOT = iphoneos;

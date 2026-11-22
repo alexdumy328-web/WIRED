@@ -52,6 +52,12 @@
         <string>location</string>
     </array>
 
+    <!-- Default API address for this build. Empty means http://localhost:8787. -->
+    <key>NorgelisAPIBaseURL</key>
+    <string>$(NORGELIS_API_BASE_URL)</string>
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>Norgelis Tech se conectează la serverul atelierului din rețeaua locală în timpul dezvoltării.</string>
+
     <!-- Local network & HTTP for dev server localhost:8787 -->
     <key>NSAppTransportSecurity</key>
     <dict>
