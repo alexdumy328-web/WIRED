@@ -3,6 +3,7 @@ import MapKit
 
 struct DriverMapView: View {
     @EnvironmentObject var appState: AppState
+    @EnvironmentObject var locationService: LocationService
     @Binding var selectedStop: PickupStop?
     @State private var showingStopsList: Bool = false
     @State private var route: MKRoute?
@@ -86,7 +87,6 @@ struct DriverMapView: View {
                 }
             }
             .mapControls {
-                MapUserLocationButton()
                 MapCompass()
                 MapScaleView()
             }
@@ -121,6 +121,18 @@ struct DriverMapView: View {
                 }
                 .padding(.horizontal, 16)
                 .padding(.top, 10)
+
+                Spacer()
+            }
+
+            // Recenter controls, under the top bar so nothing covers them
+            VStack {
+                HStack {
+                    Spacer()
+                    recenterControls
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 66)
 
                 Spacer()
             }
@@ -166,19 +178,70 @@ struct DriverMapView: View {
             let response = try await MKDirections(request: request).calculate()
             guard let best = response.routes.first else { return }
             route = best
-            let rect = best.polyline.boundingMapRect
-            withAnimation {
-                // Extra room at the bottom so the card does not cover the start of the route.
-                cameraPosition = .rect(MKMapRect(
-                    x: rect.minX - rect.width * 0.25,
-                    y: rect.minY - rect.height * 0.15,
-                    width: rect.width * 1.5,
-                    height: rect.height * 1.9
-                ))
-            }
+            fitRoute()
         } catch {
             route = nil
         }
+    }
+
+    // MARK: - Recenter
+
+    /// Frames the whole route. Extra room at the bottom so the card does not cover its start.
+    private func fitRoute() {
+        guard let route else { return }
+        let rect = route.polyline.boundingMapRect
+        withAnimation {
+            cameraPosition = .rect(MKMapRect(
+                x: rect.minX - rect.width * 0.25,
+                y: rect.minY - rect.height * 0.15,
+                width: rect.width * 1.5,
+                height: rect.height * 1.9
+            ))
+        }
+    }
+
+    private func center(on coordinate: CLLocationCoordinate2D) {
+        withAnimation {
+            cameraPosition = .region(MKCoordinateRegion(
+                center: coordinate,
+                span: MKCoordinateSpan(latitudeDelta: 0.012, longitudeDelta: 0.012)
+            ))
+        }
+    }
+
+    /// The driver: the live position on a trip, else the last GPS fix, else the workshop.
+    private var driverPosition: CLLocationCoordinate2D {
+        if appState.isDriverEnRoute { return appState.driverCoordinate }
+        return locationService.currentLocation?.coordinate ?? MockData.shopCoordinate
+    }
+
+    private var recenterControls: some View {
+        VStack(spacing: 0) {
+            recenterButton(icon: "arrow.up.left.and.arrow.down.right", label: "driver.map.fit_route") {
+                if route != nil { fitRoute() } else { center(on: MockData.shopCoordinate) }
+            }
+            Divider().frame(width: 28)
+            recenterButton(icon: "location.fill", label: "driver.map.center_driver") {
+                center(on: driverPosition)
+            }
+            Divider().frame(width: 28)
+            recenterButton(icon: "wrench.and.screwdriver.fill", label: "driver.map.center_shop") {
+                center(on: MockData.shopCoordinate)
+            }
+        }
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
+    }
+
+    private func recenterButton(icon: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: icon)
+                .font(.system(size: 16, weight: .semibold))
+                .frame(width: 44, height: 44)
+        }
+        .foregroundColor(.primary)
+        .accessibilityLabel(Text(label))
     }
 
     @ViewBuilder

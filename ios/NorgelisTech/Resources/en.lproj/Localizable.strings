@@ -98,3 +98,6 @@
 
 /* Navigation */
 "driver.action.navigate" = "Navigate";
+"driver.map.fit_route" = "Show route";
+"driver.map.center_driver" = "Center on driver";
+"driver.map.center_shop" = "Center on workshop";

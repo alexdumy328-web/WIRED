@@ -98,3 +98,6 @@
 
 /* Navigation */
 "driver.action.navigate" = "Navighează";
+"driver.map.fit_route" = "Arată traseul";
+"driver.map.center_driver" = "Centrează pe șofer";
+"driver.map.center_shop" = "Centrează pe atelier";
