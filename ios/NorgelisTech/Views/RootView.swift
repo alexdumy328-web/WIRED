@@ -17,7 +17,7 @@ struct RootView: View {
                 case .driver:
                     DriverRootView()
                 case .owner:
-                    OwnerRootView()
+                    OwnerConsoleView()
                 case .customer:
                     CustomerRootView()
                 }

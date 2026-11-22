@@ -7,6 +7,9 @@ enum APIError: LocalizedError {
     case decodingError(Error)
     case serverError(String)
     case notFound
+    case unauthorized
+    case forbidden
+    case conflict(String)
 
     var errorDescription: String? {
         switch self {
@@ -22,6 +25,12 @@ enum APIError: LocalizedError {
             return "Eroare server: \(message)"
         case .notFound:
             return "Programarea nu a fost găsită."
+        case .unauthorized:
+            return "Nu ești autentificat. Lipește cookie-ul de sesiune în Setări dezvoltare."
+        case .forbidden:
+            return "Nu ai dreptul să faci această acțiune."
+        case .conflict(let code):
+            return "Acțiunea nu a putut fi făcută (\(code))."
         }
     }
 }
@@ -34,11 +43,6 @@ struct HealthResponse: Codable {
 /// `shop` is workshop visits with no pickup, `pickup` is shop jobs we collect or deliver, `mobile` is on site.
 enum AdminBookingMode: String, CaseIterable {
     case shop, pickup, mobile
-}
-
-struct AdminBookingsPage: Codable {
-    var total: Int
-    var items: [Booking]
 }
 
 struct BusyDaySummary: Codable, Hashable {
@@ -59,12 +63,24 @@ final class APIClient: ObservableObject {
         }
     }
 
+    /// Dev only. Pastes the Better Auth session cookie so the admin routes answer. Never committed.
+    @Published var sessionCookie: String {
+        didSet { UserDefaults.standard.set(sessionCookie, forKey: "norgelis_session_cookie") }
+    }
+
+    /// Owner console and driver run on built-in sample data until this is off.
+    @Published var useMockData: Bool {
+        didSet { UserDefaults.standard.set(useMockData, forKey: "norgelis_use_mock") }
+    }
+
     private let session: URLSession
 
     init(session: URLSession = .shared) {
         self.session = session
         let savedURL = UserDefaults.standard.string(forKey: "norgelis_api_base_url")
         self.baseURLString = savedURL ?? "http://localhost:8787"
+        self.sessionCookie = UserDefaults.standard.string(forKey: "norgelis_session_cookie") ?? ""
+        self.useMockData = UserDefaults.standard.object(forKey: "norgelis_use_mock") as? Bool ?? true
     }
 
     var baseURL: URL? {
@@ -93,6 +109,63 @@ final class APIClient: ObservableObject {
         return try JSONDecoder().decode(Booking.self, from: data)
     }
 
+    // MARK: - Authenticated requests (owner console)
+
+    /// Sends a JSON request with the dev session cookie and decodes the answer.
+    func request<T: Decodable>(
+        _ method: String,
+        _ path: String,
+        query: [URLQueryItem] = [],
+        body: [String: Any]? = nil,
+        as type: T.Type = T.self
+    ) async throws -> T {
+        let data = try await send(method, path, query: query, body: body)
+        do {
+            return try JSONDecoder().decode(T.self, from: data)
+        } catch {
+            throw APIError.decodingError(error)
+        }
+    }
+
+    /// Same, for answers nobody reads.
+    func requestVoid(_ method: String, _ path: String, query: [URLQueryItem] = [], body: [String: Any]? = nil) async throws {
+        _ = try await send(method, path, query: query, body: body)
+    }
+
+    /// Downloads a file (a PDF) with the session cookie into a temporary file.
+    func download(_ path: String, fileName: String) async throws -> URL {
+        let data = try await send("GET", path, query: [], body: nil)
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        try data.write(to: url, options: .atomic)
+        return url
+    }
+
+    private func send(_ method: String, _ path: String, query: [URLQueryItem], body: [String: Any]?) async throws -> Data {
+        guard let base = baseURL,
+              var components = URLComponents(url: base.appendingPathComponent(path), resolvingAgainstBaseURL: true) else {
+            throw APIError.invalidURL
+        }
+        if !query.isEmpty { components.queryItems = query }
+        guard let url = components.url else { throw APIError.invalidURL }
+        var request = URLRequest(url: url)
+        request.httpMethod = method
+        request.setValue("application/json", forHTTPHeaderField: "Accept")
+        if !sessionCookie.isEmpty { request.setValue(sessionCookie, forHTTPHeaderField: "Cookie") }
+        if let body {
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            request.httpBody = try JSONSerialization.data(withJSONObject: body)
+        }
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch {
+            throw APIError.networkError(error)
+        }
+        try validateResponse(response, data: data)
+        return data
+    }
+
     func fetchMyBookings() async throws -> [Booking] {
         guard let url = baseURL?.appendingPathComponent("api/me/bookings") else {
             throw APIError.invalidURL
@@ -102,76 +175,12 @@ final class APIClient: ObservableObject {
         return try JSONDecoder().decode([Booking].self, from: data)
     }
 
-    // MARK: - Owner / Admin Endpoints
-
-    /// `GET /api/admin/bookings`. `mode` filters by kind of job.
-    func fetchAdminBookings(mode: AdminBookingMode? = nil, limit: Int = 50, skip: Int = 0) async throws -> AdminBookingsPage {
-        guard let base = baseURL,
-              var components = URLComponents(url: base.appendingPathComponent("api/admin/bookings"), resolvingAgainstBaseURL: true) else {
-            throw APIError.invalidURL
-        }
-        var items = [URLQueryItem(name: "limit", value: String(limit)), URLQueryItem(name: "skip", value: String(skip))]
-        if let mode = mode {
-            items.append(URLQueryItem(name: "mode", value: mode.rawValue))
-        }
-        components.queryItems = items
-        guard let url = components.url else {
-            throw APIError.invalidURL
-        }
-        let (data, response) = try await session.data(from: url)
-        try validateResponse(response, data: data)
-        return try JSONDecoder().decode(AdminBookingsPage.self, from: data)
-    }
-
-    func fetchAdminPickups(date: String? = nil) async throws -> [Booking] {
-        guard var components = URLComponents(url: baseURL!.appendingPathComponent("api/admin/pickups"), resolvingAgainstBaseURL: true) else {
-            throw APIError.invalidURL
-        }
-        if let date = date {
-            components.queryItems = [URLQueryItem(name: "date", value: date)]
-        }
-        guard let url = components.url else {
-            throw APIError.invalidURL
-        }
-        let (data, response) = try await session.data(from: url)
-        try validateResponse(response, data: data)
-        return try JSONDecoder().decode([Booking].self, from: data)
-    }
-
     func fetchAdminBusy(from: String, to: String) async throws -> [String: BusyDaySummary] {
-        guard var components = URLComponents(url: baseURL!.appendingPathComponent("api/admin/busy"), resolvingAgainstBaseURL: true) else {
-            throw APIError.invalidURL
-        }
-        components.queryItems = [
+        let decoded: BusyDaysResponse = try await request("GET", "api/admin/busy", query: [
             URLQueryItem(name: "from", value: from),
-            URLQueryItem(name: "to", value: to)
-        ]
-        guard let url = components.url else {
-            throw APIError.invalidURL
-        }
-        let (data, response) = try await session.data(from: url)
-        try validateResponse(response, data: data)
-        let decoded = try JSONDecoder().decode(BusyDaysResponse.self, from: data)
+            URLQueryItem(name: "to", value: to),
+        ])
         return decoded.days
-    }
-
-    func updateBookingStatus(code: String, status: BookingStatus, note: String? = nil) async throws -> Booking {
-        guard let url = baseURL?.appendingPathComponent("api/admin/bookings/\(code)/status") else {
-            throw APIError.invalidURL
-        }
-        var request = URLRequest(url: url)
-        request.httpMethod = "PATCH"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        var body: [String: Any] = ["status": status.rawValue]
-        if let note = note {
-            body["note"] = note
-        }
-        request.httpBody = try JSONSerialization.data(withJSONObject: body)
-
-        let (data, response) = try await session.data(for: request)
-        try validateResponse(response, data: data)
-        return try JSONDecoder().decode(Booking.self, from: data)
     }
 
     // MARK: - Planned Phase 2 Endpoints (Plumbing Prepared)
@@ -213,6 +222,16 @@ final class APIClient: ObservableObject {
 
         if httpResponse.statusCode == 404 {
             throw APIError.notFound
+        }
+        if httpResponse.statusCode == 401 {
+            throw APIError.unauthorized
+        }
+        if httpResponse.statusCode == 403 {
+            throw APIError.forbidden
+        }
+        if httpResponse.statusCode == 409 {
+            let code = (try? JSONSerialization.jsonObject(with: data) as? [String: Any])?["error"] as? String
+            throw APIError.conflict(code ?? "conflict")
         }
 
         guard (200...299).contains(httpResponse.statusCode) else {

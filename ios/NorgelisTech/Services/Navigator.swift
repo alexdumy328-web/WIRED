@@ -43,7 +43,7 @@ struct NavigateMenu: View {
                 .font(.subheadline.bold())
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 12)
-                .background(Color(.secondarySystemBackground))
+                .background(.glassFill)
                 .foregroundColor(.primary)
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         }

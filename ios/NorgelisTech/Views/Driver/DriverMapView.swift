@@ -45,23 +45,11 @@ struct DriverMapView: View {
 
                 // Customer Stops
                 ForEach(appState.stops) { stop in
-                    Annotation(stop.bookingCode, coordinate: stop.coordinate) {
+                    Annotation("", coordinate: stop.coordinate) {
                         Button {
                             selectedStop = stop
                         } label: {
-                            VStack(spacing: 2) {
-                                Image(systemName: stop.isCompleted ? "checkmark.circle.fill" : (stop.isUrgent ? "exclamationmark.triangle.fill" : "mappin.circle.fill"))
-                                    .font(.system(size: 26))
-                                    .foregroundStyle(stop.isCompleted ? .gray : (stop.isUrgent ? Theme.danger : Theme.pickup))
-                                    .background(Circle().fill(.white))
-
-                                Text(stop.bookingCode)
-                                    .font(.system(size: 10, weight: .bold))
-                                    .padding(.horizontal, 4)
-                                    .padding(.vertical, 1)
-                                    .background(Color(.systemBackground).opacity(0.85))
-                                    .clipShape(Capsule())
-                            }
+                            StopPin(stop: stop)
                         }
                     }
                 }
@@ -103,8 +91,7 @@ struct DriverMapView: View {
                     }
                     .padding(.horizontal, 12)
                     .padding(.vertical, 6)
-                    .background(.ultraThinMaterial)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .glassCard(radius: 14)
 
                     Spacer()
 
@@ -115,8 +102,7 @@ struct DriverMapView: View {
                             .font(.subheadline.bold())
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
-                            .background(.ultraThinMaterial)
-                            .clipShape(Capsule())
+                            .glassCard(radius: 20)
                     }
                 }
                 .padding(.horizontal, 16)
@@ -229,9 +215,7 @@ struct DriverMapView: View {
                 center(on: MockData.shopCoordinate)
             }
         }
-        .background(.ultraThinMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-        .shadow(color: .black.opacity(0.12), radius: 6, y: 2)
+        .glassCard(radius: 14)
     }
 
     private func recenterButton(icon: String, label: LocalizedStringKey, action: @escaping () -> Void) -> some View {
@@ -314,7 +298,7 @@ struct DriverMapView: View {
                         .font(.subheadline.bold())
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 12)
-                        .background(Color(.secondarySystemBackground))
+                        .background(.glassFill)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                 }
             }
@@ -333,9 +317,7 @@ struct DriverMapView: View {
             }
         }
         .padding(16)
-        .background(.ultraThickMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.12), radius: 10, y: 5)
+        .glassCard()
     }
 
     @ViewBuilder
@@ -396,9 +378,7 @@ struct DriverMapView: View {
             }
         }
         .padding(16)
-        .background(.ultraThickMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
-        .shadow(color: .black.opacity(0.15), radius: 10, y: 5)
+        .glassCard()
     }
 
     private var allCompletedCard: some View {
@@ -414,8 +394,7 @@ struct DriverMapView: View {
         }
         .frame(maxWidth: .infinity)
         .padding(20)
-        .background(.ultraThickMaterial)
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .glassCard()
     }
 
     private func callCustomer(phone: String) {
@@ -424,6 +403,41 @@ struct DriverMapView: View {
             #if os(iOS)
             UIApplication.shared.open(url)
             #endif
+        }
+    }
+}
+
+/// Round map pin for a stop. One shape for every state, so nothing pokes out of a circle.
+struct StopPin: View {
+    let stop: PickupStop
+
+    private var tint: Color {
+        if stop.isCompleted { return .gray }
+        return stop.isUrgent ? Theme.danger : Theme.pickup
+    }
+
+    private var icon: String {
+        if stop.isCompleted { return "checkmark" }
+        return stop.isUrgent ? "exclamationmark" : "mappin"
+    }
+
+    var body: some View {
+        VStack(spacing: 3) {
+            Image(systemName: icon)
+                .font(.system(size: 15, weight: .heavy))
+                .foregroundColor(.white)
+                .frame(width: 32, height: 32)
+                .background(Circle().fill(tint))
+                .overlay(Circle().stroke(Color.white, lineWidth: 2.5))
+                .shadow(color: .black.opacity(0.3), radius: 3, y: 1)
+
+            Text(stop.bookingCode)
+                .font(.system(size: 10, weight: .bold))
+                .foregroundColor(.primary)
+                .padding(.horizontal, 5)
+                .padding(.vertical, 1)
+                .background(Color(.systemBackground).opacity(0.9))
+                .clipShape(Capsule())
         }
     }
 }

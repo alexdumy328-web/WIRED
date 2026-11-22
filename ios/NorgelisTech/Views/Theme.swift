@@ -91,6 +91,9 @@ struct StatusDot: View {
         case .ready:
             Circle().fill(Theme.ok)
                 .frame(width: size, height: size)
+        case .unrepairable:
+            Circle().strokeBorder(Theme.rose, lineWidth: 2)
+                .frame(width: size, height: size)
         case .done:
             Circle().fill(Color.primary.opacity(0.4))
                 .frame(width: size, height: size)
@@ -121,6 +124,7 @@ struct KindChip: View {
 
     var body: some View {
         Label(LocalizedStringKey(kind.titleKey), systemImage: kind.iconName)
+            .labelStyle(.titleAndIcon)
             .font(.caption2.bold())
             .lineLimit(1)
             .fixedSize()
@@ -145,4 +149,30 @@ struct PriceRow: View {
             }
         }
     }
+}
+
+/// Floating card over the map. Liquid Glass on iOS 26 and later, a light material before that.
+struct GlassCard: ViewModifier {
+    var radius: CGFloat = 24
+
+    func body(content: Content) -> some View {
+        if #available(iOS 26.0, *) {
+            content.glassEffect(.regular, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+        } else {
+            content
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+                .shadow(color: .black.opacity(0.12), radius: 10, y: 5)
+        }
+    }
+}
+
+extension View {
+    func glassCard(radius: CGFloat = 24) -> some View {
+        modifier(GlassCard(radius: radius))
+    }
+}
+
+/// Quiet button fill that sits on glass or material instead of covering it.
+extension ShapeStyle where Self == Color {
+    static var glassFill: Color { Color.primary.opacity(0.09) }
 }

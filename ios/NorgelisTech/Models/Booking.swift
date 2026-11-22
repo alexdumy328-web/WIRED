@@ -68,7 +68,23 @@ struct Booking: Codable, Identifiable, Hashable {
     var estimate: Estimate?
     var updatedAt: String?
 
+    // Workshop fields (owner and technician views)
+    var source: String? // "online" or "walk-in"
+    var createdAt: String?
+    var customerId: String?
+    var custom: String?
+    var intake: Intake?
+    var repair: RepairNotes?
+    var deliveredAt: String?
+    var photoIds: [String]?
+    /// What was charged for the repair. The API leaves it out for technicians.
+    var finalLei: Int?
+    var statusHistory: [StatusEntry]?
+    var mapLink: String?
+
     var id: String { code }
+
+    var isWalkIn: Bool { source == "walk-in" }
 
     var hasPickup: Bool {
         pickup != nil

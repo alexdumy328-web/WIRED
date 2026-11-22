@@ -6,6 +6,7 @@ enum BookingStatus: String, Codable, CaseIterable, Identifiable {
     case waitingParts = "waiting-parts"
     case repairing = "repairing"
     case ready = "ready"
+    case unrepairable = "unrepairable"
     case done = "done"
     case cancelled = "cancelled"
 
@@ -23,6 +24,7 @@ enum BookingStatus: String, Codable, CaseIterable, Identifiable {
         case .waitingParts: return Theme.rose
         case .repairing: return Theme.violet
         case .ready: return Theme.ok
+        case .unrepairable: return Theme.rose
         case .done: return Color.primary.opacity(0.4)
         case .cancelled: return .secondary
         }
@@ -35,6 +37,7 @@ enum BookingStatus: String, Codable, CaseIterable, Identifiable {
         case .waitingParts: return "shippingbox.fill"
         case .repairing: return "wrench.and.screwdriver.fill"
         case .ready: return "checkmark.seal.fill"
+        case .unrepairable: return "exclamationmark.octagon.fill"
         case .done: return "checkmark.circle.fill"
         case .cancelled: return "xmark.circle.fill"
         }
