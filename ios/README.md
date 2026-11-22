@@ -105,12 +105,39 @@ ios/
 ## Driver navigation
 
 - The map draws the real driving route (Apple Maps directions) from the workshop to the next stop, or from the driver's position to the stop in progress. The card shows distance and travel time.
+- The bottom card is native Liquid Glass on iOS 26 and later and a light material before that. Stop pins are round: green for a stop, red with an exclamation mark when urgent, grey with a check when done.
+- Three buttons under the top bar fit the route, center on the driver or center on the workshop.
 - **Navigate** opens a menu with Waze and Apple Maps. Waze starts turn-by-turn through `waze://`. When Waze is not installed it opens the `waze.com/ul` link, which offers the App Store. `LSApplicationQueriesSchemes` lists `waze` so the app can check for it.
 - Navigate is on the map card, on the active trip card and in the stop detail sheet.
 
+## Owner console
+
+The Owner role opens the workshop console. It mirrors the `/admin` dashboard on the site, including the workshop features from PR 6.
+
+| Tab | What it does |
+| --- | --- |
+| Today | Counts (active, to hand back, visits, pickups), today's schedule, today's pickups, jobs waiting for hand-back, the driver card and a New walk-in button. |
+| Jobs | Search, status chips (with "to hand back" for ready and unrepairable), kind filter (workshop, pickup, on site). Tap a job for the work order. |
+| Customers | Search, archived list, create and edit, company details, a customer's jobs and warranties. Archiving is for owners. |
+| Schedule | Week strip with busy dots, the day's visits, and the day's pickups with Navigate (Waze or Apple Maps), call and the transport total. |
+| More | Warranties (issue, void, share PDF), Stats and Workshop settings (owners only), role preview and the data source switch. |
+
+The work order covers status including `unrepairable`, an internal note, whether to email the customer, the price charged (owners only), the service sheet (take the device in, edit it), repair notes, the customer, pickup details, the warranty and the status history. A walk-in creates a customer if needed, a job and a numbered service sheet in one step.
+
+Roles follow the server. A technician works on devices and never sees `finalLei`, Stats or Settings. Owners and devs see everything. In the live API mode the role comes from `GET /api/me`.
+
+### Data sources
+
+`OwnerRepository` has two implementations.
+
+- **Sample data** (default). `MockOwnerRepository` keeps believable data around today's date in memory. Every flow works offline, and changes vanish on restart. More → Preview as switches the role.
+- **Live API.** Turn off Sample data, set the base URL in Dev settings, and paste a Better Auth session cookie into the Session cookie field. The cookie stays on the phone (UserDefaults) and never enters git. Without it the admin routes answer 401.
+
+Not built yet. Intake photo capture and viewing (the count shows), and push notifications. PDFs (service sheet, warranty) download and share only against the live API, since the server makes them.
+
 ## Screenshots
 
-`docs/screenshots/` holds simulator captures: `driver.png` (route and Navigate), `owner.png`, `customer.png` and `home-icon.png` (the app icon on the home screen).
+`docs/screenshots/` holds simulator captures. `driver.png` shows the route, Navigate and recenter buttons on Liquid Glass. `console-today.png`, `console-schedule.png`, `console-stats.png` and `console-job.png` show the owner console. `customer.png` and `home-icon.png` show the customer lookup and the app icon.
 
 ## Look and feel
 
