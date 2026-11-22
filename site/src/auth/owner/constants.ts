@@ -1,6 +1,6 @@
 import type { BookingStatus } from '../../types'
 
-export const BOOKING_STATUSES: BookingStatus[] = ['received', 'diagnosis', 'waiting-parts', 'repairing', 'ready', 'done', 'cancelled']
+export const BOOKING_STATUSES: BookingStatus[] = ['received', 'diagnosis', 'waiting-parts', 'repairing', 'ready', 'unrepairable', 'done', 'cancelled']
 
 /** Colour per kind of job, used everywhere in the dashboard: gold workshop, green pickup, blue on site. */
 export type Kind = 'shop' | 'pickup' | 'mobile'

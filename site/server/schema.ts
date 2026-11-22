@@ -9,6 +9,7 @@ export const BOOKING_STATUSES = [
   'waiting-parts',
   'repairing',
   'ready',
+  'unrepairable',
   'done',
   'cancelled',
 ] as const

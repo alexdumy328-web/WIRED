@@ -5,7 +5,12 @@ import type { Notifier } from '../notify.ts'
 import type { SessionService } from '../auth/session.ts'
 import type { AuditLog } from '../security/audit.ts'
 import type { LimiterRegistry } from '../security/limiter.ts'
+import type { Documents } from '../documents/index.ts'
 import type { BookingAdmin } from './bookings.ts'
+import type { Counters } from './counters.ts'
+import type { Customers } from './customers.ts'
+import type { Photos } from './photos.ts'
+import type { Warranties } from './warranties.ts'
 import type { SettingsService } from './settings.ts'
 
 export type PlatformDeps = {
@@ -17,6 +22,11 @@ export type PlatformDeps = {
   sessions: SessionService
   settings: SettingsService
   bookings: BookingAdmin
+  counters: Counters
+  customers: Customers
+  warranties: Warranties
+  photos: Photos
+  documents: Documents
   audit: AuditLog
   mailer: Mailer
   notifier: Notifier

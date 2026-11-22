@@ -8,14 +8,21 @@ import { Card, Loading, Notice, PageShell, StatusBadge, useDateFormat } from '..
 import { refreshViewer, isStaff, type Viewer } from '../auth/viewer'
 import { openBooking } from '../lib/booking-store'
 import { linkTo, navigate } from '../lib/router'
-import { estimateText } from '../auth/owner/BookingDrawer'
-import type { Booking, BookingStatus } from '../types'
+import { estimateText } from '../auth/owner/format'
+import { useWorkshopCopy } from '../auth/owner/workshop/copy'
+import { dayLabel, pdfUrl } from '../auth/owner/workshop/model'
+import type { Booking, BookingStatus, WarrantyState } from '../types'
 
-type MyBooking = Omit<Booking, 'statusHistory' | 'userId'> & { timeline: { status: BookingStatus; at: string }[] }
+type MyBooking = Omit<Booking, 'statusHistory' | 'userId' | 'intake' | 'repair'> & {
+  timeline: { status: BookingStatus; at: string }[]
+  intake?: { number: number; year: number; receivedAt: string; deviceType: string }
+  repair?: { workDone: string }
+  warranty?: { id: string; label: string; startsOn: string; endsOn: string; months: number; state: WarrantyState }
+}
 
 /** /cont: sign in, or the customer's account with their bookings. */
 export function AccountPage() {
-  return <Guard roles={['customer', 'owner', 'dev']}>{(user) => <Account user={user} />}</Guard>
+  return <Guard roles={['customer', 'technician', 'owner', 'dev']}>{(user) => <Account user={user} />}</Guard>
 }
 
 function Account({ user }: { user: Viewer }) {
@@ -85,6 +92,7 @@ function Account({ user }: { user: Viewer }) {
 function MyBookings() {
   const { t, L, lang } = useI18n()
   const a = t.account
+  const c = useWorkshopCopy()
   const fmtDate = useDateFormat()
   const [state, setState] = useState<{ status: 'loading' | 'error' | 'ready'; items: MyBooking[] }>({ status: 'loading', items: [] })
 
@@ -126,6 +134,7 @@ function MyBookings() {
               <div>
                 <p className="text-[13px] font-semibold text-muted">
                   {a.bookings.code} <span className="font-mono text-ink">{b.code}</span>
+                  {b.intake && <span> · {fmt(c.account.sheet, { n: `${b.intake.number}/${b.intake.year}` })}</span>}
                 </p>
                 <h3 className="mt-1 text-lg font-bold">{[b.device.brand, b.device.model].filter(Boolean).join(' ') || jobsOf(b)}</h3>
                 <p className="text-[14px] text-muted">{jobsOf(b)}</p>
@@ -161,6 +170,34 @@ function MyBookings() {
                 </div>
               )}
             </dl>
+            {b.repair?.workDone && (
+              <div className="mt-4 text-[14px]">
+                <p className="text-muted">{c.account.workDone}</p>
+                <p className="whitespace-pre-wrap">{b.repair.workDone}</p>
+              </div>
+            )}
+            {b.warranty && (
+              <p className="mt-4 flex flex-wrap items-center gap-2 text-[14px]">
+                <span className="font-semibold">{fmt(c.account.warranty, { label: b.warranty.label })}</span>
+                <span className={b.warranty.state === 'expired' ? 'text-muted' : 'text-ok'}>
+                  {fmt(b.warranty.state === 'expired' ? c.account.expired : c.account.validUntil, { date: dayLabel(b.warranty.endsOn, lang) })}
+                </span>
+              </p>
+            )}
+            {(b.intake || b.warranty) && (
+              <div className="mt-3 flex flex-wrap gap-2">
+                {b.intake && (
+                  <a className="btn btn-ghost h-10 min-h-0 text-[14px]" href={pdfUrl.myIntake(b.code)} target="_blank" rel="noreferrer">
+                    {c.account.sheetPdf}
+                  </a>
+                )}
+                {b.warranty && (
+                  <a className="btn btn-gold h-10 min-h-0 text-[14px]" href={pdfUrl.myWarranty(b.warranty.id)} target="_blank" rel="noreferrer">
+                    {c.account.warrantyPdf}
+                  </a>
+                )}
+              </div>
+            )}
             <p className="mt-4 text-[13px] font-semibold text-muted">{a.bookings.timeline}</p>
             <ol className="mt-2 grid gap-2" lang={lang}>
               {b.timeline.map((entry, i) => (

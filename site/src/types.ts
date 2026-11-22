@@ -50,7 +50,8 @@ export type Review = {
   text: Localized
 }
 
-export type BookingStatus = 'received' | 'diagnosis' | 'waiting-parts' | 'repairing' | 'ready' | 'done' | 'cancelled'
+/** `unrepairable` is a final verdict: the device goes back unrepaired, like `ready` it waits for hand-back. */
+export type BookingStatus = 'received' | 'diagnosis' | 'waiting-parts' | 'repairing' | 'ready' | 'unrepairable' | 'done' | 'cancelled'
 
 export type BookingRequest = {
   mode: ServiceMode
@@ -98,6 +99,80 @@ export type Booking = BookingRequest & {
   statusHistory?: StatusEntry[]
   /** What the workshop charged for the repair, parts included, transport not. Set by the owner. */
   finalLei?: number
+  /** Where the job came from. Missing on bookings made before walk-ins existed (all online). */
+  source?: 'online' | 'walk-in'
+  /** The customer record this job belongs to. */
+  customerId?: string
+  /** Filled at the counter when the device is handed in. Turns the booking into a numbered service sheet. */
+  intake?: Intake
+  /** Workshop notes on the repair. Internal until printed on the warranty. */
+  repair?: RepairNotes
+  /** When the device went back to the customer (status became done). */
+  deliveredAt?: string
+  /** Intake photos, ids into the photos collection. */
+  photoIds?: string[]
+}
+
+export type Intake = {
+  /** Service sheet number, counted per calendar year: 12 in "12/2026". */
+  number: number
+  year: number
+  receivedAt: string
+  /** Free text: "Laptop", "Espressor", "Amplificator". */
+  deviceType: string
+  serial?: string
+  /** What came with the device: charger, bag, cables. */
+  accessories?: string
+  /** Visible state at hand-in: scratches, cracks, missing screws. */
+  appearance?: string
+  /** Display name of whoever took the device in. */
+  by: string
+}
+
+export type RepairNotes = {
+  diagnosis?: string
+  workDone?: string
+  partsUsed?: string
+}
+
+export type ContactChannel = 'phone' | 'sms' | 'whatsapp' | 'email'
+
+export type Customer = {
+  id: string
+  name: string
+  phone?: string
+  email?: string
+  /** Company customers: fiscal code and trade register number, printed on documents. */
+  company?: { name?: string; cui?: string; regCom?: string }
+  address?: string
+  notes?: string
+  preferred: ContactChannel
+  createdAt: string
+  updatedAt: string
+  archived?: boolean
+}
+
+export type WarrantyState = 'active' | 'expiring' | 'expired' | 'void'
+
+export type Warranty = {
+  id: string
+  /** "G7/2026". */
+  label: string
+  number: number
+  year: number
+  bookingCode: string
+  sheet?: string
+  customerId?: string
+  customerName: string
+  device: string
+  work: string
+  months: number
+  /** YYYY-MM-DD, shop-local. */
+  startsOn: string
+  endsOn: string
+  issuedAt: string
+  issuedBy: string
+  voided?: { at: string; by: string; reason: string }
 }
 
 /** POST /api/estimate request. */

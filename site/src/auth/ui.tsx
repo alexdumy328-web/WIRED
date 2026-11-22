@@ -57,6 +57,7 @@ export const STATUS_DOT: Record<BookingStatus, string> = {
   'waiting-parts': 'bg-rose',
   repairing: 'bg-violet',
   ready: 'bg-ok',
+  unrepairable: 'border-2 border-rose',
   done: 'bg-ink/40',
   cancelled: 'border border-muted',
 }

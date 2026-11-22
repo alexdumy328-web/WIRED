@@ -7,6 +7,11 @@ import { toNodeHandler } from 'better-auth/node'
 import type { Express, Request } from 'express'
 import type { Db } from 'mongodb'
 import { createBookingAdmin } from './admin/bookings.ts'
+import { createCounters } from './admin/counters.ts'
+import { createCustomers } from './admin/customers.ts'
+import { createPhotos } from './admin/photos.ts'
+import { createWarranties } from './admin/warranties.ts'
+import { createDocuments } from './documents/index.ts'
 import { createDevRouter } from './admin/dev-routes.ts'
 import type { PlatformDeps } from './admin/deps.ts'
 import { createAdminRouter } from './admin/routes.ts'
@@ -63,6 +68,9 @@ export async function createPlatform(options: PlatformOptions): Promise<Platform
   const adminToken = env.ADMIN_TOKEN?.trim() || undefined
   const notifier = createNotifier({ mailer, origin: config.baseURL, ownerEmails: env.OWNER_EMAILS, quiet: options.quiet })
 
+  const counters = createCounters(db)
+  const customers = createCustomers(db)
+
   const deps: PlatformDeps = {
     db,
     env,
@@ -71,7 +79,12 @@ export async function createPlatform(options: PlatformOptions): Promise<Platform
     auth,
     sessions,
     settings,
-    bookings: createBookingAdmin(db),
+    bookings: createBookingAdmin(db, counters),
+    counters,
+    customers,
+    warranties: createWarranties(db, counters),
+    photos: createPhotos(db),
+    documents: createDocuments({ settings, customers, origin: config.baseURL }),
     audit,
     mailer,
     notifier,

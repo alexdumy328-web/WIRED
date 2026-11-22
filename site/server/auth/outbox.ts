@@ -7,9 +7,13 @@ export type Mail = {
   text: string
   /** What the message is for, e.g. "otp:sign-in". Shown in the dev dashboard. */
   kind: string
+  /** Files sent along, e.g. a service sheet PDF. The dev outbox keeps only their names. */
+  attachments?: MailAttachment[]
 }
 
-export type OutboxItem = Mail & { id: string; at: string; delivered: 'sent' | 'stored' | 'failed' }
+export type MailAttachment = { filename: string; content: Uint8Array }
+
+export type OutboxItem = Omit<Mail, 'attachments'> & { id: string; at: string; delivered: 'sent' | 'stored' | 'failed'; attachments?: string[] }
 
 export type Mailer = {
   readonly provider: 'resend' | 'outbox' | 'none'
@@ -59,7 +63,8 @@ export function createMailer(options: MailerOptions): Mailer {
     const collection = options.db.collection(OUTBOX)
     indexReady ??= collection.createIndex({ at: 1 }, { expireAfterSeconds: 3600, name: 'ttl_1h' }).catch(() => undefined)
     await indexReady
-    await collection.insertOne({ ...mail, at: new Date(), delivered })
+    const { attachments, ...rest } = mail
+    await collection.insertOne({ ...rest, ...(attachments?.length ? { attachments: attachments.map((a) => a.filename) } : {}), at: new Date(), delivered })
   }
 
   async function viaResend(mail: Mail): Promise<boolean> {
@@ -67,7 +72,13 @@ export function createMailer(options: MailerOptions): Mailer {
       const response = await fetchImpl(RESEND_URL, {
         method: 'POST',
         headers: { authorization: `Bearer ${apiKey}`, 'content-type': 'application/json' },
-        body: JSON.stringify({ from, to: [mail.to], subject: mail.subject, text: mail.text }),
+        body: JSON.stringify({
+          from,
+          to: [mail.to],
+          subject: mail.subject,
+          text: mail.text,
+          ...(mail.attachments?.length ? { attachments: mail.attachments.map((a) => ({ filename: a.filename, content: Buffer.from(a.content).toString('base64') })) } : {}),
+        }),
         signal: AbortSignal.timeout(8000),
       })
       if (!response.ok) log(`[mail] provider answered ${response.status} for ${maskEmail(mail.to)} (${mail.kind})`)
@@ -104,6 +115,7 @@ export function createMailer(options: MailerOptions): Mailer {
         kind: String(doc.kind),
         at: new Date(doc.at as Date).toISOString(),
         delivered: doc.delivered as OutboxItem['delivered'],
+        ...(Array.isArray(doc.attachments) ? { attachments: doc.attachments.map(String) } : {}),
       }))
     },
   }

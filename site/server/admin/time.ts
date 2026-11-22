@@ -31,3 +31,22 @@ export const DATE_ONLY = /^\d{4}-\d{2}-\d{2}$/
 export function isRealDate(value: string): boolean {
   return DATE_ONLY.test(value) && !Number.isNaN(Date.parse(`${value}T00:00:00.000Z`)) && new Date(`${value}T00:00:00.000Z`).toISOString().startsWith(value)
 }
+
+/**
+ * The same day `months` calendar months later, clamped to the last day of a shorter month:
+ * 31 Aug + 6 = 28 Feb (or 29 in a leap year). Calendar months, never 30-day blocks.
+ */
+export function addMonthsClamped(date: string, months: number): string {
+  const [y, m, d] = date.split('-').map(Number) as [number, number, number]
+  const index = y * 12 + (m - 1) + months
+  const year = Math.floor(index / 12)
+  const month = index - year * 12 // 0-based
+  const last = new Date(Date.UTC(year, month + 1, 0)).getUTCDate()
+  const day = Math.min(d, last)
+  return `${String(year).padStart(4, '0')}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
+/** Shop-local calendar year of an instant. */
+export function localYear(iso: string | number | Date): number {
+  return Number(localDate(iso).slice(0, 4))
+}

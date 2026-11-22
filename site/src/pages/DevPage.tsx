@@ -201,7 +201,7 @@ function UsersSection({ tick, me }: { tick: number; me: Viewer }) {
                   title={user.id === me.id ? u.self : undefined}
                   onChange={(e) => void change(user, e.target.value as Role)}
                 >
-                  {(['customer', 'owner', 'dev'] as const).map((r) => (
+                  {(['customer', 'technician', 'owner', 'dev'] as const).map((r) => (
                     <option key={r} value={r}>
                       {t.account.roles[r]}
                     </option>

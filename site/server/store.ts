@@ -44,7 +44,7 @@ function normalizeCode(code: string): string {
   return code.trim().toUpperCase()
 }
 
-const BOOKING_OPEN: BookingStatus[] = ['received', 'diagnosis', 'waiting-parts', 'repairing', 'ready']
+const BOOKING_OPEN: BookingStatus[] = ['received', 'diagnosis', 'waiting-parts', 'repairing', 'ready', 'unrepairable']
 
 export function isDuplicateKeyError(error: unknown): boolean {
   return typeof error === 'object' && error !== null && (error as { code?: unknown }).code === 11000
@@ -171,6 +171,11 @@ export class MongoStore implements Store {
     await this.collection.createIndex({ status: 1 }, { name: 'status' })
     // One open booking per mode and slot, enforced by the database so two submits at the same
     // moment cannot both win. If old data already has a clash the index is skipped, not fatal.
+    // An index left by an older list of open statuses is replaced, or the new list never applies.
+    const existing = (await this.collection.listIndexes().toArray().catch(() => [])).find((index) => index.name === 'mode_slot_open_unique')
+    const wanted = [...BOOKING_OPEN].sort().join(',')
+    const current = ((existing?.partialFilterExpression as { status?: { $in?: string[] } } | undefined)?.status?.$in ?? []).slice().sort().join(',')
+    if (existing && current !== wanted) await this.collection.dropIndex('mode_slot_open_unique').catch(() => undefined)
     await this.collection
       .createIndex(
         { mode: 1, slot: 1 },

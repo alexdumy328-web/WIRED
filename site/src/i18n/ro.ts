@@ -157,6 +157,7 @@ const ro: Dict = {
       'waiting-parts': 'Așteptăm piesa',
       repairing: 'În reparație',
       ready: 'Gata',
+      unrepairable: 'Nereparabil',
       done: 'Predat',
       cancelled: 'Anulată',
     },
@@ -398,7 +399,7 @@ const ro: Dict = {
       generic: 'Ceva nu a mers. Încearcă din nou.',
     },
     profile: { title: 'Profil', name: 'Nume', email: 'Email', role: 'Rol', verified: 'Confirmat', notVerified: 'Neconfirmat' },
-    roles: { customer: 'Client', owner: 'Proprietar', dev: 'Dezvoltator' },
+    roles: { customer: 'Client', technician: 'Tehnician', owner: 'Proprietar', dev: 'Dezvoltator' },
     dashboards: { title: 'Panouri de lucru', owner: 'Panoul proprietarului', dev: 'Panoul dezvoltatorului' },
     adminBar: { nav: 'Panouri de lucru', owner: 'Proprietar', dev: 'Dezvoltator', site: 'Vezi site-ul' },
     bookings: {
@@ -444,7 +445,7 @@ const ro: Dict = {
       seeAll: 'Vezi toate',
       now: 'acum',
     },
-    tabs: { today: 'Azi', bookings: 'Programări', pickups: 'Ridicări', calendar: 'Calendar', stats: 'Cifre', settings: 'Tarife' },
+    tabs: { today: 'Azi', bookings: 'Programări', pickups: 'Ridicări', calendar: 'Calendar', stats: 'Cifre', settings: 'Setări' },
     bookings: {
       search: 'Caută',
       searchPlaceholder: 'Cod, nume, telefon, email, aparat',
