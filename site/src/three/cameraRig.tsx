@@ -1,9 +1,8 @@
 // @refresh reset
 import { useFrame, useThree } from '@react-three/fiber'
-import { useEffect, useRef, type RefObject } from 'react'
+import { useEffect, useRef } from 'react'
 import { Vector3, type PerspectiveCamera } from 'three'
-import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
-import { MODEL_STOP, sceneState, STATION_MODEL, STOPS, TOUR, type StopId } from './contract'
+import { MODEL_STOP, sceneState, TOUR, type StopId } from './contract'
 import { shopModelPose } from './devices'
 import { fitView } from './devices/fit'
 import { DIORAMA_PTS, NARROW_POSES, NARROW_PULL, POSES } from './layout'
@@ -13,7 +12,6 @@ type MutPose = { pos: Vector3; target: Vector3; fov: number }
 const clamp = (v: number, a: number, b: number) => (v < a ? a : v > b ? b : v)
 const smoothstep = (t: number) => t * t * (3 - 2 * t)
 const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3)
-const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2)
 const Y = new Vector3(0, 1, 0)
 
 /** Portrait / square windows use the narrow poses; landscape (aspect >= 1) the desktop ones. */
@@ -76,18 +74,7 @@ function dampScalar(cur: number, goal: number, smoothTime: number, dt: number) {
   return cur + (goal - cur) * (1 - Math.exp(-dt / Math.max(1e-4, smoothTime)))
 }
 
-type Flight = { fromPos: Vector3; fromTarget: Vector3; fromFov: number; start: number; dur: number; arc: number }
-
-/** Advance the guided tour to the next station (and its default device). */
-function nextTourStop() {
-  const i = STOPS.indexOf(sceneState.focus ?? 'overview')
-  const next = STOPS[(i + 1) % STOPS.length]
-  const m = STATION_MODEL[next]
-  sceneState.focus = next
-  sceneState.model = m
-  sceneState.explode = m ? 1 : 0
-  sceneState.highlight = null
-}
+type Flight = { fromPos: Vector3; fromTarget: Vector3; start: number; dur: number; arc: number }
 
 /**
  * Reads sceneState every frame:
@@ -96,18 +83,8 @@ function nextTourStop() {
  *  - focus null  -> follows the scroll tour at t (critically damped, ~0.35 s)
  *  - frame       -> lateral subject placement via camera.setViewOffset (damped; landscape only)
  *  - pointer     -> small parallax; plus a slow idle orbit of a few degrees (both off with reducedMotion)
- *  - tour        -> next station every ~6 s
- * In interactive mode it only flies between stations; in between, orbit controls own the camera.
  */
-export function CameraRig({
-  reducedMotion,
-  interactive = false,
-  controls,
-}: {
-  reducedMotion: boolean
-  interactive?: boolean
-  controls?: RefObject<OrbitControlsImpl | null>
-}) {
+export function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera
   const gl = useThree((s) => s.gl)
   const st = useRef({
@@ -127,7 +104,6 @@ export function CameraRig({
     px: 0,
     py: 0,
     eCam: 0,
-    tourAt: 0,
   })
 
   useEffect(() => {
@@ -153,26 +129,15 @@ export function CameraRig({
     const aspect = visW / Math.max(1, visH)
     const narrow = isNarrow(aspect)
 
-    // Guided tour.
-    if (sceneState.tour) {
-      if (s.tourAt === 0) s.tourAt = now
-      else if (now - s.tourAt > 6) {
-        s.tourAt = now
-        nextTourStop()
-      }
-    } else s.tourAt = 0
-
     const focus = sceneState.focus
     const model = sceneState.model
     const onModel = !!model && !!focus && MODEL_STOP[model] === focus
     const explode = clamp(Number(sceneState.explode) || 0, 0, 1)
-    s.eCam = reducedMotion || interactive ? explode : dampScalar(s.eCam, explode, 0.45, dt)
+    s.eCam = reducedMotion ? explode : dampScalar(s.eCam, explode, 0.45, dt)
     const key = focus ? `${focus}|${onModel ? model : ''}` : 'tour'
     if (onModel) s.goal.fov = shopModelPose(model, s.eCam, aspect, s.goal, visH / Math.max(1, height)).fov
     else if (focus) poseInto(s.goal, focus, narrow, aspect)
     else tourPose(s.goal, sceneState.t, narrow, aspect)
-
-    const ctl = interactive ? controls?.current : null
 
     if (!s.init) {
       s.pos.copy(s.goal.pos)
@@ -180,59 +145,22 @@ export function CameraRig({
       s.fov = s.goal.fov
       s.key = key
       s.init = true
-      if (ctl) {
-        camera.position.copy(s.goal.pos)
-        ctl.target.copy(s.goal.target)
-        ctl.update()
-      }
     }
 
     if (key !== s.key) {
       s.key = key
       if (!reducedMotion) {
-        const fromPos = ctl ? camera.position.clone() : s.pos.clone()
-        const fromTarget = ctl ? ctl.target.clone() : s.target.clone()
+        const fromPos = s.pos.clone()
+        const fromTarget = s.target.clone()
         const d = fromPos.distanceTo(s.goal.pos) + 0.5 * fromTarget.distanceTo(s.goal.target)
         s.flight = {
           fromPos,
           fromTarget,
-          fromFov: ctl ? camera.fov : s.fov,
           start: now,
-          dur: clamp(0.62 + d * 0.035, 0.7, 1.15) + (ctl ? 0.25 : 0),
+          dur: clamp(0.62 + d * 0.035, 0.7, 1.15),
           arc: clamp(d * 0.09, 0, 1.4),
         }
-      } else if (ctl) {
-        camera.position.copy(s.goal.pos)
-        ctl.target.copy(s.goal.target)
-        camera.fov = s.goal.fov
-        camera.updateProjectionMatrix()
-        ctl.update()
       }
-    }
-
-    if (ctl) {
-      // Explore mode: fly between stations, otherwise leave the camera to the orbit controls.
-      if (offX || offY) camera.setViewOffset(width, height, offX, offY, width, height)
-      else if (camera.view) camera.clearViewOffset()
-      const f = s.flight
-      if (f) {
-        ctl.enabled = false
-        const p = clamp((now - f.start) / f.dur, 0, 1)
-        const e = easeInOutCubic(p)
-        camera.position.lerpVectors(f.fromPos, s.goal.pos, e)
-        camera.position.y += Math.sin(Math.PI * e) * f.arc
-        s.virt.target.lerpVectors(f.fromTarget, s.goal.target, e)
-        camera.lookAt(s.virt.target)
-        camera.fov = f.fromFov + (s.goal.fov - f.fromFov) * e
-        camera.updateProjectionMatrix()
-        if (p >= 1) {
-          s.flight = null
-          ctl.target.copy(s.goal.target)
-          ctl.enabled = true
-          ctl.update()
-        }
-      } else ctl.enabled = true
-      return
     }
 
     let smooth = 0.35

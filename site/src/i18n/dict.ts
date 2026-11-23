@@ -13,7 +13,6 @@ export type Dict = {
     faq: string
     book: string // short CTA in the header
     track: string // "track a repair"
-    workshop3d: string // link to the interactive 3D workshop page
     themeLight: string
     themeDark: string
     themeSystem: string
@@ -176,22 +175,6 @@ export type Dict = {
       pickOne: string // pick a job or describe a custom one
       server: string
     }
-  }
-  /** The interactive 3D workshop page. */
-  workshopPage: {
-    title: string
-    lead: string
-    explore: string // button on the hero card that opens the page
-    stations: string
-    parts: string // heading of the part list
-    partsHint: string
-    explode: string
-    assemble: string
-    tour: string
-    stopTour: string
-    back: string
-    controls: string // how to move the camera
-    stationNames: Record<'overview' | 'pcbWall' | 'bench' | 'laptop' | 'coffee' | 'counter' | 'door', string>
   }
   /** Shown once when a filled form holds the page scroll. */
   scrollHold: string

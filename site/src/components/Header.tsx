@@ -172,9 +172,6 @@ export function Header() {
         </nav>
         <div className="ml-auto flex items-center gap-2.5">
           <OpenStatus className="mr-2 hidden min-[1560px]:inline-flex" />
-          <a href="/atelier" onClick={linkTo('/atelier')} className="hidden whitespace-nowrap text-[15px] font-semibold text-ink hover:text-gold md:inline">
-            {t.nav.workshop3d}
-          </a>
           <div className="hidden items-center gap-2 sm:flex">
             {langSwitch}
             {themeBtn}
@@ -213,7 +210,7 @@ export function Header() {
               </button>
             </div>
             <nav className="mt-6 flex flex-col">
-              {[...links, ['#status', t.nav.track] as const, ['/atelier', t.nav.workshop3d] as const, ['/cont', t.account.nav] as const].map(([href, label], i) => (
+              {[...links, ['#status', t.nav.track] as const, ['/cont', t.account.nav] as const].map(([href, label], i) => (
                 <motion.a
                   key={href}
                   href={href}

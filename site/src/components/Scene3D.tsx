@@ -58,12 +58,11 @@ const fallbackImg = <img src="/img/lab.jpg" alt="" className="absolute inset-0 s
 
 type ShopProps = {
   className?: string
-  interactive?: boolean
   onSelect?: (id: StopId) => void
 }
 
-/** The whole shop (hero card, or full screen on the workshop page). */
-export function ShopPanel({ className = '', interactive = false, onSelect }: ShopProps) {
+/** The whole shop, in the hero card. */
+export function ShopPanel({ className = '', onSelect }: ShopProps) {
   const { t, lang } = useI18n()
   const { resolved } = useTheme()
   const reduced = useReducedMotion()
@@ -80,7 +79,6 @@ export function ShopPanel({ className = '', interactive = false, onSelect }: Sho
               reducedMotion={reduced}
               className="absolute inset-0"
               showHotspots
-              interactive={interactive}
               labels={t.hotspots}
               onSelect={onSelect}
               paused={!visible}

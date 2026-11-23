@@ -8,7 +8,6 @@ import { TraceField } from './components/TraceField'
 import { BookingCta } from './sections/BookingCta'
 import { setLenis } from './lib/scroll'
 import { pageOf, usePath } from './lib/router'
-import { WorkshopPage } from './pages/WorkshopPage'
 import { Hero } from './sections/Hero'
 import { Services } from './sections/Services'
 import { Mobile } from './sections/Mobile'
@@ -81,7 +80,6 @@ const DevPage = lazy(() => import('./pages/DevPage').then((m) => ({ default: m.D
 function Page() {
   useSmoothScroll()
   const page = pageOf(usePath())
-  if (page === '/atelier') return <WorkshopPage />
   if (page === null) return <Home />
   return (
     <Suspense fallback={null}>

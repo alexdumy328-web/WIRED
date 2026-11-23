@@ -47,11 +47,6 @@ export const sceneState = {
   model: null as ModelId | null,
   /** Part id of the current model to light up in gold with its label (see MODEL_PARTS), or null. */
   highlight: null as string | null,
-  /**
-   * Guided tour: when true the shop camera moves on to the next station in STOPS every ~6 s
-   * (and shows that station's default device, see STATION_MODEL). Any drag in explore mode sets it back to false.
-   */
-  tour: false,
 }
 
 /** One exploded device per service category. */
@@ -103,24 +98,6 @@ export type WorkshopCanvasProps = {
   paused?: boolean
   /** Localised part names, key `${model}.${part}`, shown next to the highlighted part. */
   partLabels?: Record<string, string>
-  /**
-   * Explore mode: orbit controls (damped, zoom + polar limits, target kept inside the diorama),
-   * hotspots always on. Focus changes still fly the camera there, then hand control back to the
-   * orbit controls around that station. Clicking a hotspot sets focus + that station's default
-   * device (STATION_MODEL) exploded, and still calls onSelect.
-   */
-  interactive?: boolean
-}
-
-/** Device shown when a station is picked in explore mode or by the guided tour. */
-export const STATION_MODEL: Record<StopId, ModelId | null> = {
-  overview: null,
-  pcbWall: null,
-  bench: 'board',
-  laptop: 'laptop',
-  coffee: 'coffee',
-  counter: null,
-  door: 'auto',
 }
 
 /**

@@ -13,12 +13,11 @@ sceneState.frame = num('frame', q.has('model') ? 0 : 0.35)
 sceneState.explode = num('explode', 0)
 sceneState.model = (q.get('model') as ModelId | null) || null
 sceneState.highlight = q.get('hl') || null
-sceneState.tour = q.get('tour') === '1'
 sceneState.focus = (q.get('focus') as StopId | null) || null
 
 if (import.meta.env.DEV) Object.assign(window as unknown as Record<string, unknown>, { __devices: { getModel }, __sceneState: sceneState })
 
-type View = 'shop' | 'stage' | 'explore'
+type View = 'shop' | 'stage'
 type Aspect = 'full' | 'portrait' | 'landscape' | 'band'
 
 const PART_LABELS: Record<string, string> = Object.fromEntries(
@@ -42,7 +41,6 @@ function Preview() {
   const [explode, setExplode] = useState(sceneState.explode > 0.5)
   const [hl, setHl] = useState(sceneState.highlight ?? '')
   const [frame, setFrame] = useState(sceneState.frame)
-  const [tour, setTour] = useState(sceneState.tour)
   const [rm, setRm] = useState(q.get('rm') === '1')
   const [hs, setHs] = useState(q.get('hs') !== '0')
   const ui = q.get('ui') !== '0'
@@ -58,13 +56,12 @@ function Preview() {
     addEventListener('pointermove', move)
     return () => removeEventListener('pointermove', move)
   }, [])
-  // Mirror scene-driven changes (tour, hotspot clicks in explore mode) back into the controls.
+  // Mirror scene-driven changes back into the controls.
   useEffect(() => {
     const id = setInterval(() => {
       setFocus(sceneState.focus ?? '')
       setModel(sceneState.model ?? '')
       setExplode(sceneState.explode > 0.5)
-      setTour(sceneState.tour)
     }, 250)
     return () => clearInterval(id)
   }, [])
@@ -88,11 +85,9 @@ function Preview() {
           <DeviceStage theme={theme} reducedMotion={rm} partLabels={PART_LABELS} />
         ) : (
           <WorkshopCanvas
-            key={view}
             theme={theme}
             reducedMotion={rm}
             showHotspots={hs}
-            interactive={view === 'explore'}
             partLabels={PART_LABELS}
             onSelect={(id) => {
               sceneState.focus = id
@@ -104,9 +99,9 @@ function Preview() {
       {ui && (
         <div style={{ position: 'fixed', left: 12, bottom: 12, display: 'grid', gap: 6, padding: 12, borderRadius: 10, background: 'rgba(127,127,127,.18)', backdropFilter: 'blur(8px)', minWidth: 300, zIndex: 50 }}>
           <div style={{ display: 'flex', gap: 6 }}>
-            {(['shop', 'stage', 'explore'] as const).map((v) => (
+            {(['shop', 'stage'] as const).map((v) => (
               <button key={v} onClick={() => setView(v)} style={{ fontWeight: view === v ? 700 : 400 }}>
-                {v === 'shop' ? 'shop (hero)' : v === 'stage' ? 'device stage' : 'interactive shop'}
+                {v === 'shop' ? 'shop (hero)' : 'device stage'}
               </button>
             ))}
           </div>
@@ -145,8 +140,7 @@ function Preview() {
                 <select value={focus} onChange={(e) => { const v = e.target.value as StopId | ''; sceneState.focus = v || null; setFocus(v) }}>
                   <option value="">(tour / t)</option>
                   {STOPS.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>{' '}
-                <label><input type="checkbox" checked={tour} onChange={(e) => { sceneState.tour = e.target.checked; setTour(e.target.checked) }} /> auto tour</label>
+                </select>
               </label>
               <label>
                 frame {frame.toFixed(2)}{' '}

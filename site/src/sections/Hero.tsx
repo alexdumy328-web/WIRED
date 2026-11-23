@@ -3,7 +3,6 @@ import { motion, useScroll, useTransform } from 'motion/react'
 import { useI18n } from '../i18n'
 import { focus, stopSection, useStation } from '../lib/stations'
 import { openBooking } from '../lib/booking-store'
-import { linkTo } from '../lib/router'
 import { useReducedMotion } from '../lib/theme'
 import { OpenStatus } from '../components/OpenStatus'
 import { ShopPanel } from '../components/Scene3D'
@@ -44,13 +43,6 @@ export function Hero() {
       <motion.div ref={card} style={{ scale, y, opacity }}>
         <div className="relative">
           <ShopPanel className="h-[36svh] rounded-[24px] sm:h-[42svh] border border-line lg:h-[min(76svh,760px)] lg:rounded-[32px]" onSelect={onSelect} />
-          <a
-            href="/atelier"
-            onClick={linkTo('/atelier')}
-            className="btn btn-ghost absolute bottom-3 left-3 h-10 min-h-0 border-line bg-bg/80 backdrop-blur lg:bottom-5 lg:left-5"
-          >
-            {t.workshopPage.explore}
-          </a>
         </div>
       </motion.div>
     </section>
