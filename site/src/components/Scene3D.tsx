@@ -56,14 +56,16 @@ const pos = (c: string) => (/\b(absolute|fixed|sticky)\b/.test(c) ? c : `relativ
 
 type PanelProps = {
   model: ModelId
+  /** Exploded-view amount, 0 = assembled, 1 = fully exploded (default). */
+  explode?: number
   className?: string
   /** The panel inside the booking popup; page panels pause while the popup covers them. */
   inDialog?: boolean
   children?: ReactNode
 }
 
-/** One exploded device on a plinth (services, mobile, booking popup). */
-export function DevicePanel({ model, className = '', inDialog = false, children }: PanelProps) {
+/** One exploded device on a plinth (services, process, mobile, booking popup). */
+export function DevicePanel({ model, explode, className = '', inDialog = false, children }: PanelProps) {
   const { lang } = useI18n()
   const { resolved } = useTheme()
   const reduced = useReducedMotion()
@@ -74,7 +76,7 @@ export function DevicePanel({ model, className = '', inDialog = false, children 
       {webgl && near && (
         <Boundary fallback={null}>
           <Suspense fallback={<Loader progress={0} done={false} />}>
-            <StageHost model={model} theme={resolved} reducedMotion={reduced} className="absolute inset-0" paused={!visible || covered} partLabels={partLabels(lang)} />
+            <StageHost model={model} explode={explode} theme={resolved} reducedMotion={reduced} className="absolute inset-0" paused={!visible || covered} partLabels={partLabels(lang)} />
           </Suspense>
         </Boundary>
       )}

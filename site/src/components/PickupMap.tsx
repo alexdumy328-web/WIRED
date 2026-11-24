@@ -13,6 +13,7 @@ import {
 import { SHOP } from '../lib/pickup.ts'
 import type { PickupQuote, Trips } from '../lib/pickup.ts'
 import { useTheme } from '../lib/theme.tsx'
+import { shopIcon, TILE_ATTRIBUTION, TILE_URL } from './map-icons.ts'
 
 export type PickupValue = {
   address: string
@@ -471,34 +472,7 @@ export default function PickupMap(props: {
     }
   }
 
-  const shopIcon = useMemo(() => {
-    return L.divIcon({
-      className: 'nt-shop-icon',
-      html: `
-        <div style="
-          width: 26px;
-          height: 26px;
-          background: #1a1c1e;
-          border: 2px solid #d9a93f;
-          border-radius: 7px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          box-shadow: 0 3px 10px rgba(0,0,0,0.45);
-        ">
-          <div style="
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-            background: #d9a93f;
-            box-shadow: 0 0 6px #d9a93f;
-          "></div>
-        </div>
-      `,
-      iconSize: [26, 26],
-      iconAnchor: [13, 13],
-    })
-  }, [])
+  const shop = useMemo(() => shopIcon(), [])
 
   const customerIcon = useMemo(() => {
     return L.divIcon({
@@ -554,7 +528,6 @@ export default function PickupMap(props: {
 
   const isDashed = !quote?.routed || !quote?.geometry || quote.geometry.length === 0
   // Standard OpenStreetMap tiles (no key). In dark mode a CSS filter on the tile pane darkens them.
-  const tileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png'
 
   return (
     <div className={`grid gap-3.5 ${className ?? ''}`} ref={containerRef}>
@@ -687,8 +660,8 @@ export default function PickupMap(props: {
         >
           <TileLayer
             key={resolved}
-            url={tileUrl}
-            attribution="&copy; <a href=&quot;https://www.openstreetmap.org/copyright&quot;>OpenStreetMap</a> contributors"
+            url={TILE_URL}
+            attribution={TILE_ATTRIBUTION}
             className={resolved === 'dark' ? 'nt-tiles-dark' : 'nt-tiles-light'}
             maxZoom={19}
           />
@@ -697,7 +670,7 @@ export default function PickupMap(props: {
           <MapBoundsController point={point} geometry={quote?.geometry} />
 
           {/* Shop Marker */}
-          <Marker position={[SHOP.lat, SHOP.lon]} icon={shopIcon}>
+          <Marker position={[SHOP.lat, SHOP.lon]} icon={shop}>
             <Tooltip direction="top" offset={[0, -14]} permanent={false}>
               {labels.shop}
             </Tooltip>
