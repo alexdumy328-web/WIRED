@@ -78,9 +78,31 @@ final class APIClient: ObservableObject {
         }
     }
 
-    /// Owners and devs can switch the console and driver map to built-in sample data. Off by default, and cleared at sign-out.
-    @Published var useMockData: Bool {
-        didSet { UserDefaults.standard.set(useMockData, forKey: "norgelis_use_mock") }
+    /// Owners and devs can switch the console and driver map to built-in sample data. Off at every launch, and cleared at sign-out.
+    @Published var useMockData = false
+
+    /// Turns sample data off without announcing a change when it was already off.
+    func disableSample() {
+        if useMockData { useMockData = false }
+    }
+
+    /// Release builds talk to HTTPS servers only. Debug builds also take plain HTTP for a local server.
+    static func isAllowedServer(_ address: String, allowHTTP: Bool = APIClient.isDebugBuild) -> Bool {
+        guard let url = URL(string: address), let scheme = url.scheme?.lowercased(), url.host != nil else { return false }
+        return scheme == "https" || (allowHTTP && scheme == "http")
+    }
+
+    static var isDebugBuild: Bool {
+        #if DEBUG
+        return true
+        #else
+        return false
+        #endif
+    }
+
+    /// Back to the address this build was made for. Used at sign-out, so a staging address never outlives its owner.
+    func resetServer() {
+        if baseURLString != Self.buildDefaultURL { baseURLString = Self.buildDefaultURL }
     }
 
     private let session: URLSession
@@ -155,11 +177,11 @@ final class APIClient: ObservableObject {
 
     init(session: URLSession = .shared) {
         self.session = session
-        let savedURL = UserDefaults.standard.string(forKey: "norgelis_api_base_url")
+        // A saved address from another build (plain HTTP from a Debug build, say) must not break this one.
+        let savedURL = UserDefaults.standard.string(forKey: "norgelis_api_base_url").flatMap { Self.isAllowedServer($0) ? $0 : nil }
         self.baseURLString = savedURL ?? Self.buildDefaultURL
 
         self.cookies = Self.loadCookies()
-        self.useMockData = UserDefaults.standard.object(forKey: "norgelis_use_mock") as? Bool ?? false
     }
 
     /// The build's default address (`NorgelisAPIBaseURL` in Info.plist), else the production site.
@@ -185,13 +207,9 @@ final class APIClient: ObservableObject {
 
     func fetchBooking(code: String) async throws -> Booking {
         let trimmed = code.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let url = baseURL?.appendingPathComponent("api/bookings/\(trimmed)") else {
-            throw APIError.invalidURL
-        }
-
-        let (data, response) = try await session.data(from: url)
-        try validateResponse(response, data: data)
-        return try JSONDecoder().decode(Booking.self, from: data)
+        // Codes look like NT-4K7Q. Anything else cannot exist, and must not reach the URL path.
+        guard trimmed.range(of: "^[A-Za-z0-9-]{3,20}$", options: .regularExpression) != nil else { throw APIError.notFound }
+        return try await request("GET", "api/bookings/\(trimmed)")
     }
 
     // MARK: - Authenticated requests (owner console)

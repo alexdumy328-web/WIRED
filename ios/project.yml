@@ -37,7 +37,6 @@ targets:
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         DEVELOPMENT_TEAM: ""
         CODE_SIGN_STYLE: Automatic
-        CODE_SIGN_IDENTITY: "-"
         # The server the app talks to. Release builds default to the production site; a command line
         # override (NORGELIS_API_BASE_URL=http://192.168.1.20:8790) points a Debug build at a local server.
         NORGELIS_API_BASE_URL: "https://norgelis.ro"
@@ -45,12 +44,16 @@ targets:
         NORGELIS_SITE_ORIGIN: ""
         # Shown in the app when set. Empty hides the matching row.
         NORGELIS_SUPPORT_EMAIL: ""
-        NORGELIS_PHONE: ""
-        NORGELIS_DRIVER_PHONE: ""
+        NORGELIS_PHONE: "+40 (771) 332 210"
+        NORGELIS_DRIVER_PHONE: "(0758) 561 001"
+        # The legal pages default to <server>/confidentialitate and <server>/termeni. Set these to override.
         NORGELIS_PRIVACY_URL: ""
         NORGELIS_TERMS_URL: ""
+        # A Google Form link. The feedback row stays hidden until this is set.
+        NORGELIS_FEEDBACK_URL: ""
       configs:
         Debug:
+          CODE_SIGN_IDENTITY: "-"
           INFOPLIST_PREPROCESSOR_DEFINITIONS: "DEBUG_BUILD=1"
           SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG"
         Release:

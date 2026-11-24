@@ -23,6 +23,9 @@ enum AuthProblem: Error, Equatable {
     case mailUnavailable
     case offline
     case unavailable
+    /// The session is too old to delete the account. Sign in again, or give the password.
+    case reauth
+    case staffAccount
     case other
 
     var key: String {
@@ -36,6 +39,8 @@ enum AuthProblem: Error, Equatable {
         case .mailUnavailable: return "auth.error.mail_unavailable"
         case .offline: return "auth.error.offline"
         case .unavailable: return "auth.error.unavailable"
+        case .reauth: return "auth.error.reauth"
+        case .staffAccount: return "auth.error.staff_account"
         case .other: return "auth.error.generic"
         }
     }
@@ -47,6 +52,8 @@ final class AuthStore: ObservableObject {
     @Published private(set) var viewer: Viewer?
     @Published private(set) var googleAvailable = false
     @Published private(set) var loaded = false
+    /// There is a saved session but the server could not be reached, so who is signed in is not known yet.
+    @Published private(set) var needsRetry = false
 
     private let api: APIClient
 
@@ -76,17 +83,22 @@ final class AuthStore: ObservableObject {
             googleAvailable = me.providers?.google ?? false
             if me.user == nil { api.clearSession() }
             // Sample data is a tool for owners and devs. Nobody else keeps it on.
-            if me.user?.staffRole?.isManager != true { api.useMockData = false }
+            if me.user?.staffRole?.isManager != true { api.disableSample() }
+            needsRetry = false
         } catch APIError.networkError {
-            // Offline: keep what we had.
+            // Offline: keep what we had. With a saved session and nobody known yet, ask to try again
+            // instead of showing the sign-in screen to someone who is signed in.
+            needsRetry = viewer == nil && api.hasSession
         } catch APIError.unauthorized {
             viewer = nil
-            api.useMockData = false
+            needsRetry = false
+            api.disableSample()
             api.clearSession()
         } catch is CancellationError {
             // A newer refresh is running.
         } catch {
             viewer = nil
+            needsRetry = false
         }
         loaded = true
     }
@@ -139,25 +151,36 @@ final class AuthStore: ObservableObject {
             ended = false
         }
         api.clearSession()
-        api.useMockData = false
+        api.disableSample()
+        api.resetServer()
         viewer = nil
         return ended
     }
 
     /// Deletes the signed-in account on the server, then signs out here. Needs the server to allow it
     /// (Better Auth `user.deleteUser`); without that the route is missing and this throws `.unavailable`.
-    func deleteAccount() async throws {
-        try await call { try await self.api.requestVoid("POST", "api/auth/delete-user", body: [:]) }
+    func deleteAccount(password: String? = nil) async throws {
+        struct Reply: Decodable { var success: Bool?; var message: String? }
+        var body: [String: Any] = [:]
+        if let password, !password.isEmpty { body["password"] = password }
+        let reply: Reply = try await callValue { try await self.api.request("POST", "api/auth/delete-user", body: body) }
+        // The server may answer 200 with "Verification email sent" and delete nothing. Only "User deleted" counts.
+        guard reply.success == true, reply.message == "User deleted" else { throw AuthProblem.unavailable }
         api.clearSession()
-        api.useMockData = false
+        api.disableSample()
+        api.resetServer()
         viewer = nil
     }
 
     // MARK: - Errors
 
     private func call(_ work: @escaping () async throws -> Void) async throws {
+        _ = try await callValue { try await work() }
+    }
+
+    private func callValue<T>(_ work: @escaping () async throws -> T) async throws -> T {
         do {
-            try await work()
+            return try await work()
         } catch let APIError.auth(status, code) {
             throw Self.problem(status: status, code: code)
         } catch APIError.networkError {
@@ -172,6 +195,8 @@ final class AuthStore: ObservableObject {
         // Match the code first: Better Auth also answers 403 for too many attempts and for a refused Origin.
         if c.contains("ORIGIN") { return .other }
         if status == 404 { return .unavailable }
+        if c.contains("STAFF_ACCOUNT") { return .staffAccount }
+        if c.contains("SESSION_EXPIRED") || c.contains("SESSION_NOT_FRESH") { return .reauth }
         if status == 429 || c.contains("TOO_MANY") { return .tooMany }
         if c.contains("NOT_VERIFIED") { return .unverified }
         if c.contains("OTP") || c.contains("INVALID_CODE") || c.contains("EXPIRED") { return .wrongCode }

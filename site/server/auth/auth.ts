@@ -7,6 +7,7 @@ import type { Db } from 'mongodb'
 import type { AuditLog } from '../security/audit.ts'
 import { otpMail, pickLang, type OtpKind } from './emails.ts'
 import { MailUnavailableError, type Mailer } from './outbox.ts'
+import { bootstrapRole, effectiveRole } from './roles.ts'
 
 export type Env = Record<string, string | undefined>
 
@@ -91,6 +92,23 @@ export function createAuth(options: CreateAuthOptions) {
       additionalFields: {
         // Not settable from the client: roles change only through the dev dashboard.
         role: { type: 'string', required: false, defaultValue: 'customer', input: false },
+      },
+      // Customers can delete their own account (required by the App Store). Better Auth removes the
+      // user, their sign-in methods and sessions. It asks for the password or a session under a day old.
+      deleteUser: {
+        enabled: true,
+        // Staff accounts are managed by the owner, never self-deleted.
+        beforeDelete: async (user) => {
+          // The stored role, raised by OWNER_EMAILS and DEV_EMAILS the way sign-in does it.
+          const stored = (user as { role?: string }).role
+          const role = effectiveRole(stored, bootstrapRole(env, user.email, user.emailVerified))
+          if (role !== 'customer') throw new APIError('FORBIDDEN', { message: 'staff_account' })
+        },
+        // Repair records and invoices must be kept, so bookings stay but lose the link to the account.
+        afterDelete: async (user) => {
+          await db.collection('bookings').updateMany({ userId: user.id }, { $unset: { userId: '' } })
+          await audit.record({ action: 'account_deleted', actor: { id: user.id } })
+        },
       },
     },
 

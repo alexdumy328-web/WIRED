@@ -67,6 +67,8 @@
     <string>$(NORGELIS_PRIVACY_URL)</string>
     <key>NorgelisTermsURL</key>
     <string>$(NORGELIS_TERMS_URL)</string>
+    <key>NorgelisFeedbackURL</key>
+    <string>$(NORGELIS_FEEDBACK_URL)</string>
 
 #ifdef DEBUG_BUILD
     <!-- Debug builds may reach a server on this Mac or the local network. Release builds are HTTPS only. -->

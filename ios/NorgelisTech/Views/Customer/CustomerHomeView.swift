@@ -134,6 +134,7 @@ struct TrackView: View {
             }
             .padding(16)
         }
+        .scrollDismissesKeyboard(.interactively)
     }
 }
 

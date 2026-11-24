@@ -69,7 +69,7 @@
 "customer.driver.on_the_way" = "Șoferul a plecat spre tine!";
 "customer.driver.eta" = "Timp estimat de sosire: ~%d minute";
 "customer.driver.live_badge" = "ȘOFER ÎN MIȘCARE";
-"customer.driver.waiting" = "Preluarea este programată. Vei putea urmări șoferul în timp real când pleacă spre tine.";
+"customer.driver.waiting" = "Preluarea este programată. Poți suna șoferul când vrei.";
 "customer.no_active_bookings" = "Nicio programare căutată încă.";
 
 /* Dev Settings */
@@ -350,7 +350,7 @@
 "auth.account.customer" = "Client";
 "auth.staff.no_access_title" = "Fără acces";
 "auth.staff.no_access" = "Consola atelierului e pentru tehnicieni și proprietari. Contul tău e de client.";
-"console.more.sample_off" = "Consola vorbește cu serverul din Setări dezvoltare. Intră în cont cu pictograma persoană, sus.";
+"console.more.sample_off" = "Consola folosește serverul aplicației, cu contul tău.";
 
 /* Driver panel */
 "driver.panel.close" = "Închide";
@@ -534,3 +534,16 @@
 "booking.date" = "Data";
 "booking.day_closed" = "Am ales următoarea zi liberă. Atelierul e închis duminica și de sărbători.";
 "welcome.guest" = "Sau continuă fără cont";
+"offline.title" = "Nu ne putem conecta";
+"offline.message" = "Ești autentificat, dar serverul nu răspunde. Verifică internetul și încearcă din nou.";
+"booking.jobs_max" = "Poți alege cel mult 10 lucrări.";
+"account.feedback" = "Trimite feedback";
+"account.delete.staff" = "Contul de personal nu se șterge din aplicație";
+"account.delete.reauth_title" = "Confirmă ștergerea";
+"account.delete.reauth" = "Din motive de securitate, introdu parola contului. Dacă te autentifici doar cu cod pe email, intră din nou în cont și șterge-l în cel mult o zi.";
+"account.delete.signin_again" = "Intră din nou în cont";
+"account.delete.email_subject" = "Cerere de ștergere a contului";
+"account.delete.email_body %@" = "Vă rog să ștergeți contul asociat adresei %@.";
+"auth.error.reauth" = "Sesiunea e prea veche pentru această acțiune. Intră din nou în cont.";
+"auth.error.staff_account" = "Conturile de personal sunt gestionate de proprietar.";
+"auth.method.title" = "Metodă de autentificare";

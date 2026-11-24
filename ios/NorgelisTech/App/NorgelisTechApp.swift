@@ -7,6 +7,7 @@ struct NorgelisTechApp: App {
     @StateObject private var apiClient = APIClient.shared
     @StateObject private var ownerStore = OwnerStore(api: APIClient.shared)
     @StateObject private var authStore = AuthStore(api: APIClient.shared)
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some Scene {
         WindowGroup {
@@ -17,6 +18,15 @@ struct NorgelisTechApp: App {
                 .environmentObject(ownerStore)
                 .environmentObject(authStore)
                 .task { await authStore.refresh() }
+                // Back in the app: check the session again, so an offline start recovers by itself.
+                .onChange(of: scenePhase) { _, phase in
+                    if phase == .active, authStore.loaded { Task { await authStore.refresh() } }
+                }
+                // Another person signed in, or nobody: forget the last one's trip, stops, lookups and access.
+                .onChange(of: authStore.viewer?.id) { _, _ in
+                    appState.resetSession()
+                    ownerStore.reset()
+                }
         }
     }
 }

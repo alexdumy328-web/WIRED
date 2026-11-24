@@ -51,23 +51,27 @@ Everything that differs between builds is a build setting in `project.yml`. Over
 | --- | --- | --- |
 | `NORGELIS_API_BASE_URL` | The server the app talks to. | `https://norgelis.ro` (placeholder, set the real domain) |
 | `NORGELIS_SITE_ORIGIN` | The website origin Better Auth trusts (`BETTER_AUTH_URL` or `APP_ORIGINS`). Needed when the API address is not that origin, for example `http://localhost:5173` in dev. | empty |
-| `NORGELIS_SUPPORT_EMAIL`, `NORGELIS_PHONE`, `NORGELIS_DRIVER_PHONE` | Contact details. An empty value hides the matching row. The driver number falls back to the shop number. | empty |
-| `NORGELIS_PRIVACY_URL`, `NORGELIS_TERMS_URL` | Legal links in Account. Empty hides them. | empty |
+| `NORGELIS_PHONE`, `NORGELIS_DRIVER_PHONE` | The shop and driver numbers (Call, WhatsApp, Call the driver). The app only builds `tel:` links, it never dials by itself. An empty value hides the matching row. The driver number falls back to the shop number. | shop `+40 (771) 332 210`, driver `(0758) 561 001` |
+| `NORGELIS_SUPPORT_EMAIL` | Support address shown in Account. Empty hides the row. | empty |
+| `NORGELIS_PRIVACY_URL`, `NORGELIS_TERMS_URL` | Legal links in Account. When empty they follow the server address: `<server>/confidentialitate` and `<server>/termeni`, pages the website serves. | empty |
+| `NORGELIS_FEEDBACK_URL` | A Google Form link for in-app feedback (Account and the welcome screen). Empty hides the row. | empty |
 | `MARKETING_VERSION`, `CURRENT_PROJECT_VERSION` | Version and build number. Raise the build number for every App Store upload. | `1.0.0`, `1` |
 
 Debug builds also allow a plain HTTP server on the local network (`NSAllowsLocalNetworking` and the local network prompt text, added through plist preprocessing). Release builds are HTTPS only and have neither key.
 
-Owners and devs can change the server address at runtime in More → Server and sample data. The field accepts HTTPS addresses (Release) and asks before it applies one, because the session belongs to the old server and ends.
+Owners and devs can change the server address at runtime in More → Server and sample data. The field accepts HTTPS addresses (Release), applies one only after it answered the health check, and asks first, because the session belongs to the old server and ends. A saved address that this build would not accept is ignored at launch, and the address resets to the build default at sign-out.
 
 ## Sign in
 
 Sign-in uses the website's Better Auth routes: email code, password, sign-up with email confirmation, password reset. Session cookies live in the iOS Keychain, are cleared when the server address changes, and never enter git. Google sign-in is not in the app yet, because it needs a server-side handoff (one-time token and a trusted app origin).
 
-Account deletion calls `POST /api/auth/delete-user`. The site does not enable that route yet, so the app falls back to a pre-filled email request. App Store review requires in-app deletion, so enable Better Auth's `user.deleteUser` before the first submission (see `docs/app-store.md`).
+Account deletion (Account → Delete account) calls `POST /api/auth/delete-user`, which the site now enables for customer accounts. It deletes the user and sessions and keeps bookings and invoices, unlinked from the account. Staff accounts are refused (the owner manages them). Better Auth wants a session under a day old or the password, so an older session gets a password prompt and an option to sign in again. If the server answers 404 (older server) the app offers an email request instead.
+
+Signing out or deleting the account also stops any trip and GPS, clears the stops and lookups, resets the console's role and tab, and puts the server address back to the build default.
 
 ## Booking
 
-Customers book from the welcome screen (no account) or the plus button in My repairs. The form posts to `POST /api/bookings`, the same call as the website, and the server checks the jobs, the slot and the prices again.
+Customers book from the welcome screen (no account) or the plus button in My repairs. The form stops at the server's limits (10 jobs, 500/1500/60/200/80 characters for the free-text fields), so a long paste cannot fail later with a generic error. The form posts to `POST /api/bookings`, the same call as the website, and the server checks the jobs, the slot and the prices again.
 
 - Kind of visit: workshop, pickup and delivery, or on site.
 - Jobs come from `NorgelisTech/Resources/catalog.json`, which `scripts/export-catalog.mjs` generates from the site's price list and holiday list (`node ios/scripts/export-catalog.mjs` from the repository root). Run it again whenever the site's catalog changes.
@@ -77,7 +81,7 @@ Customers book from the welcome screen (no account) or the plus button in My rep
 
 ## Driver
 
-- Today's stops come from `GET /api/admin/pickups?date=` and refresh when the Driver tab opens.
+- Today's stops come from `GET /api/admin/pickups?date=` and refresh when the Driver tab opens. Done stops are remembered on the phone for the day (booking codes only), so a restart does not show them as pending again. The app does not yet send a status change to the server when a stop is done.
 - The map draws the real driving route (Apple Maps directions) from the workshop or the driver's position through the remaining stops. One bottom panel holds the list, a stop's details and the trip.
 - Navigate opens Waze or Apple Maps. `LSApplicationQueriesSchemes` lists `waze`.
 - Customers call the driver from a pickup booking (Call the driver). The driver calls the customer from the stop.
@@ -99,7 +103,7 @@ Roles follow the server (`GET /api/me`). A technician never sees `finalLei`, Sta
 
 ### Sample data
 
-Owners and devs can switch the console and the driver map to made-up data in More → Server and sample data. It is off by default, a rose notice shows while it is on, and it clears at sign-out. Use it to demo or test without touching real jobs. App Review needs a real demo account instead (see `docs/app-store.md`).
+Owners and devs can switch the console and the driver map to made-up data in More → Server and sample data. It is off at every launch (never saved), a rose notice shows while it is on, and it clears at sign-out. Use it to demo or test without touching real jobs. App Review needs a real demo account instead (see `docs/app-store.md`).
 
 Not built yet: intake photo capture, push notifications, live driver position for customers (`POST /api/driver/location` and `GET /api/bookings/:code/driver`). PDFs download only from a live server.
 

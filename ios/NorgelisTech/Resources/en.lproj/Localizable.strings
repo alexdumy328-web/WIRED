@@ -69,7 +69,7 @@
 "customer.driver.on_the_way" = "The driver is heading your way!";
 "customer.driver.eta" = "Estimated arrival time: ~%d minutes";
 "customer.driver.live_badge" = "DRIVER EN ROUTE";
-"customer.driver.waiting" = "Pickup is scheduled. Live driver tracking will be available once the driver departs.";
+"customer.driver.waiting" = "Pickup is scheduled. You can call the driver any time.";
 "customer.no_active_bookings" = "No booking looked up yet.";
 
 /* Dev Settings */
@@ -350,7 +350,7 @@
 "auth.account.customer" = "Customer";
 "auth.staff.no_access_title" = "No access";
 "auth.staff.no_access" = "The workshop console is for technicians and owners. Your account is a customer account.";
-"console.more.sample_off" = "The console talks to the server in Dev settings. Sign in with the person icon at the top.";
+"console.more.sample_off" = "The console uses the app's server, with your account.";
 
 /* Driver panel */
 "driver.panel.close" = "Close";
@@ -534,3 +534,16 @@
 "booking.date" = "Date";
 "booking.day_closed" = "We moved to the next open day. The workshop is closed on Sundays and public holidays.";
 "welcome.guest" = "Or continue without an account";
+"offline.title" = "We cannot connect";
+"offline.message" = "You are signed in, but the server is not answering. Check your internet and try again.";
+"booking.jobs_max" = "You can pick up to 10 jobs.";
+"account.feedback" = "Send feedback";
+"account.delete.staff" = "A staff account cannot be deleted in the app";
+"account.delete.reauth_title" = "Confirm deletion";
+"account.delete.reauth" = "For security, enter the account password. If you sign in with an email code only, sign in again and delete the account within a day.";
+"account.delete.signin_again" = "Sign in again";
+"account.delete.email_subject" = "Account deletion request";
+"account.delete.email_body %@" = "Please delete the account linked to %@.";
+"auth.error.reauth" = "Your session is too old for this. Sign in again.";
+"auth.error.staff_account" = "Staff accounts are managed by the owner.";
+"auth.method.title" = "Sign-in method";

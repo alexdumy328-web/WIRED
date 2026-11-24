@@ -1,6 +1,6 @@
 import { useSyncExternalStore, type MouseEvent } from 'react'
 
-/** A handful of routes: "/", "/cont", "/admin", "/dev". History API, no library. */
+/** A handful of routes: "/", "/cont", "/admin", "/dev", "/confidentialitate", "/termeni". History API, no library. */
 const subs = new Set<() => void>()
 window.addEventListener('popstate', () => subs.forEach((f) => f()))
 
@@ -31,7 +31,7 @@ export function linkTo(path: string) {
 }
 
 /** Pages other than the one-page home. */
-export const APP_PAGES = ['/cont', '/admin', '/dev'] as const
+export const APP_PAGES = ['/cont', '/admin', '/dev', '/confidentialitate', '/termeni'] as const
 export type AppPage = (typeof APP_PAGES)[number]
 
 /** The matching app page for a pathname (trailing slashes ignored), or null for the home page. */

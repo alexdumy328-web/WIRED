@@ -58,6 +58,17 @@ final class OwnerStore: ObservableObject {
         version += 1
     }
 
+    /// Signed out or switched account: nothing of the last person's access or position stays.
+    func reset() {
+        role = api.useMockData ? .dev : .technician
+        tab = .today
+        counts = nil
+        jobsFilter = nil
+        lastError = nil
+        lastWasSample = nil
+        version += 1
+    }
+
     func chooseMockRole(_ newRole: StaffRole) {
         role = newRole
         Task {

@@ -14,6 +14,7 @@ struct WelcomeView: View {
     var body: some View {
         GeometryReader { proxy in
             ScrollView {
+                // The main block is centred in the space above. The shop's contact details are pinned to the bottom.
                 VStack(spacing: 28) {
                     Spacer(minLength: 0)
                     hero
@@ -22,7 +23,8 @@ struct WelcomeView: View {
                     ContactBar()
                 }
                 .padding(.horizontal, 24)
-                .padding(.vertical, 24)
+                .padding(.top, 24)
+                .padding(.bottom, 12)
                 .frame(minHeight: proxy.size.height)
             }
             .scrollBounceBehavior(.basedOnSize)
@@ -40,7 +42,7 @@ struct WelcomeView: View {
                         default: SignInView()
                         }
                     }
-                    .navigationTitle(LocalizedStringKey(which == .track ? "customer.title" : "auth.title.sign_in"))
+                    .navigationTitle(LocalizedStringKey(which == .track ? "customer.title" : (which == .signUp ? "auth.title.sign_up" : "auth.title.sign_in")))
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
@@ -66,6 +68,7 @@ struct WelcomeView: View {
                 .font(.body)
                 .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
@@ -103,8 +106,8 @@ struct ContactBar: View {
         VStack(spacing: 10) {
             HStack(spacing: 8) {
                 if let phone = Shop.phone {
-                    button("phone.fill", "contact.call") { open("tel:\(phone.filter { $0.isNumber || $0 == "+" })") }
-                    button("message.fill", "contact.whatsapp") { open("https://wa.me/\(phone.filter(\.isNumber))") }
+                    button("phone.fill", "contact.call") { open(Shop.telURL(phone)) }
+                    button("message.fill", "contact.whatsapp") { open(Shop.whatsappURL(phone)) }
                 }
                 button("map.fill", "contact.directions") {
                     let item = MKMapItem(placemark: MKPlacemark(coordinate: Shop.coordinate))
@@ -113,6 +116,9 @@ struct ContactBar: View {
                 }
             }
             Text(Shop.address).font(.footnote).foregroundColor(.secondary).multilineTextAlignment(.center)
+            if let url = Shop.feedbackURL {
+                Link(destination: url) { Label("account.feedback", systemImage: "text.bubble").font(.footnote.bold()).frame(minHeight: 44) }
+            }
         }
     }
 
@@ -126,7 +132,7 @@ struct ContactBar: View {
         .buttonStyle(.plain)
     }
 
-    private func open(_ string: String) {
-        if let url = URL(string: string) { openURL(url) }
+    private func open(_ url: URL?) {
+        if let url { openURL(url) }
     }
 }

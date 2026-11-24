@@ -47,10 +47,6 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
         locationManager.authorizationStatus == .authorizedWhenInUse || locationManager.authorizationStatus == .authorizedAlways
     }
 
-    func requestAlwaysPermission() {
-        locationManager.requestAlwaysAuthorization()
-    }
-
     // MARK: - Tracking Management
 
     func startTracking(allowBackground: Bool = false) {
@@ -86,6 +82,8 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
 
     func stopTracking() {
         wantsTracking = false
+        // Nothing to stop, and nothing to ask the system about, when no trip ever started tracking.
+        guard isUpdatingLocation || simulationTimer != nil else { return }
         locationManager.stopUpdatingLocation()
         locationManager.stopUpdatingHeading()
         #if os(iOS)

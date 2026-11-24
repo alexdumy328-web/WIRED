@@ -80,7 +80,7 @@ final class AppState: ObservableObject {
                     self.bookings = sample ? MockData.bookings : []
                     self.stops = sample ? MockData.driverStops : []
                     self.replan()
-                    Task { await self.loadStops() }
+                    // The staff home reloads the live stops when the data source changes.
                 }
             }
             .store(in: &cancellables)
@@ -120,7 +120,7 @@ final class AppState: ObservableObject {
                 URLQueryItem(name: "date", value: ShopCalendar.dateString()),
             ])
             guard !apiClient.useMockData else { return }
-            let done = Set(stops.filter(\.isCompleted).map(\.id))
+            let done = Set(stops.filter(\.isCompleted).map(\.id)).union(Self.savedDone())
             let fresh = reply.jobs.map { job in
                 PickupStop(job: job, isCompleted: done.contains(job.code))
             }
@@ -132,6 +132,39 @@ final class AppState: ObservableObject {
         } catch {
             stopsError = error.localizedDescription
         }
+    }
+
+    // MARK: - Completed stops survive a restart (codes only, per day)
+
+    private static var doneKey: String { "norgelis_done_\(ShopCalendar.dateString())" }
+
+    private static func savedDone() -> Set<String> {
+        Set(UserDefaults.standard.stringArray(forKey: doneKey) ?? [])
+    }
+
+    private static func saveDone(_ id: String) {
+        UserDefaults.standard.set(Array(savedDone().union([id])), forKey: doneKey)
+    }
+
+    /// Signed out or switched account: stop the trip and GPS and forget everything the last person saw.
+    func resetSession() {
+        tripTask?.cancel()
+        lookupTask?.cancel()
+        locationService.stopTracking()
+        isDriverEnRoute = false
+        currentEnRouteStop = nil
+        focusedStopID = nil
+        stops = apiClient.useMockData ? MockData.driverStops : []
+        stopsError = nil
+        stopsLoading = false
+        bookings = apiClient.useMockData ? MockData.bookings : []
+        currentCustomerBooking = apiClient.useMockData ? MockData.bookings.first : nil
+        customerSearchQuery = ""
+        customerLookupError = nil
+        customerLookupBusy = false
+        UserDefaults.standard.removeObject(forKey: Self.doneKey)
+        driverCoordinate = Shop.coordinate
+        replan()
     }
 
     func moveRemaining(from offsets: IndexSet, to destination: Int) {
@@ -200,6 +233,7 @@ final class AppState: ObservableObject {
         tripTask?.cancel()
         if let idx = stops.firstIndex(where: { $0.id == current.id }) {
             stops[idx].isCompleted = true
+            if !apiClient.useMockData { Self.saveDone(current.id) }
             // Completed stops stay at the top, in the order they were done.
             let done = stops.remove(at: idx)
             stops.insert(done, at: completedStops.count)

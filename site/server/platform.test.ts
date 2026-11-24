@@ -387,6 +387,28 @@ describe('bookings for owners and customers', () => {
     assert.deepEqual(new Set(mineB.body.bookings.map((x: any) => x.code)), new Set([ownB.body.code, guest.body.code]))
   })
 
+  test('a customer can delete their account, the booking stays without the link, and staff cannot', async () => {
+    const dana = await signIn('dana-delete@example.com')
+    const made = await call('/api/bookings', { method: 'POST', cookie: dana, body: bookingBody('dana-delete@example.com', slot(7)) })
+    assert.equal(made.status, 201)
+    const before = await store.getDb().collection('bookings').findOne({ code: made.body.code })
+    assert.ok(before?.userId, 'the booking is linked to the account')
+
+    const deleted = await call('/api/auth/delete-user', { method: 'POST', cookie: dana, body: {} })
+    assert.equal(deleted.status, 200)
+    // The signed session cookie keeps working for a few minutes (cookie cache), so check the database.
+    assert.equal(await store.getDb().collection('user').countDocuments({ email: 'dana-delete@example.com' }), 0, 'the user is gone')
+    assert.equal(await store.getDb().collection('session').countDocuments({ userId: before.userId }), 0, 'and their sessions')
+    const after = await store.getDb().collection('bookings').findOne({ code: made.body.code })
+    assert.ok(after, 'the repair record is kept')
+    assert.equal(after?.userId, undefined, 'and no longer linked to the account')
+
+    const owner = await signIn(OWNER)
+    const refused = await call('/api/auth/delete-user', { method: 'POST', cookie: owner, body: {} })
+    assert.equal(refused.status, 403)
+    assert.equal((await call('/api/me', { cookie: owner })).status, 200, 'the owner is still signed in')
+  })
+
   test('owner lists, filters and searches bookings, and sees the week calendar and pickups', async () => {
     const owner = await signIn(OWNER)
     const withPickup = {

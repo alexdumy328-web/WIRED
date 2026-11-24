@@ -12,6 +12,8 @@ struct RootView: View {
         Group {
             if !auth.loaded {
                 SplashView()
+            } else if auth.needsRetry {
+                OfflineView()
             } else if let viewer = auth.viewer {
                 if viewer.isStaff {
                     StaffHomeView()
@@ -38,6 +40,32 @@ struct SplashView: View {
                 .accessibilityHidden(true)
             ProgressView()
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(Color(.systemBackground))
+    }
+}
+
+/// A saved sign-in exists but the server did not answer. Better to say so than to show the sign-in screen.
+struct OfflineView: View {
+    @EnvironmentObject var auth: AuthStore
+    @State private var busy = false
+
+    var body: some View {
+        VStack(spacing: 16) {
+            Image(systemName: "wifi.slash").font(.system(size: 44)).foregroundColor(.secondary)
+            Text("offline.title").font(.title3.bold())
+            Text("offline.message").font(.subheadline).foregroundColor(.secondary).multilineTextAlignment(.center)
+            Button {
+                busy = true
+                Task { await auth.refresh(); busy = false }
+            } label: {
+                HStack { if busy { ProgressView().tint(.white) }; Text("common.retry").font(.headline) }
+                    .frame(minWidth: 160, minHeight: 44)
+            }
+            .buttonStyle(.borderedProminent)
+            .disabled(busy)
+        }
+        .padding(32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(Color(.systemBackground))
     }

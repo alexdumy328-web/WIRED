@@ -10,6 +10,7 @@ struct BackendSettingsView: View {
     @State private var address = ""
     @State private var testing = false
     @State private var result: (ok: Bool, message: String)?
+    @State private var tested: String?
     @State private var confirmApply = false
     @State private var confirmSample = false
 
@@ -18,13 +19,8 @@ struct BackendSettingsView: View {
     private var valid: Bool { Self.isAllowed(trimmed) }
 
     /// Release builds only talk to HTTPS servers. Debug builds also accept plain HTTP for a local server.
-    static func isAllowed(_ address: String) -> Bool {
-        guard let url = URL(string: address), let scheme = url.scheme?.lowercased(), url.host != nil else { return false }
-        #if DEBUG
-        return scheme == "https" || scheme == "http"
-        #else
-        return scheme == "https"
-        #endif
+    static func isAllowed(_ address: String, allowHTTP: Bool = APIClient.isDebugBuild) -> Bool {
+        APIClient.isAllowedServer(address, allowHTTP: allowHTTP)
     }
 
     var body: some View {
@@ -35,8 +31,9 @@ struct BackendSettingsView: View {
                     .textInputAutocapitalization(.never)
                     .keyboardType(.URL)
                     .submitLabel(.done)
+                // An address is applied only after it answered the health check, so a typo cannot lock everyone out.
                 Button("backend.apply") { confirmApply = true }
-                    .disabled(!changed || !valid)
+                    .disabled(!changed || !valid || tested != trimmed)
                 Button {
                     Task { await test() }
                 } label: {
@@ -85,6 +82,7 @@ struct BackendSettingsView: View {
             Button("backend.apply.confirm", role: .destructive) {
                 apiClient.baseURLString = trimmed
                 result = nil
+                tested = nil
             }
             Button("common.cancel", role: .cancel) {}
         } message: {
@@ -115,12 +113,14 @@ struct BackendSettingsView: View {
         defer { testing = false }
         guard let url = URL(string: trimmed)?.appendingPathComponent("api/health") else { return }
         do {
-            let (data, response) = try await URLSession.shared.data(from: url)
+            // No cookies: this call must not carry the session to an address that is only being tried.
+            let (data, response) = try await URLSession(configuration: .ephemeral).data(from: url)
             guard (response as? HTTPURLResponse)?.statusCode == 200,
                   let health = try? JSONDecoder().decode(HealthResponse.self, from: data), health.ok else {
                 result = (false, String(localized: "backend.test.bad_answer"))
                 return
             }
+            tested = trimmed
             result = (true, String(format: String(localized: "dev.health.ok %@"), health.store ?? String(localized: "dev.gps.unknown")))
         } catch {
             result = (false, error.localizedDescription)

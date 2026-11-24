@@ -196,7 +196,7 @@ struct BookingDetailView: View {
                 if let v = intake.serial { InfoRow(title: "console.intake.serial", value: v) }
                 if let v = intake.accessories { InfoRow(title: "console.intake.accessories", value: v) }
                 if let v = intake.appearance { InfoRow(title: "console.intake.appearance", value: v) }
-                InfoRow(title: "console.job.received", value: "\(ShopCalendar.dateTime(intake.receivedAt)) · \(intake.by)")
+                InfoRow(title: "console.job.received", value: [ShopCalendar.dateTime(intake.receivedAt), intake.by].compactMap { $0 }.joined(separator: " · "))
                 Button("console.intake.edit") { showIntake = true }
             } else {
                 Text("console.job.no_sheet").font(.footnote).foregroundColor(.secondary)

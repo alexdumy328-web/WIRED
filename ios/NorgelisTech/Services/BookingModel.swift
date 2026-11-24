@@ -80,14 +80,21 @@ final class BookingModel: ObservableObject {
     @Published var problem: String?
     @Published var bookedCode: String?
 
+    /// The server's limits (site/server/schema.ts). The form stops at them instead of failing with a 400.
+    enum Limit {
+        static let jobs = 10, custom = 500, issue = 1500, device = 60, location = 200, name = 80, email = 160, address = 200
+    }
+
     private let api: APIClient
     let planner: SlotPlanner
     let catalog: Catalog
+    private let now: () -> Date
 
-    init(api: APIClient, catalog: Catalog = .shared) {
+    init(api: APIClient, catalog: Catalog = .shared, now: @escaping () -> Date = { Date() }) {
         self.api = api
         self.catalog = catalog
-        self.planner = SlotPlanner(holidays: Set(catalog.holidays))
+        self.now = now
+        self.planner = SlotPlanner(holidays: Set(catalog.holidays), now: now)
         day = firstOpenDay ?? ShopCalendar.dateString()
     }
 
@@ -97,10 +104,13 @@ final class BookingModel: ObservableObject {
     private var urgentPickup: Bool { kind == .pickup && urgent }
     /// First day that still has a window to book.
     var firstOpenDay: String? { planner.daysAhead(count: 1, mobile: mobileSlots, urgent: urgentPickup).first }
-    /// What the calendar offers: from the first open day for the next four weeks.
+    /// What the calendar offers: from the first open day for four weeks, never past 30 days from today
+    /// (`GET /api/slots` answers at most 31 days at a time).
     var dateRange: ClosedRange<Date> {
-        let start = ShopCalendar.date(firstOpenDay ?? ShopCalendar.dateString())
-        return start...ShopCalendar.date(ShopCalendar.addDays(ShopCalendar.dateString(start), 28))
+        let today = ShopCalendar.dateString(now())
+        let first = firstOpenDay ?? today
+        let end = min(ShopCalendar.addDays(first, 28), ShopCalendar.addDays(today, 30))
+        return ShopCalendar.date(first)...ShopCalendar.date(max(end, first))
     }
 
     /// The calendar picked a date. A closed day (Sunday, holiday, nothing left) moves to the next open one.
@@ -138,10 +148,11 @@ final class BookingModel: ObservableObject {
     var phoneOK: Bool { Self.validPhone(phone) }
     var emailOK: Bool {
         let e = email.trimmingCharacters(in: .whitespaces)
-        return e.isEmpty || (e.contains("@") && e.contains(".") && e.count >= 5)
+        // Close to the server's check: something@domain.tld, no spaces, a top-level domain of 2+ letters.
+        return e.isEmpty || (e.count <= Limit.email && e.range(of: "^[^\\s@]+@[^\\s@]+\\.[^\\s@]{2,}$", options: .regularExpression) != nil)
     }
     var nameOK: Bool { name.trimmingCharacters(in: .whitespaces).count >= 2 }
-    var jobsOK: Bool { !jobIDs.isEmpty || hasCustom }
+    var jobsOK: Bool { (!jobIDs.isEmpty || hasCustom) && jobIDs.count <= Limit.jobs }
     var issueOK: Bool { issue.trimmingCharacters(in: .whitespacesAndNewlines).count >= 3 }
     var whereOK: Bool {
         switch kind {
@@ -150,7 +161,9 @@ final class BookingModel: ObservableObject {
         case .mobile: return !location.trimmingCharacters(in: .whitespaces).isEmpty
         }
     }
-    var canSubmit: Bool { jobsOK && issueOK && whereOK && slot != nil && nameOK && phoneOK && emailOK && !submitting }
+    var isComplete: Bool { jobsOK && issueOK && whereOK && slot != nil && nameOK && phoneOK && emailOK }
+    var canSubmit: Bool { isComplete && !submitting }
+    var canAddJob: Bool { jobIDs.count < Limit.jobs }
 
     // MARK: - Loading
 
@@ -207,8 +220,8 @@ final class BookingModel: ObservableObject {
 
     func loadTaken() async {
         slotsFailed = false
-        let first = ShopCalendar.dateString()
-        let last = ShopCalendar.addDays(first, 28)
+        let first = ShopCalendar.dateString(now())
+        let last = ShopCalendar.addDays(first, 30)
         do {
             struct Reply: Decodable { var taken: [String] }
             let reply: Reply = try await api.request("GET", "api/slots", query: [
@@ -226,38 +239,43 @@ final class BookingModel: ObservableObject {
 
     // MARK: - Submit
 
-    func submit() async {
-        guard canSubmit, let slot else { return }
-        submitting = true
-        problem = nil
-        defer { submitting = false }
-
+    /// The JSON for `POST /api/bookings`, or nil while the form is not complete.
+    func requestBody() -> [String: Any]? {
+        guard isComplete, let slot else { return nil }
         var device: [String: Any] = [:]
-        if !brand.trimmed.isEmpty { device["brand"] = brand.trimmed }
-        if !model.trimmed.isEmpty { device["model"] = model.trimmed }
-        if needsYear, !year.trimmed.isEmpty { device["year"] = year.trimmed }
-        var contact: [String: Any] = ["name": name.trimmed, "phone": phone.trimmed]
+        if !brand.trimmed.isEmpty { device["brand"] = String(brand.trimmed.prefix(Limit.device)) }
+        if !model.trimmed.isEmpty { device["model"] = String(model.trimmed.prefix(Limit.device)) }
+        if needsYear, !year.trimmed.isEmpty { device["year"] = String(year.trimmed.prefix(Limit.device)) }
+        var contact: [String: Any] = ["name": String(name.trimmed.prefix(Limit.name)), "phone": phone.trimmed]
         if !email.trimmed.isEmpty { contact["email"] = email.trimmed }
         let est = estimate
         var body: [String: Any] = [
             "mode": kind.jobMode.rawValue,
-            "jobIds": Array(jobIDs),
+            "jobIds": Array(jobIDs).sorted(),
             "device": device,
-            "issue": issue.trimmed,
+            "issue": String(issue.trimmed.prefix(Limit.issue)),
             "slot": slot.iso,
             "contact": contact,
             "estimate": ["priceFrom": est.from, "priceTo": est.to, "etaHours": est.etaHours],
             "lang": Self.lang,
         ]
-        if hasCustom { body["custom"] = custom.trimmed }
+        if hasCustom { body["custom"] = String(custom.trimmed.prefix(Limit.custom)) }
         if usesValue, let value { body["deviceValue"] = value.rawValue }
-        if kind == .mobile { body["location"] = location.trimmed }
+        if kind == .mobile { body["location"] = String(location.trimmed.prefix(Limit.location)) }
         if kind == .pickup, let place, let quote {
             body["pickup"] = [
-                "address": place.label, "lat": place.lat, "lon": place.lon, "trips": trips.rawValue, "urgent": urgent,
+                "address": String(place.label.prefix(Limit.address)), "lat": place.lat, "lon": place.lon, "trips": trips.rawValue, "urgent": urgent,
                 "quote": ["totalLei": quote.totalLei, "oneWayKm": quote.oneWayKm],
             ] as [String: Any]
         }
+        return body
+    }
+
+    func submit() async {
+        guard canSubmit, let body = requestBody() else { return }
+        submitting = true
+        problem = nil
+        defer { submitting = false }
 
         struct Reply: Decodable { var code: String }
         do {

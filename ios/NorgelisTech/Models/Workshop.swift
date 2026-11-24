@@ -33,7 +33,8 @@ struct Intake: Codable, Hashable {
     var serial: String?
     var accessories: String?
     var appearance: String?
-    var by: String
+    /// Who took the device in. The customer view of a booking leaves it out.
+    var by: String?
 
     /// "12/2026"
     var label: String { "\(number)/\(year)" }

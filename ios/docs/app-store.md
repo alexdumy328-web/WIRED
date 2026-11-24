@@ -20,9 +20,9 @@ All in for the first year: about 99 USD, plus your own time. Enrol as the compan
 These need a decision or a change outside the app.
 
 1. **Real production address.** Set `NORGELIS_API_BASE_URL` (the default `https://norgelis.ro` is a placeholder). It must be HTTPS and the server must trust the app (see the Origin note in the README).
-2. **Account deletion in the app.** App Store guideline 5.1.1(v) requires it for apps that create accounts. Enable Better Auth's `user.deleteUser` on the server so `POST /api/auth/delete-user` works. Until then the app falls back to an email request, which review may reject.
-3. **Privacy policy URL** (required) and a terms page. Set `NORGELIS_PRIVACY_URL` and `NORGELIS_TERMS_URL`. The site has neither page yet.
-4. **Real contact details.** Set `NORGELIS_SUPPORT_EMAIL`, `NORGELIS_PHONE` and `NORGELIS_DRIVER_PHONE`. The site's phone number is still a placeholder.
+2. **Deploy the site changes that go with the app.** Account deletion (`user.deleteUser` in `site/server/auth/auth.ts`, guideline 5.1.1(v)) and the privacy and terms pages (`/confidentialitate`, `/termeni`) are in the repository. The production server must run them before submission, because the app links to those pages and calls that route.
+3. **Have a lawyer read the legal text** (`site/src/data/legal.ts`) and fill in the company's legal name, CUI and trade register number in `OPERATOR` once they exist. The text is a careful draft, not legal advice. Add a support email there and in `NORGELIS_SUPPORT_EMAIL` when you have one.
+4. **Contact details.** The shop and driver numbers are set in `project.yml`. Check them before launch. The app never dials them by itself.
 5. **Demo account for App Review.** Review cannot receive your email codes. Create a customer account with a password and a staff (technician) account with a password, verified on the server, and list both in App Store Connect → App Review Information. Say that the driver map needs a pickup booked for today.
 6. **Apple Developer team.** Put the team id in `DEVELOPMENT_TEAM` (or pick it in Xcode), keep automatic signing, and raise `CURRENT_PROJECT_VERSION` for each upload.
 7. **Google sign-in.** Not in the app. If you add it, Apple also requires Sign in with Apple (guideline 4.8).
@@ -35,6 +35,8 @@ These need a decision or a change outside the app.
 - **Required reason APIs:** UserDefaults (reason `CA92.1`) is declared.
 - **Location text:** "while using the app" only. No background mode is declared (see the README).
 - **Support URL:** the website or a contact page.
+- **Privacy policy URL:** `<production site>/confidentialitate`.
+- **Feedback:** create a Google Form and set `NORGELIS_FEEDBACK_URL`. The row stays hidden until then.
 - **Screenshots:** iPhone 6.9 inch (and 6.5 inch if asked). The app is iPhone only. The `docs/screenshots/prod-*.png` files are simulator captures to start from.
 
 ## Release steps
@@ -51,3 +53,4 @@ These need a decision or a change outside the app.
 - Permissions: one location prompt with a plain reason, asked when the Driver tab opens.
 - Placeholder content: the sample-data mode is hidden from customers and technicians and off by default. The shop phone and the support email stay hidden until set.
 - iPad: not supported. Add iPad layouts before turning iPad on.
+- Holidays: the app ships the site's public holiday list, which ends on 2027-12-26. Run `node ios/scripts/export-catalog.mjs` and release a new build when the site's list grows.

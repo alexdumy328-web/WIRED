@@ -4,6 +4,7 @@ import { Section } from '../components/Section'
 import { Logo } from '../components/Logo'
 import { OpenStatus } from '../components/OpenStatus'
 import { Phone, Pin } from '../components/Icons'
+import { linkTo } from '../lib/router'
 
 const ShopMap = lazy(() => import('../components/ShopMap'))
 
@@ -23,7 +24,7 @@ function useNear<T extends HTMLElement>() {
 
 /** Contact details. The map position lives in lib/pickup.ts. */
 export const SHOP = {
-  phone: '+40700000000', // TODO: real number
+  phone: '+40771332210',
   maps: 'https://maps.app.goo.gl/ka5738mbWirnKRPJ9',
 }
 
@@ -75,9 +76,19 @@ export function Footer() {
     <footer className="relative z-10 border-t border-line bg-bg">
       <div className="mx-auto flex max-w-[1360px] flex-col gap-6 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-10">
         <Logo />
-        <p className="text-[14px] text-muted">
-          © {new Date().getFullYear()} {t.footer.rights} {t.footer.made}
-        </p>
+        <div className="grid gap-2 text-[14px] text-muted sm:justify-items-end">
+          <nav aria-label={t.footer.privacy + ' / ' + t.footer.terms} className="flex gap-5">
+            <a href="/confidentialitate" onClick={linkTo('/confidentialitate')} className="underline decoration-gold underline-offset-4 hover:text-ink">
+              {t.footer.privacy}
+            </a>
+            <a href="/termeni" onClick={linkTo('/termeni')} className="underline decoration-gold underline-offset-4 hover:text-ink">
+              {t.footer.terms}
+            </a>
+          </nav>
+          <p>
+            © {new Date().getFullYear()} {t.footer.rights} {t.footer.made}
+          </p>
+        </div>
       </div>
     </footer>
   )

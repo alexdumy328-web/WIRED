@@ -46,7 +46,7 @@ struct CustomersTab: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Toggle("console.customers.archived", isOn: $archived)
-                    } label: { Image(systemName: archived ? "archivebox.fill" : "archivebox") }
+                    } label: { Image(systemName: archived ? "archivebox.fill" : "archivebox").accessibilityLabel(Text("console.customers.archived")) }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showNew = true } label: { Image(systemName: "person.badge.plus") }

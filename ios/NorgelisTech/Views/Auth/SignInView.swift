@@ -33,7 +33,7 @@ struct SignInView: View {
                 header
 
                 if step == .start || step == .code {
-                    Picker("", selection: $method) {
+                    Picker("auth.method.title", selection: $method) {
                         Text("auth.method.code").tag(Method.code)
                         Text("auth.method.password").tag(Method.password)
                     }
@@ -305,6 +305,9 @@ struct AccountView: View {
     @State private var deleting = false
     @State private var deleteUnavailable = false
     @State private var deleteFailed = false
+    @State private var deleteReauth = false
+    @State private var deletePassword = ""
+    @State private var staffAccount = false
 
     var body: some View {
         List {
@@ -326,11 +329,14 @@ struct AccountView: View {
             }
 
             Section("account.section.shop") {
-                if let phone = Shop.phone {
-                    Button { openURL(URL(string: "tel:\(phone.filter { $0.isNumber || $0 == "+" })")!) } label: { Label("contact.call", systemImage: "phone.fill") }
+                if let phone = Shop.phone, let url = Shop.telURL(phone) {
+                    Button { openURL(url) } label: { Label("contact.call", systemImage: "phone.fill") }
                 }
-                if let mail = Shop.supportEmail {
-                    Button { openURL(URL(string: "mailto:\(mail)")!) } label: { Label(mail, systemImage: "envelope.fill") }
+                if let mail = Shop.supportEmail, let url = Shop.mailURL(to: mail, subject: "", body: "") {
+                    Button { openURL(url) } label: { Label(mail, systemImage: "envelope.fill") }
+                }
+                if let url = Shop.feedbackURL {
+                    Link(destination: url) { Label("account.feedback", systemImage: "text.bubble.fill") }
                 }
                 Label(Shop.address, systemImage: "mappin.and.ellipse").font(.subheadline).foregroundColor(.secondary)
             }
@@ -351,7 +357,6 @@ struct AccountView: View {
                     Button(role: .destructive) {
                         Task {
                             let ended = await auth.signOut()
-                            ownerStore.changed()
                             if !ended { signOutWarning = true }
                         }
                     } label: {
@@ -385,12 +390,10 @@ struct AccountView: View {
             Text("account.delete.message")
         }
         .alert("account.delete.unavailable_title", isPresented: $deleteUnavailable) {
-            if let mail = Shop.supportEmail {
-                Button("account.delete.email") {
-                    let body = "Vă rog să ștergeți contul \(auth.viewer?.email ?? "")."
-                    let query = "subject=Ștergere cont&body=\(body)".addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? ""
-                    if let url = URL(string: "mailto:\(mail)?\(query)") { openURL(url) }
-                }
+            if let mail = Shop.supportEmail,
+               let url = Shop.mailURL(to: mail, subject: String(localized: "account.delete.email_subject"),
+                                      body: String(format: String(localized: "account.delete.email_body %@"), auth.viewer?.email ?? "")) {
+                Button("account.delete.email") { openURL(url) }
             }
             Button("common.close", role: .cancel) {}
         } message: {
@@ -399,16 +402,40 @@ struct AccountView: View {
         .alert("account.delete.failed", isPresented: $deleteFailed) {
             Button("common.ok", role: .cancel) {}
         }
+        .alert("account.delete.staff", isPresented: $staffAccount) {
+            Button("common.ok", role: .cancel) {}
+        } message: {
+            Text("auth.error.staff_account")
+        }
+        // The server wants the password, or a sign-in from the last day. A code-only account has no password.
+        .alert("account.delete.reauth_title", isPresented: $deleteReauth) {
+            SecureField("auth.field.password", text: $deletePassword)
+            Button("account.delete.confirm", role: .destructive) {
+                let password = deletePassword
+                deletePassword = ""
+                Task { await delete(password: password) }
+            }
+            Button("account.delete.signin_again") {
+                deletePassword = ""
+                Task { _ = await auth.signOut() }
+            }
+            Button("common.cancel", role: .cancel) { deletePassword = "" }
+        } message: {
+            Text("account.delete.reauth")
+        }
     }
 
-    private func delete() async {
+    private func delete(password: String? = nil) async {
         deleting = true
         defer { deleting = false }
         do {
-            try await auth.deleteAccount()
-            ownerStore.changed()
+            try await auth.deleteAccount(password: password)
         } catch AuthProblem.unavailable {
             deleteUnavailable = true
+        } catch AuthProblem.reauth {
+            deleteReauth = true
+        } catch AuthProblem.staffAccount {
+            staffAccount = true
         } catch {
             deleteFailed = true
         }

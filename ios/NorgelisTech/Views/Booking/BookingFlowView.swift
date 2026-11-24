@@ -64,14 +64,14 @@ private struct BookingForm: View {
                     HStack {
                         Text("booking.jobs")
                         Spacer()
-                        Text(model.jobIDs.isEmpty ? "" : "\(model.jobIDs.count)").foregroundColor(.secondary)
+                        Text("\(model.jobIDs.count)").foregroundColor(.secondary)
                     }
                 }
-                TextField("booking.custom", text: $model.custom, axis: .vertical).lineLimit(1...3)
-                TextField("booking.brand", text: $model.brand)
-                TextField("booking.model", text: $model.model)
-                if model.needsYear { TextField("booking.year", text: $model.year).keyboardType(.numberPad) }
-                TextField("booking.issue", text: $model.issue, axis: .vertical).lineLimit(2...6)
+                TextField("booking.custom", text: $model.custom, axis: .vertical).lineLimit(1...3).limited($model.custom, to: BookingModel.Limit.custom)
+                TextField("booking.brand", text: $model.brand).limited($model.brand, to: BookingModel.Limit.device)
+                TextField("booking.model", text: $model.model).limited($model.model, to: BookingModel.Limit.device)
+                if model.needsYear { TextField("booking.year", text: $model.year).keyboardType(.numberPad).limited($model.year, to: BookingModel.Limit.device) }
+                TextField("booking.issue", text: $model.issue, axis: .vertical).lineLimit(2...6).limited($model.issue, to: BookingModel.Limit.issue)
                 if model.usesValue {
                     Picker("booking.value", selection: $model.value) {
                         Text("booking.value.unknown").tag(DeviceValue?.none)
@@ -88,7 +88,7 @@ private struct BookingForm: View {
             }
 
             Section {
-                TextField("booking.name", text: $model.name).textContentType(.name)
+                TextField("booking.name", text: $model.name).textContentType(.name).limited($model.name, to: BookingModel.Limit.name)
                 TextField("booking.phone", text: $model.phone).textContentType(.telephoneNumber).keyboardType(.phonePad)
                 TextField("booking.email", text: $model.email).textContentType(.emailAddress).keyboardType(.emailAddress)
                     .textInputAutocapitalization(.never).autocorrectionDisabled()
@@ -138,7 +138,7 @@ private struct BookingForm: View {
             } header: { Text("booking.section.pickup") }
         } else if model.kind == .mobile {
             Section("booking.section.location") {
-                TextField("booking.location", text: $model.location, axis: .vertical).lineLimit(1...3)
+                TextField("booking.location", text: $model.location, axis: .vertical).lineLimit(1...3).limited($model.location, to: BookingModel.Limit.location)
             }
         }
     }
@@ -195,6 +195,7 @@ private struct BookingForm: View {
                             .foregroundColor(model.slot == s ? .white : .primary)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityAddTraits(model.slot == s ? .isSelected : [])
                 }
             }
             .padding(.vertical, 4)
@@ -255,7 +256,7 @@ private struct JobPicker: View {
                 Section(loc("booking.category.\(category)")) {
                     ForEach(jobs) { job in
                         Button {
-                            if model.jobIDs.contains(job.id) { model.jobIDs.remove(job.id) } else { model.jobIDs.insert(job.id) }
+                            if model.jobIDs.contains(job.id) { model.jobIDs.remove(job.id) } else if model.canAddJob { model.jobIDs.insert(job.id) }
                         } label: {
                             HStack(alignment: .top, spacing: 12) {
                                 Image(systemName: model.jobIDs.contains(job.id) ? "checkmark.circle.fill" : "circle")
@@ -275,6 +276,11 @@ private struct JobPicker: View {
         .navigationTitle(LocalizedStringKey("booking.jobs"))
         .navigationBarTitleDisplayMode(.inline)
         .searchable(text: $text)
+        .safeAreaInset(edge: .bottom) {
+            if !model.canAddJob {
+                Text("booking.jobs_max").font(.footnote.bold()).padding(8).glassCard(radius: 12).padding(.bottom, 8)
+            }
+        }
     }
 
     private func priceText(_ job: CatalogJob) -> String {
@@ -317,5 +323,14 @@ private struct BookedView: View {
         }
         .padding(24)
         .navigationBarBackButtonHidden()
+    }
+}
+
+extension View {
+    /// Stops text at a length the server accepts, so a long paste cannot make the booking fail later.
+    func limited(_ text: Binding<String>, to length: Int) -> some View {
+        onChange(of: text.wrappedValue) { _, new in
+            if new.count > length { text.wrappedValue = String(new.prefix(length)) }
+        }
     }
 }

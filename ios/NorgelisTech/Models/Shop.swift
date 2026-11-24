@@ -19,6 +19,34 @@ enum Shop {
     static var phone: String? { value("NorgelisPhone") }
     /// The driver's own number when there is one, otherwise the shop's.
     static var driverPhone: String? { value("NorgelisDriverPhone") ?? phone }
-    static var privacyURL: URL? { value("NorgelisPrivacyURL").flatMap(URL.init(string:)) }
-    static var termsURL: URL? { value("NorgelisTermsURL").flatMap(URL.init(string:)) }
+    /// Both legal pages live on the website. Without a build setting they follow the server address.
+    static var privacyURL: URL? { value("NorgelisPrivacyURL").flatMap(URL.init(string:)) ?? sitePage("confidentialitate") }
+    static var termsURL: URL? { value("NorgelisTermsURL").flatMap(URL.init(string:)) ?? sitePage("termeni") }
+    /// The feedback form (a Google Form link). Hidden until the build sets it.
+    static var feedbackURL: URL? { value("NorgelisFeedbackURL").flatMap(URL.init(string:)) }
+
+    private static func sitePage(_ path: String) -> URL? {
+        URL(string: APIClient.shared.baseURLString)?.appendingPathComponent(path)
+    }
+
+    /// `tel:` link for a number written any way ("+40 (771) 332 210", "(0758) 561 001"). Never dials by itself.
+    static func telURL(_ number: String) -> URL? {
+        let digits = number.filter { $0.isNumber || $0 == "+" }
+        return digits.isEmpty ? nil : URL(string: "tel:\(digits)")
+    }
+
+    /// WhatsApp wants the number with its country code and no plus, so a Romanian 07xx number gets 40.
+    static func whatsappURL(_ number: String) -> URL? {
+        var digits = number.filter { $0.isNumber || $0 == "+" }
+        if digits.hasPrefix("+") { digits.removeFirst() } else if digits.hasPrefix("0") { digits = "40" + digits.dropFirst() }
+        return digits.isEmpty ? nil : URL(string: "https://wa.me/\(digits)")
+    }
+
+    static func mailURL(to address: String, subject: String, body: String) -> URL? {
+        var parts = URLComponents()
+        parts.scheme = "mailto"
+        parts.path = address
+        parts.queryItems = [URLQueryItem(name: "subject", value: subject), URLQueryItem(name: "body", value: body)]
+        return parts.url
+    }
 }

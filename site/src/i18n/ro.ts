@@ -330,7 +330,7 @@ const ro: Dict = {
     title: 'Contact',
     address: 'Bd. Alexandru cel Bun 49, bl. Y1, parter, Iași 700634',
     hours: ['Luni–Vineri 09:00–18:00', 'Sâmbătă 10:00–14:00', 'Duminică închis'],
-    call: 'Sună-ne la +40 700 000 000',
+    call: 'Sună-ne la +40 771 332 210',
     whatsapp: 'Scrie-ne pe WhatsApp',
     directions: 'Deschide în Google Maps',
   },
@@ -586,7 +586,10 @@ const ro: Dict = {
   footer: {
     rights: 'Norgelis Tech. Toate drepturile rezervate.',
     made: 'Făcut în Iași.',
+    privacy: 'Confidențialitate',
+    terms: 'Termeni',
   },
+  legal: { updated: 'Actualizat la', contact: 'Date de contact', operator: 'Operator', address: 'Adresă', phone: 'Telefon', home: 'Înapoi la site' },
 }
 
 export default ro
