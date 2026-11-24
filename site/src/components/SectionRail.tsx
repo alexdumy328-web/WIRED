@@ -46,7 +46,7 @@ function useActiveSection() {
 }
 
 /**
- * Desktop side rail: one gold pad per section on a trace, the current one lit and the trace
+ * Wide screens (xl) side rail: one gold pad per section on a trace, the current one lit and the trace
  * filled up to it. Hover or focus shows the section name; a click scrolls there.
  */
 export function SectionRail() {
@@ -55,7 +55,7 @@ export function SectionRail() {
   const at = Math.max(0, SECTIONS.findIndex(([id]) => id === active))
   const fill = (at / (SECTIONS.length - 1)) * 100
   return (
-    <nav aria-label={t.nav.sections} className="fixed right-2 top-1/2 z-30 hidden -translate-y-1/2 lg:block xl:right-4">
+    <nav aria-label={t.nav.sections} className="fixed right-2 top-1/2 z-30 hidden -translate-y-1/2 xl:right-4 xl:block">
       <ol className="relative flex flex-col gap-1">
         <span aria-hidden="true" className="absolute bottom-3 left-1/2 top-3 w-px -translate-x-1/2 bg-line" />
         <span

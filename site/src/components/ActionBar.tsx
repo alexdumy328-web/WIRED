@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useI18n } from '../i18n'
 import { openBooking, useBooking } from '../lib/booking-store'
 import { SHOP } from '../sections/Contact'
-import { Phone } from './Icons'
+import { Calendar, Chat, Phone } from './Icons'
 
 /**
  * Phones and tablets: Call, WhatsApp and Book pinned to the bottom edge. It shows once the hero
@@ -36,17 +36,19 @@ export function ActionBar() {
       role="region"
       aria-label={t.actionBar.label}
       inert={!shown}
-      className={`scrim fixed inset-x-0 bottom-0 z-40 border-t border-line px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 transition-transform duration-300 ease-out sm:px-6 lg:hidden ${shown ? 'translate-y-0' : 'translate-y-full'}`}
+      className={`scrim fixed inset-x-0 bottom-0 z-40 border-t border-line px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 transition-transform duration-300 ease-out sm:px-6 lg:hidden ${shown ? 'translate-y-0 shadow-[0_-8px_24px_rgb(0_0_0/0.12)]' : 'translate-y-full'}`}
     >
-      <div className="mx-auto grid max-w-xl grid-cols-3 gap-2">
-        <a href={`tel:${SHOP.phone}`} className="btn btn-ghost min-h-11 px-3 text-[15px]">
-          <Phone className="size-4" />
+      <div className="mx-auto grid max-w-xl grid-cols-[0.8fr_1fr_1.15fr] gap-2">
+        <a href={`tel:${SHOP.phone}`} className="btn btn-ghost min-h-11 gap-1.5 px-2 text-[14px] sm:text-[15px]">
+          <Phone className="size-4 shrink-0" />
           {t.actionBar.call}
         </a>
-        <a href={`https://wa.me/${SHOP.phone.replace('+', '')}`} target="_blank" rel="noreferrer" className="btn btn-ghost min-h-11 px-3 text-[15px]">
+        <a href={`https://wa.me/${SHOP.phone.replace('+', '')}`} target="_blank" rel="noreferrer" className="btn btn-ghost min-h-11 gap-1.5 px-2 text-[14px] sm:text-[15px]">
+          <Chat className="size-4 shrink-0" />
           {t.actionBar.whatsapp}
         </a>
-        <button type="button" onClick={() => openBooking()} className="btn btn-gold min-h-11 px-3 text-[15px]">
+        <button type="button" onClick={() => openBooking()} className="btn btn-gold min-h-11 gap-1.5 px-2 text-[14px] sm:text-[15px]">
+          <Calendar className="size-4 shrink-0" />
           {t.actionBar.book}
         </button>
       </div>

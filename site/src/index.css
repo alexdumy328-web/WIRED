@@ -316,6 +316,18 @@ a:focus-visible > .roll .roll-ch {
   padding: 4px 8px !important;
 }
 
+.leaflet-control-attribution {
+  margin: 0 10px 8px 0 !important;
+  padding: 1px 8px !important;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--bg) 85%, transparent) !important;
+  color: var(--muted) !important;
+  font-size: 11px !important;
+}
+.leaflet-control-attribution a {
+  color: var(--ink) !important;
+}
+
 .leaflet-tooltip-top:before {
   border-top-color: var(--line) !important;
 }
