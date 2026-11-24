@@ -19,7 +19,13 @@ export type Dict = {
     language: string
     openMenu: string
     closeMenu: string
+    /** Side rail of section dots (desktop). */
+    sections: string // aria-label of the rail
+    top: string // the first screen in the rail
+    contact: string
   }
+  /** The bar pinned to the bottom of phone screens. */
+  actionBar: { label: string; call: string; whatsapp: string; book: string }
   status: {
     openNow: string // "Open now, until {time}"
     closedNow: string // "Closed, opens {day} at {time}"
@@ -61,6 +67,7 @@ export type Dict = {
   process: {
     title: string
     steps: { title: string; body: string }[] // exactly 5, real sequence
+    step: string // "Step {n} of {total}" on the 3D card
   }
   eta: {
     title: string

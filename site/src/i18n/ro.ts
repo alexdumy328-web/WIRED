@@ -20,7 +20,11 @@ const ro: Dict = {
     language: 'Limba',
     openMenu: 'Deschide meniul',
     closeMenu: 'Închide meniul',
+    sections: 'Secțiunile paginii',
+    top: 'Început',
+    contact: 'Contact',
   },
+  actionBar: { label: 'Contact rapid', call: 'Sună', whatsapp: 'WhatsApp', book: 'Programare' },
   status: {
     openNow: 'Deschis acum, până la {time}',
     closedNow: 'Închis, deschidem {day} la {time}',
@@ -129,6 +133,7 @@ const ro: Dict = {
         body: 'Ridici aparatul și primești factura. Garanția este de 3 luni pentru manoperă, iar piesele au garanția producătorului.',
       },
     ],
+    step: 'Pasul {n} din {total}',
   },
   eta: {
     title: 'Cât durează',

@@ -56,9 +56,6 @@ export type ModelAsset = {
   /** Bounds in model space (front = +z, frontYaw applied), assembled and exploded. */
   boxA: Box3
   boxE: Box3
-  /** Every part's 8 box corners in model space, assembled / exploded (same order). Used for tight camera fits. */
-  ptsA: Vector3[]
-  ptsE: Vector3[]
 }
 
 const cache = new Map<ModelId, ModelAsset>()
@@ -142,8 +139,6 @@ export function getModel(id: ModelId): ModelAsset {
   const yawM = new Matrix4().makeRotationY(spec.frontYaw ?? 0)
   const boxA = new Box3()
   const boxE = new Box3()
-  const ptsA: Vector3[] = []
-  const ptsE: Vector3[] = []
   for (const p of parts) {
     if (p.box.isEmpty()) continue
     const mA = partMatrix(parts, p.index, false, new Matrix4()).premultiply(yawM)
@@ -152,13 +147,11 @@ export function getModel(id: ModelId): ModelAsset {
       const c = new Vector3(k & 1 ? p.box.max.x : p.box.min.x, k & 2 ? p.box.max.y : p.box.min.y, k & 4 ? p.box.max.z : p.box.min.z)
       const e = c.clone().applyMatrix4(mE)
       const a = p.spec.appear ? e.clone() : c.applyMatrix4(mA)
-      ptsA.push(a)
-      ptsE.push(e)
       if (!p.spec.appear) boxA.expandByPoint(a)
       boxE.expandByPoint(e)
     }
   }
-  const asset: ModelAsset = { spec, parts, boxA, boxE, ptsA, ptsE }
+  const asset: ModelAsset = { spec, parts, boxA, boxE }
   cache.set(id, asset)
   return asset
 }
@@ -224,12 +217,41 @@ export function partPose(p: PartAsset, t: number, pos: Vector3, rot: Euler): voi
 }
 
 const _pts: Vector3[] = []
+const _mats: Matrix4[] = []
+const _ready: boolean[] = []
+const _yaw = new Matrix4()
+const _pos = new Vector3()
+const _rot = new Euler()
+const _scale = new Vector3()
 
-/** The parts' box corners at explode amount e (model space), written into a reused array. */
+/** Part i's model-space matrix at explode amount e, with its parents', as DeviceModel poses them. */
+function poseMatrix(a: ModelAsset, i: number, e: number): Matrix4 {
+  if (_ready[i]) return _mats[i]
+  const p = a.parts[i]
+  const t = partProgress(p.start, e, p.span)
+  partPose(p, t, _pos, _rot)
+  const m = (_mats[i] ??= new Matrix4()).compose(_pos, _q.setFromEuler(_rot), _scale.setScalar(p.spec.appear ? Math.max(1e-4, t) : 1))
+  m.premultiply(p.parent >= 0 ? poseMatrix(a, p.parent, e) : _yaw)
+  _ready[i] = true
+  return m
+}
+
+/**
+ * The parts' box corners at explode amount e (model space), written into a reused array.
+ * Each part follows its real path, so a lid that swings out part way is still in the fit.
+ */
 export function modelPoints(a: ModelAsset, e: number, pts: Vector3[] = _pts): Vector3[] {
-  const n = a.ptsA.length
-  while (pts.length < n) pts.push(new Vector3())
+  _yaw.makeRotationY(a.spec.frontYaw ?? 0)
+  _ready.length = 0
+  let n = 0
+  for (const p of a.parts) {
+    if (p.box.isEmpty()) continue
+    const m = poseMatrix(a, p.index, e)
+    for (let k = 0; k < 8; k++) {
+      const c = (pts[n++] ??= new Vector3())
+      c.set(k & 1 ? p.box.max.x : p.box.min.x, k & 2 ? p.box.max.y : p.box.min.y, k & 4 ? p.box.max.z : p.box.min.z).applyMatrix4(m)
+    }
+  }
   pts.length = n
-  for (let i = 0; i < n; i++) pts[i].lerpVectors(a.ptsA[i], a.ptsE[i], e)
   return pts
 }

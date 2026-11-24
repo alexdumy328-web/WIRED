@@ -20,7 +20,11 @@ const en: Dict = {
     language: 'Language',
     openMenu: 'Open menu',
     closeMenu: 'Close menu',
+    sections: 'Page sections',
+    top: 'Top',
+    contact: 'Contact',
   },
+  actionBar: { label: 'Quick contact', call: 'Call', whatsapp: 'WhatsApp', book: 'Book' },
   status: {
     openNow: 'Open now until {time}',
     closedNow: 'Closed, we open {day} at {time}',
@@ -129,6 +133,7 @@ const en: Dict = {
         body: 'You pick up the device and get the invoice. The warranty is 3 months on labour, and parts carry the manufacturer warranty.',
       },
     ],
+    step: 'Step {n} of {total}',
   },
   eta: {
     title: 'How long it takes',
