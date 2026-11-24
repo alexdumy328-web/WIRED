@@ -86,10 +86,7 @@ type Flight = { fromPos: Vector3; fromTarget: Vector3; start: number; dur: numbe
  */
 export function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
   const camera = useThree((s) => s.camera) as PerspectiveCamera
-  const gl = useThree((s) => s.gl)
   const st = useRef({
-    /** Canvas margins covered by page panels (--nt-safe-l/r/t/b on an ancestor), re-read twice a second. */
-    safe: { l: 0, r: 0, t: 0, b: 0, at: -1 },
     init: false,
     key: '' as string,
     flight: null as Flight | null,
@@ -116,17 +113,7 @@ export function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
     const dt = Math.min(Math.max(rawDt, 1e-4), 0.1)
     const now = state.clock.elapsedTime
     const { width, height } = state.size
-    if (now - s.safe.at > 0.5) {
-      const cs = getComputedStyle(gl.domElement)
-      const v = (n: string) => parseFloat(cs.getPropertyValue(n)) || 0
-      s.safe = { l: v('--nt-safe-l'), r: v('--nt-safe-r'), t: v('--nt-safe-t'), b: v('--nt-safe-b'), at: now }
-    }
-    // Visible part of the canvas: frame the subject there and centre the image on it.
-    const visW = Math.max(1, width - s.safe.l - s.safe.r)
-    const visH = Math.max(1, height - s.safe.t - s.safe.b)
-    const offX = width / 2 - (s.safe.l + visW / 2)
-    const offY = height / 2 - (s.safe.t + visH / 2)
-    const aspect = visW / Math.max(1, visH)
+    const aspect = width / Math.max(1, height)
     const narrow = isNarrow(aspect)
 
     const focus = sceneState.focus
@@ -135,7 +122,7 @@ export function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
     const explode = clamp(Number(sceneState.explode) || 0, 0, 1)
     s.eCam = reducedMotion ? explode : dampScalar(s.eCam, explode, 0.45, dt)
     const key = focus ? `${focus}|${onModel ? model : ''}` : 'tour'
-    if (onModel) s.goal.fov = shopModelPose(model, s.eCam, aspect, s.goal, visH / Math.max(1, height)).fov
+    if (onModel) s.goal.fov = shopModelPose(model, s.eCam, aspect, s.goal).fov
     else if (focus) poseInto(s.goal, focus, narrow, aspect)
     else tourPose(s.goal, sceneState.t, narrow, aspect)
 
@@ -216,7 +203,7 @@ export function CameraRig({ reducedMotion }: { reducedMotion: boolean }) {
     const goalShift = narrow || onModel ? 0 : clamp(Number(sceneState.frame) || 0, -1.6, 1.6) / 6
     s.shift = reducedMotion ? goalShift : dampScalar(s.shift, goalShift, 0.45, dt)
     if (camera.fov !== s.fov) camera.fov = s.fov
-    camera.setViewOffset(width, height, -s.shift * width + offX, offY, width, height)
+    camera.setViewOffset(width, height, -s.shift * width, 0, width, height)
     camera.updateProjectionMatrix()
   })
 

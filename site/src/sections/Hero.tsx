@@ -8,7 +8,7 @@ import { OpenStatus } from '../components/OpenStatus'
 import { ShopPanel } from '../components/Scene3D'
 import type { StopId } from '../three/contract'
 
-/** First screen: headline on the left, the shop in a card on the right (on top on phones). */
+/** First screen: headline on the left, the shop in a card on the right (below it on phones). */
 export function Hero() {
   const { t } = useI18n()
   const reduced = useReducedMotion()
@@ -41,9 +41,7 @@ export function Hero() {
         </div>
       </div>
       <motion.div ref={card} style={{ scale, y, opacity }}>
-        <div className="relative">
-          <ShopPanel className="h-[36svh] rounded-[24px] sm:h-[42svh] border border-line lg:h-[min(76svh,760px)] lg:rounded-[32px]" onSelect={onSelect} />
-        </div>
+        <ShopPanel className="h-[36svh] rounded-[24px] sm:h-[42svh] border border-line lg:h-[min(76svh,760px)] lg:rounded-[32px]" onSelect={onSelect} />
       </motion.div>
     </section>
   )

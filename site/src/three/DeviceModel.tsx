@@ -241,8 +241,6 @@ type LabelUi = {
   label: HTMLSpanElement | null
   line: SVGLineElement | null
   dot: SVGCircleElement | null
-  /** Margins the page keeps covered (panels over the canvas), from --nt-safe-l/r/t/b. Re-read now and then. */
-  safe?: { l: number; r: number; t: number; b: number; at: number }
 }
 /** side: 0 left, 1 right, 2 above, 3 below, 4 pinned to the top of the canvas. */
 type LabelLayout = { side: number; x: number; y: number; init: boolean }
@@ -275,17 +273,10 @@ function layoutLabel(
   const { width: W, height: H } = size
   const el = ui.label
   if (!el || !ui.line || !ui.dot || !ui.wrap || W < 2 || H < 2) return
-  const now = performance.now()
-  if (!ui.safe || now - ui.safe.at > 500) {
-    const cs = getComputedStyle(ui.wrap)
-    const v = (n: string) => parseFloat(cs.getPropertyValue(n)) || 0
-    ui.safe = { l: v('--nt-safe-l'), r: v('--nt-safe-r'), t: v('--nt-safe-t'), b: v('--nt-safe-b'), at: now }
-  }
-  // Usable area: the canvas minus whatever the page lays over it.
-  const L = ui.safe.l
-  const R = W - ui.safe.r
-  const T = ui.safe.t
-  const B = H - ui.safe.b
+  const L = 0
+  const R = W
+  const T = 0
+  const B = H
   root.updateWorldMatrix(true, true)
   // Screen outline of the device: projected corners of every visible part's box.
   let x0 = Infinity

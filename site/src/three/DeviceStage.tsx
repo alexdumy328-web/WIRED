@@ -90,6 +90,7 @@ function StageContent({ theme, reducedMotion, partLabels, controls }: { theme: T
   const st = useRef({ e: 0, dist: 0, target: new Vector3(), init: false })
   const camera = useThree((s) => s.camera) as PerspectiveCamera
   const size = useThree((s) => s.size)
+  const invalidate = useThree((s) => s.invalidate)
 
   // Start each device from its best side (an axial exploded view reads from the side, not head on).
   useEffect(() => {
@@ -151,8 +152,15 @@ function StageContent({ theme, reducedMotion, partLabels, controls }: { theme: T
       s.target.lerp(_out.target, k)
     }
     if (ctl) {
+      const moved = Math.abs(ctl.minDistance - s.dist) > 1e-4
       ctl.target.copy(s.target)
       ctl.minDistance = ctl.maxDistance = s.dist
+      // With reduced motion the canvas renders on demand, so apply the new distance now and draw once more;
+      // otherwise a device swapped in keeps the previous device's zoom.
+      if (moved && reducedMotion) {
+        ctl.update()
+        invalidate()
+      }
     }
     camera.near = Math.max(0.005, s.dist * 0.02)
     camera.far = s.dist * 20

@@ -1,7 +1,6 @@
 import { useEffect, useRef } from 'react'
 import type { JobCategory } from '../types'
 import { sceneState, MODEL_STOP, type ModelId, type StopId } from '../three/contract'
-import { setViewStop } from './scene-view'
 
 /** Which bench in the shop each service category lives at. */
 export const categoryStop: Record<JobCategory, StopId> = {
@@ -33,7 +32,6 @@ export function focus(stop: StopId, model: ModelId | null = null) {
   sceneState.model = model
   sceneState.explode = model ? 1 : 0
   if (!model) sceneState.highlight = null
-  setViewStop(sceneState.focus)
 }
 
 type StationOpts = {
