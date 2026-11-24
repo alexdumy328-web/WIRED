@@ -12,6 +12,8 @@ struct PickupStop: Identifiable, Hashable {
     var isUrgent: Bool
     var scheduledTime: String
     var isCompleted: Bool = false
+    /// The booking's status on the server, when the stop came from there.
+    var bookingStatus: BookingStatus?
 
     static func == (lhs: PickupStop, rhs: PickupStop) -> Bool {
         lhs.id == rhs.id && lhs.isCompleted == rhs.isCompleted
@@ -36,7 +38,8 @@ extension PickupStop {
             type: job.trips,
             isUrgent: job.urgent,
             scheduledTime: ShopCalendar.time(job.slot),
-            isCompleted: isCompleted
+            isCompleted: isCompleted,
+            bookingStatus: job.status
         )
     }
 }

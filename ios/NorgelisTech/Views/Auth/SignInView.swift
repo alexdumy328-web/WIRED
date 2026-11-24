@@ -308,6 +308,7 @@ struct AccountView: View {
     @State private var deleteReauth = false
     @State private var deletePassword = ""
     @State private var staffAccount = false
+    @State private var wrongPassword = false
 
     var body: some View {
         List {
@@ -363,16 +364,21 @@ struct AccountView: View {
                         Label("auth.account.sign_out", systemImage: "rectangle.portrait.and.arrow.right")
                     }
                 }
-                Section {
-                    Button(role: .destructive) { confirmDelete = true } label: {
-                        HStack {
-                            Label("account.delete", systemImage: "trash")
-                            if deleting { Spacer(); ProgressView() }
+                // Staff accounts are removed by the owner, and a demo account is shared, so neither deletes itself here.
+                if auth.viewer?.isStaff == true || auth.viewer?.isDemo == true {
+                    Section { Text("account.delete.staff_note").font(.footnote).foregroundColor(.secondary) }
+                } else {
+                    Section {
+                        Button(role: .destructive) { confirmDelete = true } label: {
+                            HStack {
+                                Label("account.delete", systemImage: "trash")
+                                if deleting { Spacer(); ProgressView() }
+                            }
                         }
+                        .disabled(deleting)
+                    } footer: {
+                        Text("account.delete.footer")
                     }
-                    .disabled(deleting)
-                } footer: {
-                    Text("account.delete.footer")
                 }
             }
         }
@@ -400,6 +406,9 @@ struct AccountView: View {
             Text("account.delete.unavailable")
         }
         .alert("account.delete.failed", isPresented: $deleteFailed) {
+            Button("common.ok", role: .cancel) {}
+        }
+        .alert("account.delete.wrong_password", isPresented: $wrongPassword) {
             Button("common.ok", role: .cancel) {}
         }
         .alert("account.delete.staff", isPresented: $staffAccount) {
@@ -436,6 +445,8 @@ struct AccountView: View {
             deleteReauth = true
         } catch AuthProblem.staffAccount {
             staffAccount = true
+        } catch AuthProblem.invalidLogin {
+            wrongPassword = true
         } catch {
             deleteFailed = true
         }

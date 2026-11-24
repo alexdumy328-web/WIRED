@@ -4,10 +4,11 @@ import Foundation
 
 /// Who is signed in to the console. Technicians work on devices; owners also see money, stats and settings.
 enum StaffRole: String, CaseIterable, Identifiable, Codable {
-    case technician, owner, dev
+    case driver, technician, owner, dev
 
     var id: String { rawValue }
-    var isManager: Bool { self != .technician }
+    var isManager: Bool { self == .owner || self == .dev }
+    var isDriver: Bool { self == .driver }
     var titleKey: String { "console.role.\(rawValue)" }
 }
 

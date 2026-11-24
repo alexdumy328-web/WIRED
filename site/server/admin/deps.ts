@@ -12,6 +12,7 @@ import type { Customers } from './customers.ts'
 import type { Photos } from './photos.ts'
 import type { Warranties } from './warranties.ts'
 import type { SettingsService } from './settings.ts'
+import type { DriverTracking } from './driver.ts'
 
 export type PlatformDeps = {
   db: Db
@@ -25,6 +26,7 @@ export type PlatformDeps = {
   counters: Counters
   customers: Customers
   warranties: Warranties
+  driver: DriverTracking
   photos: Photos
   documents: Documents
   audit: AuditLog

@@ -29,6 +29,7 @@
 		5DFFAEE0A0259B78D7223C8F /* catalog.json in Resources */ = {isa = PBXBuildFile; fileRef = 44D138235C8ECFF818F8C8FD /* catalog.json */; };
 		622CAFB467E74BB0851A8B32 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3896954FFA3703713D5C4351 /* Keychain.swift */; };
 		67DFD9CA47D73975C73C283E /* NorgelisTechTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F740B3D910CCDA8373805C /* NorgelisTechTests.swift */; };
+		6A83ECE285337DFBC1E27C42 /* DriverHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFBB49A7CAA79537885D2384 /* DriverHomeView.swift */; };
 		6CF8CE6EF19764C20E9DE5D9 /* TodayTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495E2C25CA64217A0F3E6D7D /* TodayTab.swift */; };
 		6DDACB42639C512150996CE6 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 1EF488557DEF3749A8B3C9C5 /* InfoPlist.strings */; };
 		790A1645A7E50040D2B6C833 /* OwnerRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D4696B0900390557FCF1713 /* OwnerRepository.swift */; };
@@ -46,6 +47,7 @@
 		92AB8E26661B88696CFC9CCE /* CustomersTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BCECAFE4A76C03232FB6945 /* CustomersTab.swift */; };
 		9738947027AECA048659316C /* DriverMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A0E6CEFF8D69F1691135AC9 /* DriverMapView.swift */; };
 		997B5905150D427A06FB0750 /* BookingStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE3FA3DC62554F3205AFF3A /* BookingStatus.swift */; };
+		9D07C1061D6DA3587DA01013 /* DriverSharing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EE2A2D9C6F73C2AFE12B1DE /* DriverSharing.swift */; };
 		A0AAED7AF4095F219F1CCA6F /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 114865215185903BAC779F64 /* WelcomeView.swift */; };
 		A11AAAFA93866EAD72681517 /* Catalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3177286FFAFE6A04BD273A47 /* Catalog.swift */; };
 		A4D63622D4956DE14B6C189D /* CustomerHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBF4EBADC7A0357BC13EC144 /* CustomerHomeView.swift */; };
@@ -93,6 +95,7 @@
 		48336DE168DAF09A9A71DBB2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		490BBE9E5083DA924198FE98 /* ro */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ro; path = ro.lproj/Localizable.strings; sourceTree = "<group>"; };
 		495E2C25CA64217A0F3E6D7D /* TodayTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayTab.swift; sourceTree = "<group>"; };
+		4EE2A2D9C6F73C2AFE12B1DE /* DriverSharing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverSharing.swift; sourceTree = "<group>"; };
 		51A2018910D7CD120FB281BE /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/Localizable.strings; sourceTree = "<group>"; };
 		620A429BCEA41CBB958C7F8A /* OwnerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerStore.swift; sourceTree = "<group>"; };
 		64549C8A2DA63C9DCDBB1DFE /* WarrantiesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WarrantiesView.swift; sourceTree = "<group>"; };
@@ -119,6 +122,7 @@
 		CAA16DC80F7CEDFCB578E1CC /* Navigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigator.swift; sourceTree = "<group>"; };
 		CAA5805A99415F6558829339 /* DriverLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverLocation.swift; sourceTree = "<group>"; };
 		CB7BE7571589975B3060021E /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = en.lproj/InfoPlist.strings; sourceTree = "<group>"; };
+		CFBB49A7CAA79537885D2384 /* DriverHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverHomeView.swift; sourceTree = "<group>"; };
 		D8788B081887184ADA2F9E9D /* ScheduleTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScheduleTab.swift; sourceTree = "<group>"; };
 		D8DDD17F647B3F57FCC9C051 /* MockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockData.swift; sourceTree = "<group>"; };
 		DF4F52A82B63EE6E6057D6DF /* BookingDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingDetailView.swift; sourceTree = "<group>"; };
@@ -246,6 +250,7 @@
 		A7EE10EE1445F576F499E49E /* Driver */ = {
 			isa = PBXGroup;
 			children = (
+				CFBB49A7CAA79537885D2384 /* DriverHomeView.swift */,
 				6A0E6CEFF8D69F1691135AC9 /* DriverMapView.swift */,
 				359D45A175734DDF469D68B9 /* DriverPanel.swift */,
 				83445BA20548B7813B954853 /* DriverRootView.swift */,
@@ -288,6 +293,7 @@
 				F490C116CE536750005103B5 /* AuthStore.swift */,
 				B8F2101A7E07B5E155AA13BA /* BookingModel.swift */,
 				413D8F0DD2993BBCBA81AA7A /* DriverRoutePlanner.swift */,
+				4EE2A2D9C6F73C2AFE12B1DE /* DriverSharing.swift */,
 				3896954FFA3703713D5C4351 /* Keychain.swift */,
 				9567685E983F5201FB3CCE24 /* LocationService.swift */,
 				D8DDD17F647B3F57FCC9C051 /* MockData.swift */,
@@ -428,12 +434,14 @@
 				A11AAAFA93866EAD72681517 /* Catalog.swift in Sources */,
 				A4D63622D4956DE14B6C189D /* CustomerHomeView.swift in Sources */,
 				92AB8E26661B88696CFC9CCE /* CustomersTab.swift in Sources */,
+				6A83ECE285337DFBC1E27C42 /* DriverHomeView.swift in Sources */,
 				FC09F290C0966AE3E004B7A5 /* DriverLocation.swift in Sources */,
 				9738947027AECA048659316C /* DriverMapView.swift in Sources */,
 				5DC79E101410BC4723E650E2 /* DriverPanel.swift in Sources */,
 				81FE8E5DFCD4E641B2E50969 /* DriverRadarCard.swift in Sources */,
 				597500261874022043B4F9F3 /* DriverRootView.swift in Sources */,
 				7B3E22C9008A4BB2521A7B16 /* DriverRoutePlanner.swift in Sources */,
+				9D07C1061D6DA3587DA01013 /* DriverSharing.swift in Sources */,
 				EB0418BD46AF3D47D20ECEB8 /* JobsTab.swift in Sources */,
 				622CAFB467E74BB0851A8B32 /* Keychain.swift in Sources */,
 				C0D25EA8D6A9AB2EA4D387EE /* LiveTrackingView.swift in Sources */,

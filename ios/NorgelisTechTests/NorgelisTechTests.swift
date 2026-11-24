@@ -1,4 +1,5 @@
 import XCTest
+import CoreLocation
 @testable import NorgelisTech
 
 final class CatalogTests: XCTestCase {
@@ -101,6 +102,13 @@ final class ConfigTests: XCTestCase {
         XCTAssertTrue(BookingModel.validPhone("+40 700 000 000"))
         XCTAssertFalse(BookingModel.validPhone("12"))
         XCTAssertFalse(BookingModel.validPhone("abc123456789"))
+    }
+
+    func testADriverIsNotAManager() {
+        XCTAssertFalse(StaffRole.driver.isManager)
+        XCTAssertTrue(StaffRole.driver.isDriver)
+        XCTAssertTrue(Viewer(id: "1", email: "d@x.ro", name: "D", emailVerified: true, role: "driver").isStaff)
+        XCTAssertEqual(Viewer(id: "1", email: "d@x.ro", name: "D", emailVerified: true, role: "driver").staffRole, .driver)
     }
 
     func testRolesRoute() {
@@ -219,6 +227,19 @@ final class DecodingTests: XCTestCase {
         XCTAssertEqual(bookings[0].intake?.label, "12/2026")
     }
 
+    func testADriverJobDecodesWithoutWorkshopFields() throws {
+        // What GET /api/driver/jobs sends: no intake, repair, notes, money or ids.
+        let json = """
+        {"total":1,"items":[{"code":"NT-ZFG8","status":"ready","mode":"shop","slot":"2026-11-25T07:00:00.000Z",
+         "device":{"brand":"Lenovo","model":"T14"},"issue":"Does not charge","contact":{"name":"Ana","phone":"+40 700 000 111"},
+         "pickup":{"address":"Str. Palas 7A","lat":47.1585,"lon":27.6014,"trips":"both"},"createdAt":"2026-11-24T10:00:00.000Z"}]}
+        """.data(using: .utf8)!
+        let page = try JSONDecoder().decode(Page<Booking>.self, from: json)
+        XCTAssertEqual(page.items.first?.pickup?.address, "Str. Palas 7A")
+        XCTAssertNil(page.items.first?.finalLei)
+        XCTAssertNil(page.items.first?.intake)
+    }
+
     func testPickupsBecomeDriverStops() throws {
         let json = """
         {"date":"2026-12-07","jobs":[{"code":"NT-8B2M","status":"received","slot":"2026-12-07T09:30:00.000Z",
@@ -268,5 +289,122 @@ final class SessionResetTests: XCTestCase {
         XCTAssertFalse(APIClient().useMockData, "a new launch starts with sample data off")
         api.disableSample()
         XCTAssertFalse(api.useMockData)
+    }
+}
+
+/// Answers every request from a closure, so a test can see what the app sent without a network.
+final class StubProtocol: URLProtocol {
+    nonisolated(unsafe) static var handler: ((URLRequest) -> (Int, Data))?
+    nonisolated(unsafe) static var seen: [URLRequest] = []
+
+    static func session() -> URLSession {
+        let config = URLSessionConfiguration.ephemeral
+        config.protocolClasses = [StubProtocol.self]
+        return URLSession(configuration: config)
+    }
+
+    override class func canInit(with request: URLRequest) -> Bool { true }
+    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+    override func startLoading() {
+        var req = request
+        if let stream = request.httpBodyStream {
+            stream.open(); defer { stream.close() }
+            var data = Data(); var buffer = [UInt8](repeating: 0, count: 1024)
+            while stream.hasBytesAvailable { let n = stream.read(&buffer, maxLength: 1024); if n <= 0 { break }; data.append(buffer, count: n) }
+            req.httpBody = data
+        }
+        Self.seen.append(req)
+        let (status, body) = Self.handler?(req) ?? (204, Data())
+        let response = HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil, headerFields: nil)!
+        client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+        client?.urlProtocol(self, didLoad: body)
+        client?.urlProtocolDidFinishLoading(self)
+    }
+    override func stopLoading() {}
+}
+
+@MainActor
+final class TrackingTests: XCTestCase {
+    override func setUp() { StubProtocol.seen = []; StubProtocol.handler = nil }
+
+    func testServerAnswersDecode() throws {
+        let on = try JSONDecoder().decode(DriverTrackingStatus.self, from: Data("""
+        {"isEnRoute":true,"driverName":"Ion","latitude":47.16,"longitude":27.58,"heading":90,"etaMinutes":7,"updatedAt":"2026-12-07T08:00:00.000Z"}
+        """.utf8))
+        XCTAssertTrue(on.isEnRoute)
+        XCTAssertEqual(on.etaMinutes, 7)
+        let off = try JSONDecoder().decode(DriverTrackingStatus.self, from: Data(#"{"isEnRoute":false}"#.utf8))
+        XCTAssertFalse(off.isEnRoute)
+        XCTAssertNil(off.latitude)
+        let live = try JSONDecoder().decode([String: [LiveDriver]].self, from: Data("""
+        {"drivers":[{"name":"Ion","latitude":47.16,"longitude":27.58,"heading":null,"speedKmh":30,"bookingCode":"NT-4K7Q","etaMinutes":null,"updatedAt":"2026-12-07T08:00:00.000Z"}]}
+        """.utf8))
+        XCTAssertEqual(live["drivers"]?.first?.bookingCode, "NT-4K7Q")
+    }
+
+    func testDemoFlagComesFromTheServer() throws {
+        let demo = try JSONDecoder().decode(Viewer.self, from: Data(#"{"id":"1","email":"demo@x.ro","name":"Demo","emailVerified":true,"role":"customer","demo":true}"#.utf8))
+        XCTAssertTrue(demo.isDemo)
+        XCTAssertFalse(demo.isStaff, "a demo account holds no staff role")
+        let plain = try JSONDecoder().decode(Viewer.self, from: Data(#"{"id":"1","email":"a@x.ro","name":"A","emailVerified":true,"role":"customer"}"#.utf8))
+        XCTAssertFalse(plain.isDemo)
+    }
+
+    func testOnlyTheServerCanTurnSampleDataOn() {
+        let api = APIClient(session: StubProtocol.session())
+        XCTAssertFalse(api.useMockData)
+        api.setDemo(true)
+        XCTAssertTrue(api.useMockData)
+        api.setDemo(false)
+        XCTAssertFalse(api.useMockData)
+    }
+
+    func testSharingIsThrottledAndStopDeletes() async throws {
+        let api = APIClient(session: StubProtocol.session())
+        let sharing = DriverSharing(api: api)
+        let here = CLLocation(latitude: 47.16, longitude: 27.58)
+        sharing.offer(here, bookingCode: "NT-4K7Q", etaMinutes: 8)
+        sharing.offer(CLLocation(latitude: 47.1601, longitude: 27.5801), bookingCode: "NT-4K7Q", etaMinutes: 8)
+        sharing.offer(CLLocation(latitude: 47.1602, longitude: 27.5802), bookingCode: "NT-4K7Q", etaMinutes: 8)
+        try await Task.sleep(nanoseconds: 300_000_000)
+        let posts = StubProtocol.seen.filter { $0.httpMethod == "POST" && $0.url?.path == "/api/driver/location" }
+        XCTAssertEqual(posts.count, 1, "three fixes in a second send one request")
+        let body = try XCTUnwrap(posts.first?.httpBody.flatMap { try? JSONSerialization.jsonObject(with: $0) as? [String: Any] })
+        XCTAssertEqual(body["bookingCode"] as? String, "NT-4K7Q")
+        XCTAssertEqual(body["etaMinutes"] as? Int, 8)
+        XCTAssertNil(body["heading"], "no heading is sent when the phone has none")
+
+        sharing.stop()
+        try await Task.sleep(nanoseconds: 300_000_000)
+        XCTAssertTrue(StubProtocol.seen.contains { $0.httpMethod == "DELETE" && $0.url?.path == "/api/driver/location" })
+
+        let before = StubProtocol.seen.count
+        sharing.stop()
+        try await Task.sleep(nanoseconds: 100_000_000)
+        XCTAssertEqual(StubProtocol.seen.count, before, "stopping twice asks the server once")
+    }
+
+    func testAMalformedCodeNeverReachesTheServer() async throws {
+        let api = APIClient(session: StubProtocol.session())
+        let status = try await api.fetchDriver(code: "../admin")
+        XCTAssertFalse(status.isEnRoute)
+        XCTAssertTrue(StubProtocol.seen.isEmpty)
+    }
+
+    func testAServerHiccupKeepsTheSignedInPerson() async throws {
+        // Someone is signed in, then the server answers 503 during a deploy: they stay signed in.
+        StubProtocol.handler = { req in
+            req.url?.path == "/api/me" ? (200, Data(#"{"user":{"id":"1","email":"a@x.ro","name":"A","emailVerified":true,"role":"customer"},"providers":{"google":false}}"#.utf8)) : (503, Data())
+        }
+        let api = APIClient(session: StubProtocol.session())
+        let auth = AuthStore(api: api)
+        await auth.refresh()
+        XCTAssertEqual(auth.viewer?.id, "1")
+        StubProtocol.handler = { _ in (503, Data()) }
+        await auth.refresh()
+        XCTAssertEqual(auth.viewer?.id, "1", "a 503 does not sign anybody out")
+        StubProtocol.handler = { _ in (401, Data()) }
+        await auth.refresh()
+        XCTAssertNil(auth.viewer, "a 401 does")
     }
 }

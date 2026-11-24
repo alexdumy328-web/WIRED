@@ -10,6 +10,7 @@ import { categoryOf } from '../documents/categories.ts'
 import type { PlatformDeps } from './deps.ts'
 import { localDate, isRealDate, DATE_ONLY } from './time.ts'
 import { mountWorkshop } from './workshop-routes.ts'
+import { ROMANIA_BBOX } from '../geo.ts'
 
 export function issues(error: z.ZodError) {
   return error.issues.map((i) => ({ path: i.path.map(String), message: i.message, code: i.code }))
@@ -47,6 +48,29 @@ const statusBodySchema = z.object({
 
 export const codeParam = z.string().trim().regex(/^NT-[A-Z0-9]{4}$/i)
 
+/** A driver's position update. Only the shop's own staff may send one. */
+const driverUpdateSchema = z
+  .object({
+    latitude: z.number().min(ROMANIA_BBOX.minLat).max(ROMANIA_BBOX.maxLat),
+    longitude: z.number().min(ROMANIA_BBOX.minLon).max(ROMANIA_BBOX.maxLon),
+    heading: z.number().min(0).max(360).nullish(),
+    speedKmh: z.number().min(0).max(300).nullish(),
+    bookingCode: codeParam.nullish(),
+    etaMinutes: z.number().int().min(0).max(600).nullish(),
+  })
+  .strict()
+
+/** Emails that open the app in demo mode (sample data, no real access). A demo account is never staff. */
+function demoEmails(env: Record<string, string | undefined>): Set<string> {
+  return new Set((env.DEMO_EMAILS ?? '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean))
+}
+
+/** What a driver sees of a job: who to find, where, and the state. No notes, money, photos or workshop records. */
+export function driverView(b: Record<string, any>) {
+  const { code, status, mode, slot, device, issue, contact, pickup, mapLink, updatedAt, createdAt } = b
+  return { code, status, mode, slot, device, issue, contact, pickup, mapLink, updatedAt, createdAt }
+}
+
 /** Technicians work on devices but do not see what was charged. */
 export function forViewer<T extends { finalLei?: number }>(viewer: Viewer, booking: T): T {
   if (isManager(viewer.role)) return booking
@@ -68,6 +92,8 @@ export function createAdminRouter(deps: PlatformDeps): Router {
   const meLimit = deps.limiters.create('me', 60_000, 120)
   const statusLimit = deps.limiters.create('admin-status', 60_000, 60)
   const staff = sessions.requireRole('technician', 'owner', 'dev')
+  /** Drivers and everyone above them: today's pickups and deliveries, and sharing the van's position. */
+  const driverOrStaff = sessions.requireRole('driver', 'technician', 'owner', 'dev')
   /** After `staff`: money, settings, stats, archiving and voiding are for owners and devs. */
   const managers: express.RequestHandler = (_req, res, next) => {
     if (!isManager(res.locals.viewer!.role)) {
@@ -82,7 +108,71 @@ export function createAdminRouter(deps: PlatformDeps): Router {
   router.get('/me', meLimit, handle(async (req, res) => {
     const viewer = await sessions.viewer(req)
     res.set('Cache-Control', 'no-store')
-    res.json({ user: viewer, providers: { google: Boolean(deps.env.GOOGLE_CLIENT_ID && deps.env.GOOGLE_CLIENT_SECRET) } })
+    // Demo accounts see sample data in the app. They must hold no staff role, or they would be real.
+    const demo = viewer ? viewer.role === 'customer' && viewer.emailVerified && demoEmails(deps.env).has(viewer.email.toLowerCase()) : false
+    res.json({ user: viewer ? { ...viewer, ...(demo ? { demo: true } : {}) } : viewer, providers: { google: Boolean(deps.env.GOOGLE_CLIENT_ID && deps.env.GOOGLE_CLIENT_SECRET) } })
+  }))
+
+  // ---- driver tracking ------------------------------------------------------------------
+  // The driver's phone posts its position during a trip and deletes it when the trip ends.
+  const driverWrite = deps.limiters.create('driver-location', 60_000, 40)
+  const driverRead = deps.limiters.create('driver-track', 60_000, 90)
+
+  router.post('/driver/location', driverWrite, driverOrStaff, handle(async (req, res) => {
+    const parsed = driverUpdateSchema.safeParse(req.body)
+    if (!parsed.success) {
+      res.status(400).json({ error: 'invalid', issues: issues(parsed.error) })
+      return
+    }
+    const viewer = res.locals.viewer!
+    await deps.driver.update(viewer, parsed.data)
+    res.status(204).end()
+  }))
+
+  router.delete('/driver/location', driverWrite, driverOrStaff, handle(async (_req, res) => {
+    await deps.driver.stop(res.locals.viewer!.id)
+    res.status(204).end()
+  }))
+
+  router.get('/admin/driver/live', adminLimit, staff, handle(async (_req, res) => {
+    res.set('Cache-Control', 'no-store')
+    const drivers = await deps.driver.live()
+    res.json({
+      drivers: drivers.map((d) => ({
+        name: d.name,
+        latitude: d.lat,
+        longitude: d.lon,
+        heading: d.heading ?? null,
+        speedKmh: d.speedKmh ?? null,
+        bookingCode: d.bookingCode ?? null,
+        etaMinutes: d.etaMinutes ?? null,
+        updatedAt: d.updatedAt.toISOString(),
+      })),
+    })
+  }))
+
+  // Public, like the booking lookup: whoever holds the booking code sees the driver while one is on the way to it.
+  router.get('/bookings/:code/driver', driverRead, handle(async (req, res) => {
+    res.set('Cache-Control', 'no-store')
+    const code = codeParam.safeParse(req.params.code)
+    if (!code.success) {
+      res.json({ isEnRoute: false })
+      return
+    }
+    const d = await deps.driver.forBooking(code.data)
+    if (!d) {
+      res.json({ isEnRoute: false })
+      return
+    }
+    res.json({
+      isEnRoute: true,
+      driverName: d.name,
+      latitude: d.lat,
+      longitude: d.lon,
+      heading: d.heading ?? null,
+      etaMinutes: d.etaMinutes ?? null,
+      updatedAt: d.updatedAt.toISOString(),
+    })
   }))
 
   router.get('/me/bookings', meLimit, sessions.requireAuth, handle(async (_req, res) => {
@@ -289,6 +379,101 @@ export function createAdminRouter(deps: PlatformDeps): Router {
   mountWorkshop(admin, deps, managers)
 
   router.use('/admin', admin)
+
+  // ---- driver ---------------------------------------------------------------------------
+  // What a driver may see and do, and nothing more: pickup and delivery jobs, no customers list, warranties,
+  // money, stats, settings, walk-ins, photos or other visits. Technicians, owners and devs may use it too.
+  const drv = express.Router()
+  drv.use(adminLimit, driverOrStaff)
+  drv.use((_req, res, next) => {
+    res.set('Cache-Control', 'no-store')
+    next()
+  })
+
+  drv.get('/pickups', handle(async (req, res) => {
+    const parsed = z.object({ date: dateParam.optional() }).safeParse(req.query)
+    if (!parsed.success) {
+      res.status(400).json({ error: 'invalid', issues: issues(parsed.error) })
+      return
+    }
+    const date = parsed.data.date ?? localDate(new Date())
+    res.json({ date, jobs: await bookings.pickups(date) })
+  }))
+
+  drv.get('/jobs', handle(async (req, res) => {
+    const parsed = searchQuerySchema.pick({ status: true, limit: true, skip: true }).safeParse(req.query)
+    if (!parsed.success) {
+      res.status(400).json({ error: 'invalid', issues: issues(parsed.error) })
+      return
+    }
+    // Only jobs we collect or deliver, whatever the caller asks for.
+    const found = await bookings.search({ ...parsed.data, mode: 'pickup' })
+    res.json({ total: found.total, items: found.items.map(driverView) })
+  }))
+
+  drv.get('/busy', handle(async (req, res) => {
+    const parsed = z
+      .object({ from: dateParam, to: dateParam })
+      .refine((q) => q.from <= q.to && Date.parse(q.to) - Date.parse(q.from) <= 62 * 86_400_000, 'At most 62 days')
+      .safeParse(req.query)
+    if (!parsed.success) {
+      res.status(400).json({ error: 'invalid', issues: issues(parsed.error) })
+      return
+    }
+    // Pickups only: a driver does not see how busy the workshop is.
+    const days = await bookings.busyDays(parsed.data.from, parsed.data.to)
+    res.json({ days: Object.fromEntries(Object.entries(days).filter(([, d]) => d.pickups > 0).map(([day, d]) => [day, { total: d.pickups, pickups: d.pickups }])) })
+  }))
+
+  drv.get('/bookings/:code', handle(async (req, res) => {
+    const code = codeParam.safeParse(req.params.code)
+    const found = code.success ? await bookings.detail(code.data) : null
+    if (!found || !found.pickup) {
+      res.status(404).json({ error: 'not_found' })
+      return
+    }
+    res.json(driverView(found))
+  }))
+
+  /** Mark a delivery done, or leave a note. The status moves only to `done`, only from a finished repair. */
+  drv.patch('/bookings/:code/status', statusLimit, handle(async (req, res) => {
+    const code = codeParam.safeParse(req.params.code)
+    const body = z.object({ delivered: z.boolean().default(false), note: z.string().trim().max(500).optional() }).strict().safeParse(req.body)
+    if (!code.success || !body.success) {
+      res.status(body.success ? 404 : 400).json(body.success ? { error: 'not_found' } : { error: 'invalid', issues: issues(body.error) })
+      return
+    }
+    const found = await bookings.detail(code.data)
+    if (!found || !found.pickup) {
+      res.status(404).json({ error: 'not_found' })
+      return
+    }
+    const { delivered, note } = body.data
+    if (!delivered && !note) {
+      res.status(400).json({ error: 'invalid', issues: [{ path: ['note'], message: 'A note or delivered is needed' }] })
+      return
+    }
+    if (delivered && found.status !== 'ready' && found.status !== 'unrepairable') {
+      res.status(409).json({ error: 'not_ready' })
+      return
+    }
+    const viewer = res.locals.viewer!
+    const result = await bookings.update(code.data, { status: delivered ? 'done' : found.status, note }, { id: viewer.id, name: viewer.name || viewer.email })
+    if (!result) {
+      res.status(404).json({ error: 'not_found' })
+      return
+    }
+    if (result.changed) await audit.record({
+      action: 'booking_status',
+      actor: { id: viewer.id, email: viewer.email, role: viewer.role },
+      target: result.booking.code,
+      detail: { from: result.from, to: delivered ? 'done' : found.status, note: Boolean(note), by: 'driver' },
+      ip: clientIp(req),
+    })
+    res.json(driverView(result.booking))
+  }))
+
+  router.use('/driver', drv)
   return router
 }
 

@@ -376,7 +376,7 @@ const ro: Dict = {
       generic: 'Ceva nu a mers. Încearcă din nou.',
     },
     profile: { title: 'Profil', name: 'Nume', email: 'Email', role: 'Rol', verified: 'Confirmat', notVerified: 'Neconfirmat' },
-    roles: { customer: 'Client', technician: 'Tehnician', owner: 'Proprietar', dev: 'Dezvoltator' },
+    roles: { customer: 'Client', driver: 'Șofer', technician: 'Tehnician', owner: 'Proprietar', dev: 'Dezvoltator' },
     dashboards: { title: 'Panouri de lucru', owner: 'Panoul proprietarului', dev: 'Panoul dezvoltatorului' },
     adminBar: { nav: 'Panouri de lucru', owner: 'Proprietar', dev: 'Dezvoltator', site: 'Vezi site-ul' },
     bookings: {

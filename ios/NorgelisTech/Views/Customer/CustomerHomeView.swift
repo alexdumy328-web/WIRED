@@ -1,4 +1,5 @@
 import SwiftUI
+import CoreLocation
 
 /// A signed-in customer: their own repairs, a code lookup, and the account.
 struct CustomerHomeView: View {
@@ -145,9 +146,10 @@ struct BookingSummaryCard: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            if appState.isDriverEnRoute, let stop = appState.currentEnRouteStop, stop.bookingCode == booking.code {
-                LiveTrackingView(booking: booking, stop: stop)
-            } else if booking.hasPickup, booking.status != .done, booking.status != .cancelled {
+            if booking.status != .done, booking.status != .cancelled {
+                DriverOnTheWay(code: booking.code, destination: booking.pickup.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) })
+            }
+            if booking.hasPickup, booking.status != .done, booking.status != .cancelled {
                 VStack(alignment: .leading, spacing: 8) {
                     Label("customer.pickup.scheduled", systemImage: "clock.badge.checkmark.fill")
                         .font(.subheadline.bold()).foregroundColor(Theme.pickup)

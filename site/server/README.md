@@ -318,6 +318,8 @@ Copy `.env.example` to `.env.local` for the variable names.
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Enable Google sign-in. Redirect URI: `<BETTER_AUTH_URL>/api/auth/callback/google`. |
 | `RESEND_API_KEY` / `MAIL_FROM` | Email delivery. Without them development uses the `dev_outbox` collection; production answers 503. |
 | `OWNER_EMAILS` / `DEV_EMAILS` | Comma separated emails that get the role once their address is verified. Every `OWNER_EMAILS` address also gets a mail for each new booking. |
+| `DRIVER_EMAILS` | Comma separated emails that get the `driver` role once verified: the iOS app opens the driver app and the server shows only pickups and deliveries. |
+| `DEMO_EMAILS` | Verified customer accounts that open the iOS app in demo mode (sample data, no real access). Never staff: a listed address that also has a staff role is a real account. |
 | `TRUST_PROXY` | Set behind a reverse proxy so `req.ip` is the client address. |
 
 Sign-in: Google, email and password (10+ characters, email confirmed by a 6-digit code)
@@ -327,7 +329,8 @@ can get a role from the env lists; they raise a role, never lower it.
 
 Routes (all validated with zod, per-IP limiters, JSON errors):
 
-- `GET /api/me`, `GET /api/me/bookings`, `GET /api/settings/public`
+- `GET /api/me` (adds `demo: true` for a demo account), `GET /api/me/bookings`, `GET /api/settings/public`
+- Driver tracking (iOS app): `POST /api/driver/location` and `DELETE /api/driver/location` (staff only, 40 a minute per IP; one document per driver in `driver_positions`, overwritten, deleted when the trip ends, TTL 24 h), `GET /api/bookings/:code/driver` (public by booking code; only a position fresher than 90 s counts; 3 s read cache; 90 a minute per IP), `GET /api/admin/driver/live` (staff). Polling, not sockets: see issue 13.
 - Owner or dev: `GET /api/admin/bookings`, `GET /api/admin/bookings/:code`,
   `PATCH /api/admin/bookings/:code/status` (status, optional note, optional `finalLei`,
   `notify`; history and audit),

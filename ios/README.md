@@ -8,10 +8,13 @@ Connects to the Express API in `site/server/`. Nobody picks a role. The server's
 | --- | --- |
 | Not signed in | A welcome screen. Sign in or create an account first. Booking a repair and tracking one by code also work without an account, as on the website. |
 | Customer | My repairs (every booking made with the account, with status and a Call the driver button on pickup jobs), Track by code, Account. A plus button books a new repair. |
+| Driver | Its own small app: Today (today's total driving distance and time, then the stops), Jobs (pickups and deliveries only), the Driver map, Schedule (pickups and deliveries by day) and Account. No customers list, warranties, money, stats, settings, walk-ins or workshop visits, in the app or on the server (`/api/driver/*`). |
 | Technician | The workshop console: Today, Jobs, Driver map, Schedule, More. No prices, stats or settings. |
-| Owner, dev | The same, plus Stats, Workshop settings, and Server and sample data (the backend settings). |
+| Owner, dev | The same, plus Stats, Workshop settings and the server address. |
 
-The driver map is part of every staff account. The server has no separate driver role, so the technician who drives uses the Driver tab.
+The driver map is part of every staff account. Drivers get the `driver` role (`DRIVER_EMAILS` on the server, or set in the website's dev dashboard or by an owner); it opens the small driver app above instead of the console, and the server limits it to `/api/driver/*`. Technicians, owners and devs can drive too. A role change shows in the app after the next sign-in.
+
+A **demo account** (listed in the server's `DEMO_EMAILS`, a customer account with no real access) opens the staff console on sample data, with a simulated drive. It is for App Review and demos. Sample data exists nowhere else: there is no switch for it.
 
 ## Project management
 
@@ -59,7 +62,7 @@ Everything that differs between builds is a build setting in `project.yml`. Over
 
 Debug builds also allow a plain HTTP server on the local network (`NSAllowsLocalNetworking` and the local network prompt text, added through plist preprocessing). Release builds are HTTPS only and have neither key.
 
-Owners and devs can change the server address at runtime in More → Server and sample data. The field accepts HTTPS addresses (Release), applies one only after it answered the health check, and asks first, because the session belongs to the old server and ends. A saved address that this build would not accept is ignored at launch, and the address resets to the build default at sign-out.
+Owners and devs can change the server address at runtime in More → Server address. The field accepts HTTPS addresses (Release), applies one only after it answered the health check, and asks first, because the session belongs to the old server and ends. A saved address that this build would not accept is ignored at launch, and the address resets to the build default at sign-out.
 
 ## Sign in
 
@@ -79,13 +82,14 @@ Customers book from the welcome screen (no account) or the plus button in My rep
 - Pickup uses `GET /api/geo/search` for the address and `GET /api/pickup/quote` for the transport price.
 - Customer details prefill from the account. A confirmation shows the booking code.
 
-## Driver
+## Driver and live tracking
 
-- Today's stops come from `GET /api/admin/pickups?date=` and refresh when the Driver tab opens. Done stops are remembered on the phone for the day (booking codes only), so a restart does not show them as pending again. The app does not yet send a status change to the server when a stop is done.
-- The map draws the real driving route (Apple Maps directions) from the workshop or the driver's position through the remaining stops. One bottom panel holds the list, a stop's details and the trip.
-- Navigate opens Waze or Apple Maps. `LSApplicationQueriesSchemes` lists `waze`.
-- Customers call the driver from a pickup booking (Call the driver). The driver calls the customer from the stop.
-- Location is used only while the app is open (`NSLocationWhenInUseUsageDescription`). The app does not declare a background mode, because it does not yet send the position to the server. Add `UIBackgroundModes: location`, the Always prompt text and the `POST /api/driver/location` call together when live sharing ships.
+- Today's stops come from `GET /api/admin/pickups?date=` and refresh when the Driver tab opens. Done stops are remembered on the phone for the day (booking codes only). Completing a stop updates the booking on the server: a delivery sets it to `done`, a pickup adds a history note. Nobody is emailed from there.
+- The map draws the real driving route (Apple Maps directions) through the remaining stops. Navigate opens Waze or Apple Maps (`LSApplicationQueriesSchemes` lists `waze`).
+- **Tracking is real.** During a trip the phone posts its position to `POST /api/driver/location` and deletes it when the trip ends (`Services/DriverSharing.swift`). It sends at most one request at a time, 5 seconds apart, only when the driver moved 15 m or 20 seconds passed, and nothing when no trip runs. The `location` background mode keeps it going when the driver switches to Waze (blue indicator on, only during a trip).
+- **Customers** see the driver on the booking while one is heading to it (`GET /api/bookings/:code/driver`, polled every 5 s when the driver is within 10 minutes, 10 s otherwise, 20 s when nobody is sharing, with backoff). **Owners** see every sharing driver on the Today tab (`GET /api/admin/driver/live`, every 10 s).
+- The server keeps one document per driver, overwritten (no trail), a 3 second read cache, and a 24 hour expiry. It is polling, not sockets, because the site runs on Vercel functions (issue 13).
+- Customers call the driver from a pickup booking. The driver calls the customer from the stop.
 
 ## Owner console
 
@@ -97,15 +101,15 @@ It mirrors the `/admin` dashboard on the site.
 | Jobs | Search, status chips, kind filter. Tap a job for the work order. |
 | Driver | The driver map. |
 | Schedule | Week strip with busy dots, the day's visits and pickups. |
-| More | Customers, Warranties (issue, void, share PDF), Stats and Workshop settings (owners and devs), Account, and Server and sample data (owners and devs). |
+| More | Customers, Warranties (issue, void, share PDF), Stats and Workshop settings (owners and devs), Account, and the server address (owners and devs). |
 
 Roles follow the server (`GET /api/me`). A technician never sees `finalLei`, Stats or Settings.
 
-### Sample data
+### Demo account
 
-Owners and devs can switch the console and the driver map to made-up data in More → Server and sample data. It is off at every launch (never saved), a rose notice shows while it is on, and it clears at sign-out. Use it to demo or test without touching real jobs. App Review needs a real demo account instead (see `docs/app-store.md`).
+The server marks demo accounts (`DEMO_EMAILS`). For them the console and the driver map use `MockOwnerRepository` and a simulated drive, a rose notice shows, and nothing is sent to the server. Real accounts never see sample data. A demo account holds no staff role, so its credentials open nothing real on the website either.
 
-Not built yet: intake photo capture, push notifications, live driver position for customers (`POST /api/driver/location` and `GET /api/bookings/:code/driver`). PDFs download only from a live server.
+Not built yet: intake photo capture and push notifications (so customers see the driver while the app polls, not as an alert; see issue 13). PDFs download only from a real server.
 
 ## App architecture
 
@@ -127,7 +131,7 @@ ios/
     │   ├── Customer/            # My repairs, Track, booking card, live tracking
     │   ├── Driver/              # Map and panel
     │   ├── Owner/               # Console tabs (Console/), driver radar card
-    │   └── Settings/            # Server and sample data (owners and devs)
+    │   └── Settings/            # Server address (owners and devs)
     └── Resources/               # Info.plist, PrivacyInfo.xcprivacy, catalog.json, strings (ro, en), assets
 ```
 
@@ -137,17 +141,15 @@ The app uses the website's colour system in light and dark (`Views/Theme.swift`)
 
 ## Screenshots
 
-`docs/screenshots/` holds simulator captures. The `prod-` files show the production flow: welcome, booking form, calendar, confirmation, customer repairs, call the driver, staff Today, Driver, More and Server and sample data. The others show the driver panel, sign-in and console screens.
+`docs/screenshots/` holds simulator captures. The `prod-` files show the production flow: welcome, booking form, calendar, confirmation, customer repairs, call the driver, staff Today, Driver, More and the server address. The others show the driver panel, sign-in and console screens.
 
 ## API endpoints used
 
 - `GET /api/health`, `GET /api/me`, `GET /api/me/bookings`, `GET /api/bookings/:code`
 - Auth: `POST /api/auth/...` (sign in, sign up, email OTP, reset, sign out, delete user)
 - Booking: `POST /api/bookings`, `GET /api/slots`, `GET /api/geo/search`, `GET /api/pickup/quote`
-- Staff: `GET /api/admin/bookings`, `/bookings/:code`, `PATCH /bookings/:code/status`, intake, `/walk-ins`, `/customers`, `/warranties`, `/calendar`, `/busy`, `/pickups`, `/counts`, `/stats`, `/settings`
+- Staff: `PATCH /api/admin/bookings/:code/status` (stop done), `GET /api/admin/bookings`, `/bookings/:code`, `PATCH /bookings/:code/status`, intake, `/walk-ins`, `/customers`, `/warranties`, `/calendar`, `/busy`, `/pickups`, `/counts`, `/stats`, `/settings`
 
-### Planned (live tracking)
+### Live tracking
 
-1. `POST /api/driver/location` from the driver app every 5 to 10 seconds during a trip (`driverId`, `bookingCode`, `latitude`, `longitude`, `heading`, `speedKmh`, `timestamp`).
-2. `GET /api/bookings/:code/driver` for the customer (`isEnRoute`, `driverName`, `latitude`, `longitude`, `heading`, `etaMinutes`, `updatedAt`), polled every 5 seconds or pushed over SSE.
-3. `GET /api/admin/driver/live` for the owner's radar card.
+`POST /api/driver/location`, `DELETE /api/driver/location`, `GET /api/bookings/:code/driver`, `GET /api/admin/driver/live`. A push channel (sockets or APNs) is tracked in issue 13.

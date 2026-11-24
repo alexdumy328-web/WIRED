@@ -244,6 +244,7 @@ export function createApp(store: Store, options: CreateAppOptions = {}): Express
 
     const urgent = req.query.urgent === '1'
     const quote = await pickupService.quote(lat, lon, trips as Trips, urgent)
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=60')
     res.json(quote)
   })
 
@@ -410,6 +411,8 @@ export function createApp(store: Store, options: CreateAppOptions = {}): Express
 
     const serviceMode: ServiceMode = mode === 'mobile' ? 'mobile' : 'shop'
     const taken = await store.takenSlots(serviceMode, fromMs, toMs + DAY_MS - 1)
+    // A few seconds is enough to absorb a burst, and a stale answer is corrected by the 409 on booking.
+    res.set('Cache-Control', 'public, max-age=10, s-maxage=10')
     res.json({ taken })
   })
 

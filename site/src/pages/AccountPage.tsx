@@ -22,7 +22,7 @@ type MyBooking = Omit<Booking, 'statusHistory' | 'userId' | 'intake' | 'repair'>
 
 /** /cont: sign in, or the customer's account with their bookings. */
 export function AccountPage() {
-  return <Guard roles={['customer', 'technician', 'owner', 'dev']}>{(user) => <Account user={user} />}</Guard>
+  return <Guard roles={['customer', 'driver', 'technician', 'owner', 'dev']}>{(user) => <Account user={user} />}</Guard>
 }
 
 function Account({ user }: { user: Viewer }) {

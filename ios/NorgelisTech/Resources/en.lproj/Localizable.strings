@@ -290,8 +290,6 @@
 "console.more.preview_as" = "Preview as";
 "console.more.technician_note" = "Technicians do not see money, stats or settings.";
 "console.more.data" = "Data";
-"console.more.sample_data" = "Sample data";
-"console.more.sample_on" = "The console uses sample data inside the app. Changes are lost on restart.";
 "console.more.dev_settings" = "Server and sample data";
 "console.dev.title" = "Sample data";
 
@@ -350,7 +348,6 @@
 "auth.account.customer" = "Customer";
 "auth.staff.no_access_title" = "No access";
 "auth.staff.no_access" = "The workshop console is for technicians and owners. Your account is a customer account.";
-"console.more.sample_off" = "The console uses the app's server, with your account.";
 
 /* Driver panel */
 "driver.panel.close" = "Close";
@@ -421,8 +418,6 @@
 "dev.gps.restricted" = "Restricted";
 "dev.gps.not_asked" = "Not asked";
 "dev.gps.unknown" = "Unknown";
-"dev.mock.title" = "Sample data";
-"dev.mock.reset" = "Reset to the starting data";
 "dev.health.ok %@" = "Connected! Store: %@";
 
 /* Production flow */
@@ -501,7 +496,7 @@
 "booking.category.vintage" = "Vintage audio";
 "booking.category.auto" = "Car electrics";
 "console.tab.driver" = "Driver";
-"console.sample.banner" = "Sample data. Nothing here is real.";
+"console.sample.banner" = "Demo account. Nothing here is real.";
 "driver.empty_today" = "No pick-ups or deliveries today";
 "account.section.shop" = "Workshop";
 "account.section.legal" = "Legal";
@@ -524,9 +519,6 @@
 "backend.apply.title" = "Change the server?";
 "backend.apply.confirm" = "Change and sign me out";
 "backend.apply.message" = "The current session belongs to the old server and ends.";
-"backend.sample.title" = "Turn on sample data?";
-"backend.sample.confirm" = "Turn on";
-"backend.sample.message" = "The app shows made-up data, not the workshop's. Nothing is sent to the server.";
 "backend.open_settings" = "Open iPhone Settings";
 "backend.test.bad_answer" = "The server did not answer like a Norgelis server.";
 "backend.location.allowed" = "Allowed";
@@ -547,3 +539,28 @@
 "auth.error.reauth" = "Your session is too old for this. Sign in again.";
 "auth.error.staff_account" = "Staff accounts are managed by the owner.";
 "auth.method.title" = "Sign-in method";
+"radar.heading_to %@" = "Heading to %@";
+"radar.unavailable" = "We cannot tell where the driver is right now.";
+"driver.note.collected" = "Device collected by the driver";
+"driver.note.delivered" = "Device handed to the customer by the driver";
+"driver.sync_failed" = "The booking status could not be updated on the server. Check your connection.";
+"account.delete.wrong_password" = "Wrong password. Try again.";
+"account.delete.staff_note" = "A staff or demo account cannot be deleted in the app.";
+"console.role.driver" = "Driver";
+"driver.tab.jobs" = "Jobs";
+"driver.today.run" = "Today's run";
+"driver.today.distance" = "to drive";
+"driver.today.drive_time" = "driving";
+"driver.today.done" = "done";
+"driver.today.start" = "Start the run";
+"driver.today.open_trip" = "Open the trip";
+"driver.jobs.collect" = "To collect";
+"driver.jobs.deliver" = "To deliver";
+"driver.schedule.empty" = "No pickups or deliveries on this day.";
+"driver.job.title" = "Job";
+"driver.job.note" = "Note";
+"driver.job.note_placeholder" = "What happened on site";
+"driver.job.save_note" = "Save note";
+"driver.job.delivered" = "Handed to the customer";
+"driver.navigate.waze" = "Navigate with Waze";
+"driver.navigate.apple" = "Navigate with Apple Maps";

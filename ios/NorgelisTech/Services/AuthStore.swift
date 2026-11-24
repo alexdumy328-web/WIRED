@@ -8,8 +8,12 @@ struct Viewer: Codable, Equatable {
     var emailVerified: Bool
     var role: String
 
+    /// Set by the server for the demo accounts listed in DEMO_EMAILS (customer accounts with no real access).
+    var demo: Bool?
+
     var staffRole: StaffRole? { StaffRole(rawValue: role) }
     var isStaff: Bool { staffRole != nil }
+    var isDemo: Bool { demo == true }
 }
 
 /// What went wrong in a sign-in step, in words the person can act on.
@@ -82,23 +86,21 @@ final class AuthStore: ObservableObject {
             viewer = me.user
             googleAvailable = me.providers?.google ?? false
             if me.user == nil { api.clearSession() }
-            // Sample data is a tool for owners and devs. Nobody else keeps it on.
-            if me.user?.staffRole?.isManager != true { api.disableSample() }
+            // Sample data belongs to demo accounts only, and follows the server's answer.
+            api.setDemo(me.user?.isDemo == true)
             needsRetry = false
-        } catch APIError.networkError {
-            // Offline: keep what we had. With a saved session and nobody known yet, ask to try again
-            // instead of showing the sign-in screen to someone who is signed in.
-            needsRetry = viewer == nil && api.hasSession
         } catch APIError.unauthorized {
+            // Only the server saying "no session" signs anybody out.
             viewer = nil
             needsRetry = false
-            api.disableSample()
+            api.setDemo(false)
             api.clearSession()
         } catch is CancellationError {
             // A newer refresh is running.
         } catch {
-            viewer = nil
-            needsRetry = false
+            // No network, a 5xx during a deploy, a 429, an odd answer: keep who we had. With a saved session
+            // and nobody known yet, ask to try again instead of showing the sign-in screen to someone signed in.
+            needsRetry = viewer == nil && api.hasSession
         }
         loaded = true
     }

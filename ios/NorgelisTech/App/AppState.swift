@@ -33,6 +33,8 @@ final class AppState: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var tripTask: Task<Void, Never>?
     private var lookupTask: Task<Void, Never>?
+    /// Shares the driver's position with the server during a live trip.
+    private lazy var sharing = DriverSharing(api: apiClient)
     /// Where the current plan starts, so a real position fix far from it replans.
     private var lastPlanOrigin = Shop.coordinate
 
@@ -42,11 +44,12 @@ final class AppState: ObservableObject {
 
         // Follow the driver: position, progress on the route and ETA.
         locationService.$currentLocation
-            .compactMap { $0?.coordinate }
+            .compactMap { $0 }
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] coord in
+            .sink { [weak self] fix in
                 MainActor.assumeIsolated {
                     guard let self else { return }
+                    let coord = fix.coordinate
                     let here = CLLocation(latitude: coord.latitude, longitude: coord.longitude)
                     // A position far from Iasi is a simulator's default city or garbage. Never follow it.
                     let shop = CLLocation(latitude: Shop.coordinate.latitude, longitude: Shop.coordinate.longitude)
@@ -55,6 +58,10 @@ final class AppState: ObservableObject {
                         self.driverCoordinate = coord
                         self.planner.update(driver: coord)
                         if self.planner.hasRoute(to: self.currentEnRouteStop?.id ?? "") { self.etaMinutes = self.planner.etaMinutes }
+                        // Live trips tell the server where the van is. Demo accounts and sample data stay on the phone.
+                        if !self.apiClient.useMockData {
+                            self.sharing.offer(fix, bookingCode: self.currentEnRouteStop?.bookingCode, etaMinutes: self.etaMinutes)
+                        }
                     } else {
                         // Idle fix: replan only when the driver really moved.
                         let origin = CLLocation(latitude: self.lastPlanOrigin.latitude, longitude: self.lastPlanOrigin.longitude)
@@ -116,7 +123,7 @@ final class AppState: ObservableObject {
         stopsError = nil
         defer { stopsLoading = false }
         do {
-            let reply: PickupsResponse = try await apiClient.request("GET", "api/admin/pickups", query: [
+            let reply: PickupsResponse = try await apiClient.request("GET", "api/driver/pickups", query: [
                 URLQueryItem(name: "date", value: ShopCalendar.dateString()),
             ])
             guard !apiClient.useMockData else { return }
@@ -147,9 +154,11 @@ final class AppState: ObservableObject {
     }
 
     /// Signed out or switched account: stop the trip and GPS and forget everything the last person saw.
-    func resetSession() {
+    /// `clearSavedDone` is false on the first launch (the saved done stops belong to the same driver) and true on sign-out.
+    func resetSession(clearSavedDone: Bool = true) {
         tripTask?.cancel()
         lookupTask?.cancel()
+        sharing.stop()
         locationService.stopTracking()
         isDriverEnRoute = false
         currentEnRouteStop = nil
@@ -162,7 +171,7 @@ final class AppState: ObservableObject {
         customerSearchQuery = ""
         customerLookupError = nil
         customerLookupBusy = false
-        UserDefaults.standard.removeObject(forKey: Self.doneKey)
+        if clearSavedDone { UserDefaults.standard.removeObject(forKey: Self.doneKey) }
         driverCoordinate = Shop.coordinate
         replan()
     }
@@ -193,7 +202,8 @@ final class AppState: ObservableObject {
         focusedStopID = nil
 
         // Real location service with background mode enabled.
-        locationService.startTracking(allowBackground: false)
+        // A live trip keeps sharing when the driver switches to Waze (the location background mode). A demo never does.
+        locationService.startTracking(allowBackground: !apiClient.useMockData)
 
         tripTask?.cancel()
         tripTask = Task { [weak self] in
@@ -204,24 +214,25 @@ final class AppState: ObservableObject {
                 waited += 0.1
             }
             guard !Task.isCancelled, self.isDriverEnRoute, self.currentEnRouteStop?.id == target.id else { return }
-            #if targetEnvironment(simulator)
-            // A simulator has no GPS movement, so drive the car along the planned route. A real phone uses its own position.
-            let path = self.planner.firstLegCoordinates
-            if path.count > 1 {
-                let seconds = min(45, max(20, self.planner.firstLegSeconds / 10))
-                self.locationService.startSimulation(along: path, durationSeconds: seconds)
-            } else {
-                self.locationService.startSimulation(from: self.driverCoordinate, to: target.coordinate, durationSeconds: 25)
+            // A simulator has no GPS movement, and a demo account has no real trip, so drive the car along the planned route.
+            // A real phone on a live account uses its own position.
+            if self.apiClient.useMockData || Self.runsOnSimulator {
+                let path = self.planner.firstLegCoordinates
+                if path.count > 1 {
+                    let seconds = min(45, max(20, self.planner.firstLegSeconds / 10))
+                    self.locationService.startSimulation(along: path, durationSeconds: seconds)
+                } else {
+                    self.locationService.startSimulation(from: self.driverCoordinate, to: target.coordinate, durationSeconds: 25)
+                }
             }
-            #endif
             if self.planner.hasRoute(to: target.id) { self.etaMinutes = self.planner.etaMinutes }
-            // Sharing the position with the server waits for POST /api/driver/location to exist (see README).
         }
     }
 
     /// The driver changes their mind before arriving. The stop stays on the list.
     func cancelTrip() {
         tripTask?.cancel()
+        sharing.stop()
         isDriverEnRoute = false
         currentEnRouteStop = nil
         locationService.stopTracking()
@@ -239,16 +250,45 @@ final class AppState: ObservableObject {
             stops.insert(done, at: completedStops.count)
         }
 
-        // If this corresponds to an active booking, update status to done/received
-        if let bookingIdx = bookings.firstIndex(where: { $0.code == current.bookingCode }) {
-            bookings[bookingIdx].status = current.type == .pickup ? .received : .done
+        if apiClient.useMockData {
+            if let bookingIdx = bookings.firstIndex(where: { $0.code == current.bookingCode }) {
+                bookings[bookingIdx].status = current.type == .dropoff ? .done : .received
+            }
+        } else {
+            syncCompleted(current)
         }
 
+        sharing.stop()
         isDriverEnRoute = false
         currentEnRouteStop = nil
         locationService.stopTracking()
         driverCoordinate = current.coordinate
         replan()
+    }
+
+    /// Tells the server the stop is done: a delivery closes the booking, a pickup leaves a note in its history.
+    /// Nobody is emailed from here. The owner decides when the customer hears.
+    private func syncCompleted(_ stop: PickupStop) {
+        let delivered = stop.type == .dropoff
+        let note = String(localized: delivered ? "driver.note.delivered" : "driver.note.collected")
+        Task {
+            do {
+                try await apiClient.requestVoid("PATCH", "api/driver/bookings/\(stop.bookingCode)/status",
+                                                body: ["delivered": delivered, "note": note])
+            } catch is CancellationError {
+                return
+            } catch {
+                stopsError = String(localized: "driver.sync_failed")
+            }
+        }
+    }
+
+    private static var runsOnSimulator: Bool {
+        #if targetEnvironment(simulator)
+        return true
+        #else
+        return false
+        #endif
     }
 
     // MARK: - Customer Actions

@@ -290,8 +290,6 @@
 "console.more.preview_as" = "Previzualizează ca";
 "console.more.technician_note" = "Tehnicienii nu văd banii, statisticile și setările.";
 "console.more.data" = "Date";
-"console.more.sample_data" = "Date de test";
-"console.more.sample_on" = "Consola folosește date de test din aplicație. Modificările se pierd la repornire.";
 "console.more.dev_settings" = "Server și date de test";
 "console.dev.title" = "Date de test";
 
@@ -350,7 +348,6 @@
 "auth.account.customer" = "Client";
 "auth.staff.no_access_title" = "Fără acces";
 "auth.staff.no_access" = "Consola atelierului e pentru tehnicieni și proprietari. Contul tău e de client.";
-"console.more.sample_off" = "Consola folosește serverul aplicației, cu contul tău.";
 
 /* Driver panel */
 "driver.panel.close" = "Închide";
@@ -421,8 +418,6 @@
 "dev.gps.restricted" = "Restricționat";
 "dev.gps.not_asked" = "Nesolicitat";
 "dev.gps.unknown" = "Necunoscut";
-"dev.mock.title" = "Date de test";
-"dev.mock.reset" = "Resetează la datele inițiale";
 "dev.health.ok %@" = "Conectat! Store: %@";
 
 /* Production flow */
@@ -501,7 +496,7 @@
 "booking.category.vintage" = "Aparate audio vintage";
 "booking.category.auto" = "Electrică auto";
 "console.tab.driver" = "Șofer";
-"console.sample.banner" = "Date de test. Nimic de aici nu e real.";
+"console.sample.banner" = "Cont demo. Nimic de aici nu e real.";
 "driver.empty_today" = "Nicio ridicare sau livrare azi";
 "account.section.shop" = "Atelier";
 "account.section.legal" = "Legal";
@@ -524,9 +519,6 @@
 "backend.apply.title" = "Schimbi serverul?";
 "backend.apply.confirm" = "Schimbă și deconectează-mă";
 "backend.apply.message" = "Sesiunea curentă aparține serverului vechi și se închide.";
-"backend.sample.title" = "Pornești datele de test?";
-"backend.sample.confirm" = "Pornește";
-"backend.sample.message" = "Aplicația arată date inventate, nu cele ale atelierului. Nu se trimite nimic la server.";
 "backend.open_settings" = "Deschide Setările iPhone";
 "backend.test.bad_answer" = "Serverul nu a răspuns ca un server Norgelis.";
 "backend.location.allowed" = "Permisă";
@@ -547,3 +539,28 @@
 "auth.error.reauth" = "Sesiunea e prea veche pentru această acțiune. Intră din nou în cont.";
 "auth.error.staff_account" = "Conturile de personal sunt gestionate de proprietar.";
 "auth.method.title" = "Metodă de autentificare";
+"radar.heading_to %@" = "Merge spre %@";
+"radar.unavailable" = "Nu putem afla acum unde e șoferul.";
+"driver.note.collected" = "Aparat ridicat de șofer";
+"driver.note.delivered" = "Aparat predat clientului de șofer";
+"driver.sync_failed" = "Starea comenzii nu s-a putut actualiza pe server. Verifică conexiunea.";
+"account.delete.wrong_password" = "Parolă greșită. Încearcă din nou.";
+"account.delete.staff_note" = "Contul de personal sau demo nu se șterge din aplicație.";
+"console.role.driver" = "Șofer";
+"driver.tab.jobs" = "Comenzi";
+"driver.today.run" = "Cursa de azi";
+"driver.today.distance" = "de condus";
+"driver.today.drive_time" = "la volan";
+"driver.today.done" = "terminate";
+"driver.today.start" = "Pornește cursa";
+"driver.today.open_trip" = "Deschide cursa";
+"driver.jobs.collect" = "De ridicat";
+"driver.jobs.deliver" = "De livrat";
+"driver.schedule.empty" = "Nicio ridicare sau livrare în ziua asta.";
+"driver.job.title" = "Comandă";
+"driver.job.note" = "Notă";
+"driver.job.note_placeholder" = "Ce s-a întâmplat la fața locului";
+"driver.job.save_note" = "Salvează nota";
+"driver.job.delivered" = "Predat clientului";
+"driver.navigate.waze" = "Navighează cu Waze";
+"driver.navigate.apple" = "Navighează cu Apple Maps";

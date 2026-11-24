@@ -12,7 +12,9 @@ struct BackendSettingsView: View {
     @State private var result: (ok: Bool, message: String)?
     @State private var tested: String?
     @State private var confirmApply = false
-    @State private var confirmSample = false
+
+    /// One session for every health check, with no cookies: it must not carry the account to an address being tried.
+    private static let probeSession = URLSession(configuration: .ephemeral)
 
     private var trimmed: String { address.trimmingCharacters(in: .whitespacesAndNewlines).trimmingCharacters(in: CharacterSet(charactersIn: "/")) }
     private var changed: Bool { trimmed != apiClient.baseURLString }
@@ -52,18 +54,6 @@ struct BackendSettingsView: View {
                 if !trimmed.isEmpty, !valid { Text("backend.https_only").foregroundColor(Theme.danger) } else { Text("backend.footer") }
             }
 
-            Section {
-                Toggle("console.more.sample_data", isOn: Binding(
-                    get: { apiClient.useMockData },
-                    set: { on in if on { confirmSample = true } else { apiClient.useMockData = false } }
-                ))
-                Text(LocalizedStringKey(apiClient.useMockData ? "console.more.sample_on" : "console.more.sample_off"))
-                    .font(.footnote).foregroundColor(.secondary)
-                if apiClient.useMockData {
-                    Button(role: .destructive) { appState.resetDriverDemo() } label: { Label("dev.mock.reset", systemImage: "arrow.counterclockwise") }
-                }
-            } header: { Text("console.dev.title") }
-
             Section("dev.gps.title") {
                 LabeledContent("dev.gps.status") { Text(locationText).foregroundColor(.secondary) }
                 if locationService.authorizationStatus == .notDetermined {
@@ -88,12 +78,6 @@ struct BackendSettingsView: View {
         } message: {
             Text("backend.apply.message")
         }
-        .confirmationDialog("backend.sample.title", isPresented: $confirmSample, titleVisibility: .visible) {
-            Button("backend.sample.confirm") { apiClient.useMockData = true }
-            Button("common.cancel", role: .cancel) {}
-        } message: {
-            Text("backend.sample.message")
-        }
     }
 
     private var locationText: String {
@@ -114,7 +98,7 @@ struct BackendSettingsView: View {
         guard let url = URL(string: trimmed)?.appendingPathComponent("api/health") else { return }
         do {
             // No cookies: this call must not carry the session to an address that is only being tried.
-            let (data, response) = try await URLSession(configuration: .ephemeral).data(from: url)
+            let (data, response) = try await Self.probeSession.data(from: url)
             guard (response as? HTTPURLResponse)?.statusCode == 200,
                   let health = try? JSONDecoder().decode(HealthResponse.self, from: data), health.ok else {
                 result = (false, String(localized: "backend.test.bad_answer"))

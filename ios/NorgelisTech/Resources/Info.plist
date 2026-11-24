@@ -48,9 +48,14 @@
         <string>waze</string>
     </array>
 
-    <!-- Location is used while the app is open: the driver map and the route to the next stop. -->
+    <!-- Location: the driver map and route, and sharing the van position during a trip, also in the background. -->
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>Norgelis Tech folosește locația ca să arate poziția ta pe hartă și să calculeze traseul și ora de sosire până la următoarea oprire.</string>
+    <string>Norgelis Tech folosește locația ca să arate poziția ta pe hartă, să calculeze traseul și, în timpul unei curse, să le arate clienților și atelierului unde ești. Funcționează și când treci în Waze.</string>
+    <!-- Keeps the position coming while the driver is in Waze. Only during a trip, with the blue status bar indicator. -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>location</string>
+    </array>
 
     <!-- Build settings, set in project.yml or on the command line. -->
     <key>NorgelisAPIBaseURL</key>

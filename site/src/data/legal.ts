@@ -39,7 +39,7 @@ export const PRIVACY: Both = {
           'Programări: nume, telefon, email (opțional), aparatul și defectul descris, data și ora aleasă, adresa de ridicare sau locul intervenției și coordonatele ei, prețul estimat și transportul.',
           'Reparații: fișa de primire a aparatului, istoricul stărilor, notele tehnice, fotografiile făcute la primire, garanția, documentele și sumele facturate.',
           'Date tehnice și de securitate: adresa IP, ora autentificărilor, jurnal de audit al acțiunilor din contul de personal, mesajele de email pe care ți le trimitem.',
-          'Locația telefonului: aplicația o folosește doar pe dispozitiv, cât timp e deschisă, pentru traseul șoferului. Nu o trimitem pe server.',
+          'Locația șoferului: în timpul unei curse, telefonul șoferului trimite poziția (și când aplicația e în fundal, de exemplu în Waze) ca să vadă clientul și atelierul unde e mașina. Păstrăm doar ultima poziție, fără istoric, o ștergem când cursa se termină și oricum expiră în cel mult 24 de ore. Poziția se vede doar cât șoferul se îndreaptă spre programarea ta și doar celor care au codul programării. Pentru clienți, aplicația nu citește locația telefonului.',
         ],
       },
       {
@@ -57,10 +57,13 @@ export const PRIVACY: Both = {
         ul: [
           'găzduirea site-ului și a serverului (Vercel, funcții în regiunea Frankfurt);',
           'baza de date (MongoDB Atlas, Frankfurt, UE);',
+          'fonturile paginii web (Google Fonts): browserul tău le descarcă de la Google, care primește adresa ta IP;',
           'trimiterea emailurilor de confirmare și a codurilor (Resend);',
           'autentificarea cu Google, doar dacă o alegi;',
-          'căutarea adreselor și calculul traseului pentru ridicare (servicii de hărți bazate pe OpenStreetMap): le trimitem adresa pe care o scrii;',
-          'estimarea prețului cu ajutorul unui serviciu de inteligență artificială: îi trimitem descrierea defectului și datele aparatului, fără nume, telefon sau email.',
+          'căutarea adreselor și calculul prețului de transport (servicii de hărți bazate pe OpenStreetMap): primesc adresa pe care o scrii;',
+          'traseul șoferului (Apple Maps, în aplicația iPhone): primește poziția șoferului și adresele de ridicare ale cursei de azi;',
+          'formularul de feedback din aplicație (Google Forms), doar dacă îl deschizi: ce scrii acolo ajunge la Google și la noi;',
+          'estimarea prețului cu ajutorul unui serviciu de inteligență artificială (OpenRouter, care trimite cererea unui furnizor de modele): îi trimitem descrierea defectului și datele aparatului, fără nume, telefon sau email.',
         ],
       },
       {
@@ -74,8 +77,9 @@ export const PRIVACY: Both = {
         ul: [
           'Contul: până îl ștergi.',
           'Programările și fișele de reparație: cât durează garanția și cât cere legea. Documentele contabile și facturile se păstrează de regulă 5 ani.',
-          'Jurnalele de securitate: cel mult 12 luni.',
-          'După ce ștergi contul, programările și documentele pe care legea ne obligă să le păstrăm rămân, dar nu mai sunt legate de cont.',
+          'Jurnalul de audit al acțiunilor din conturile de personal: cel mult 12 luni. Jurnalul tehnic de erori se rotește singur și nu conține date de contact.',
+          'Poziția șoferului: doar ultima, ștearsă la sfârșitul cursei și oricum după cel mult 24 de ore.',
+          'După ce ștergi contul, programările, fișa clientului (nume, telefon, email) și documentele pe care legea ne obligă să le păstrăm rămân pe durata păstrării legale, dar nu mai sunt legate de cont. Dacă te înscrii din nou cu același email confirmat, programările făcute cu acel email îți apar iar.',
         ],
       },
       {
@@ -89,7 +93,7 @@ export const PRIVACY: Both = {
       {
         h: '8. Cookie-uri și stocare locală',
         p: [
-          'Folosim un cookie de sesiune, strict necesar, ca să rămâi autentificat, și stocare locală pentru limba și tema aleasă. Nu folosim cookie-uri de publicitate sau de urmărire și nu avem analiză a traficului de la terți. Aplicația păstrează sesiunea în Keychain-ul iPhone-ului.',
+          'Folosim două cookie-uri de sesiune, strict necesare, ca să rămâi autentificat (identificatorul sesiunii și o copie semnată de scurtă durată), și stocare locală pentru limba și tema aleasă. Nu folosim cookie-uri de publicitate sau de urmărire și nu avem analiză a traficului de la terți. Aplicația păstrează sesiunea în Keychain-ul iPhone-ului și, pe telefonul șoferului, codurile opririlor terminate azi.',
         ],
       },
       {
@@ -125,7 +129,7 @@ export const PRIVACY: Both = {
           'Bookings: name, phone, email (optional), the device and the problem you describe, the time you pick, the pickup address or the place of the visit and its coordinates, the estimated price and transport.',
           'Repairs: the intake sheet, status history, technical notes, photos taken at intake, warranty, documents and amounts invoiced.',
           'Technical and security data: IP address, sign-in times, an audit log of actions in staff accounts, the emails we send you.',
-          'Phone location: the app uses it on the device only, while it is open, for the driver route. We do not send it to the server.',
+          'Driver location: during a trip, the driver\'s phone sends its position (also while the app is in the background, for example in Waze) so the customer and the workshop can see where the van is. We keep only the latest position, no trail, delete it when the trip ends, and it expires after 24 hours at the latest. The position is visible only while the driver is heading to your booking, and only to people who have the booking code. For customers, the app does not read the phone\'s location.',
         ],
       },
       {
@@ -143,10 +147,13 @@ export const PRIVACY: Both = {
         ul: [
           'hosting of the website and server (Vercel, functions in the Frankfurt region);',
           'the database (MongoDB Atlas, Frankfurt, EU);',
+          'the website fonts (Google Fonts): your browser downloads them from Google, which receives your IP address;',
           'sending confirmation emails and codes (Resend);',
           'Google sign-in, only if you choose it;',
-          'address search and route calculation for pickups (OpenStreetMap-based map services): they receive the address you type;',
-          'the price estimate, made with an artificial intelligence service: it receives the problem description and the device details, without name, phone or email.',
+          'address search and transport pricing for pickups (OpenStreetMap-based map services): they receive the address you type;',
+          'the driver route (Apple Maps, in the iPhone app): it receives the driver\'s position and today\'s pickup addresses;',
+          'the in-app feedback form (Google Forms), only if you open it: what you write goes to Google and to us;',
+          'the price estimate, made with an artificial intelligence service (OpenRouter, which passes the request to a model provider): it receives the problem description and the device details, without name, phone or email.',
         ],
       },
       {
@@ -160,8 +167,9 @@ export const PRIVACY: Both = {
         ul: [
           'Your account: until you delete it.',
           'Bookings and repair records: for the warranty period and as long as the law requires. Invoices and accounting documents are normally kept for 5 years.',
-          'Security logs: 12 months at most.',
-          'After you delete your account, bookings and documents we must keep by law stay, but are no longer linked to the account.',
+          'The audit log of actions in staff accounts: 12 months at most. The technical error log rotates by itself and holds no contact details.',
+          'The driver position: only the latest one, deleted when the trip ends and in any case after 24 hours.',
+          'After you delete your account, bookings, the customer record (name, phone, email) and documents we must keep by law stay for the legal retention period, but are no longer linked to the account. If you sign up again with the same confirmed email, bookings made with that email show up again.',
         ],
       },
       {
@@ -175,7 +183,7 @@ export const PRIVACY: Both = {
       {
         h: '8. Cookies and local storage',
         p: [
-          'We use one strictly necessary session cookie to keep you signed in, and local storage for your language and theme. We use no advertising or tracking cookies and no third-party traffic analytics. The app keeps your session in the iPhone Keychain.',
+          'We use two strictly necessary session cookies to keep you signed in (the session identifier and a short-lived signed copy), and local storage for your language and theme. We use no advertising or tracking cookies and no third-party traffic analytics. The app keeps your session in the iPhone Keychain and, on the driver\'s phone, the codes of today\'s finished stops.',
         ],
       },
       {

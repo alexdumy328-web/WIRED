@@ -15,7 +15,9 @@ struct RootView: View {
             } else if auth.needsRetry {
                 OfflineView()
             } else if let viewer = auth.viewer {
-                if viewer.isStaff {
+                if viewer.staffRole == .driver {
+                    DriverHomeView()
+                } else if viewer.isStaff || viewer.isDemo {
                     StaffHomeView()
                 } else {
                     CustomerHomeView()
@@ -64,6 +66,11 @@ struct OfflineView: View {
             }
             .buttonStyle(.borderedProminent)
             .disabled(busy)
+            // Not stuck: leave this account (and a server address that stopped answering), or just call the shop.
+            Button("auth.account.sign_out") { Task { _ = await auth.signOut() } }
+                .font(.subheadline.bold())
+                .frame(minHeight: 44)
+            ContactBar().padding(.top, 8)
         }
         .padding(32)
         .frame(maxWidth: .infinity, maxHeight: .infinity)

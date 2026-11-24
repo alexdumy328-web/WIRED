@@ -23,8 +23,9 @@ struct NorgelisTechApp: App {
                     if phase == .active, authStore.loaded { Task { await authStore.refresh() } }
                 }
                 // Another person signed in, or nobody: forget the last one's trip, stops, lookups and access.
-                .onChange(of: authStore.viewer?.id) { _, _ in
-                    appState.resetSession()
+                .onChange(of: authStore.viewer?.id) { old, _ in
+                    // The first sign-in check after launch (nil to the saved account) keeps today's done stops.
+                    appState.resetSession(clearSavedDone: old != nil)
                     ownerStore.reset()
                 }
         }

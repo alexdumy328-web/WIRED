@@ -52,6 +52,7 @@ struct SampleNotice: View {
 struct MoreTab: View {
     @EnvironmentObject var store: OwnerStore
     @EnvironmentObject var apiClient: APIClient
+    @EnvironmentObject var auth: AuthStore
 
     var body: some View {
         NavigationStack {
@@ -85,7 +86,8 @@ struct MoreTab: View {
 
                 Section {
                     NavigationLink { AccountView() } label: { Label("auth.account.title", systemImage: "person.crop.circle.fill") }
-                    if store.role.isManager {
+                    // Owners and devs only. A demo account (sample data) has no server to configure.
+                    if auth.viewer?.isStaff == true, store.role.isManager {
                         NavigationLink { BackendSettingsView() } label: { Label("console.more.dev_settings", systemImage: "server.rack") }
                     }
                 }

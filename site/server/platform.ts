@@ -11,6 +11,7 @@ import { createCounters } from './admin/counters.ts'
 import { createCustomers } from './admin/customers.ts'
 import { createPhotos } from './admin/photos.ts'
 import { createWarranties } from './admin/warranties.ts'
+import { createDriverTracking } from './admin/driver.ts'
 import { createDocuments } from './documents/index.ts'
 import { createDevRouter } from './admin/dev-routes.ts'
 import type { PlatformDeps } from './admin/deps.ts'
@@ -83,6 +84,7 @@ export async function createPlatform(options: PlatformOptions): Promise<Platform
     counters,
     customers,
     warranties: createWarranties(db, counters),
+    driver: createDriverTracking(db),
     photos: createPhotos(db),
     documents: createDocuments({ settings, customers, origin: config.baseURL }),
     audit,

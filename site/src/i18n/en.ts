@@ -376,7 +376,7 @@ const en: Dict = {
       generic: 'Something went wrong. Try again.',
     },
     profile: { title: 'Profile', name: 'Name', email: 'Email', role: 'Role', verified: 'Confirmed', notVerified: 'Not confirmed' },
-    roles: { customer: 'Customer', technician: 'Technician', owner: 'Owner', dev: 'Developer' },
+    roles: { customer: 'Customer', driver: 'Driver', technician: 'Technician', owner: 'Owner', dev: 'Developer' },
     dashboards: { title: 'Dashboards', owner: 'Owner dashboard', dev: 'Developer dashboard' },
     adminBar: { nav: 'Dashboards', owner: 'Owner', dev: 'Developer', site: 'View the site' },
     bookings: {

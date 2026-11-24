@@ -124,8 +124,11 @@ final class BookingModel: ObservableObject {
             return
         }
         var next = picked
+        let upper = ShopCalendar.dateString(dateRange.upperBound)
         for _ in 0..<10 {
             next = ShopCalendar.addDays(next, 1)
+            // Never past the window the slots were loaded for.
+            if next > upper { return }
             if planner.isOpen(next) { day = next; dayMovedNote = true; return }
         }
     }

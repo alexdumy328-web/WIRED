@@ -23,6 +23,7 @@ Bookings go to MongoDB when `MONGODB_URI` is set (see `server/README.md`), other
    - `MONGODB_URI`: a MongoDB Atlas connection string (the Atlas integration in the Vercel Marketplace sets this for you). In Atlas, allow access from `0.0.0.0/0` or use the Vercel integration, since function IPs change.
    - `MONGODB_DB` (optional, default `norgelis`).
    - `ADMIN_TOKEN`: a long random string. It enables `PATCH /api/bookings/:code/status`.
+   - For the iOS app: set `BETTER_AUTH_URL` to the production https origin and use the same address as the app's `NORGELIS_API_BASE_URL`, so sign-in passes the origin check. Optional `DEMO_EMAILS` (see `.env.example`) for the App Review demo account.
    - Accounts: `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `RESEND_API_KEY`, `MAIL_FROM`, `OWNER_EMAILS`, `DEV_EMAILS` (see `.env.example` and `server/README.md`). Functions run in `fra1`.
 3. Deploy. `scripts/vercel-build.mjs` writes `.vercel/output` (Build Output API): the Vite build goes to the CDN, and the Express app is bundled into one Node function at `/api/*`. Other paths fall back to `index.html`.
 

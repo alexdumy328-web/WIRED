@@ -21,6 +21,8 @@ const ENV = {
   BETTER_AUTH_URL: ORIGIN,
   OWNER_EMAILS: OWNER,
   DEV_EMAILS: DEV,
+  DEMO_EMAILS: 'demo@example.com',
+  DRIVER_EMAILS: 'env-driver@example.com',
 }
 
 let mongo: MongoMemoryServer
@@ -96,6 +98,8 @@ before(async () => {
   const app = createApp(store, {
     platform,
     adminToken: null,
+    // Many tests book from one address; the limiter itself is tested in app.test.ts.
+    rateLimit: { max: 200 },
     // No network: OSRM and Photon always fail, so the pickup quote falls back to haversine.
     upstreamFetch: async () => new Response('nope', { status: 500 }),
   })
@@ -407,6 +411,120 @@ describe('bookings for owners and customers', () => {
     const refused = await call('/api/auth/delete-user', { method: 'POST', cookie: owner, body: {} })
     assert.equal(refused.status, 403)
     assert.equal((await call('/api/me', { cookie: owner })).status, 200, 'the owner is still signed in')
+  })
+
+  test('a driver shares a position, the customer sees it while it is fresh, and it goes away', async () => {
+    const owner = await signIn(OWNER)
+    const customer = await signIn('driver-watch@example.com')
+    // The lookup only needs a well-formed code; no booking has to exist (and bookings are rate limited in tests).
+    const code = 'NT-ZX4Q'
+    const spot = { latitude: 47.16, longitude: 27.58, heading: 90, speedKmh: 35, bookingCode: code, etaMinutes: 9 }
+
+    assert.equal((await call(`/api/bookings/${code}/driver`)).body.isEnRoute, false, 'nobody is on the way yet')
+    assert.equal((await call('/api/driver/location', { method: 'POST', body: spot })).status, 401, 'sign-in is needed')
+    assert.equal((await call('/api/driver/location', { method: 'POST', cookie: customer, body: spot })).status, 403, 'customers cannot share a position')
+    assert.equal((await call('/api/driver/location', { method: 'POST', cookie: owner, body: { ...spot, latitude: 10, longitude: 10 } })).status, 400, 'outside Romania')
+    assert.equal((await call('/api/driver/location', { method: 'POST', cookie: owner, body: { ...spot, extra: 1 } })).status, 400, 'unknown fields')
+
+    assert.equal((await call('/api/driver/location', { method: 'POST', cookie: owner, body: spot })).status, 204)
+    const seen = await call(`/api/bookings/${code}/driver`)
+    assert.equal(seen.body.isEnRoute, true)
+    assert.equal(seen.body.etaMinutes, 9)
+    assert.equal(seen.body.latitude, 47.16)
+    assert.equal(seen.body.userId, undefined)
+    assert.equal(typeof seen.body.driverName, 'string')
+    assert.equal((await call('/api/bookings/NT-ZZZZ/driver')).body.isEnRoute, false, 'another booking sees nothing')
+    assert.equal((await call('/api/bookings/not-a-code/driver')).body.isEnRoute, false)
+
+    const live = await call('/api/admin/driver/live', { cookie: owner })
+    assert.equal(live.status, 200)
+    assert.equal(live.body.drivers.length >= 1, true)
+    assert.equal((await call('/api/admin/driver/live', { cookie: customer })).status, 403)
+
+    // A second update replaces the first: one document per driver, no trail.
+    assert.equal((await call('/api/driver/location', { method: 'POST', cookie: owner, body: { ...spot, latitude: 47.17 } })).status, 204)
+    assert.equal(await store.getDb().collection('driver_positions').countDocuments({}), 1)
+
+    // A position that stopped updating no longer counts as en route.
+    await store.getDb().collection('driver_positions').updateMany({}, { $set: { updatedAt: new Date(Date.now() - 10 * 60_000) } })
+    await new Promise((r) => setTimeout(r, 3100)) // the short read cache
+    assert.equal((await call(`/api/bookings/${code}/driver`)).body.isEnRoute, false, 'stale')
+
+    assert.equal((await call('/api/driver/location', { method: 'POST', cookie: owner, body: spot })).status, 204)
+    assert.equal((await call('/api/driver/location', { method: 'DELETE', cookie: owner })).status, 204)
+    assert.equal(await store.getDb().collection('driver_positions').countDocuments({}), 0, 'deleted when the trip ends')
+  })
+
+  test('only a verified customer account on the demo list is a demo account', async () => {
+    const demo = await signIn('demo@example.com')
+    const other = await signIn('not-demo@example.com')
+    const owner = await signIn(OWNER)
+    assert.equal((await call('/api/me', { cookie: demo })).body.user.demo, true)
+    assert.equal((await call('/api/me', { cookie: other })).body.user.demo, undefined)
+    assert.equal((await call('/api/me', { cookie: owner })).body.user.demo, undefined)
+    // A demo account holds no staff role, so it reaches nothing real.
+    assert.equal((await call('/api/admin/bookings', { cookie: demo })).status, 403)
+    assert.equal((await call('/api/driver/location', { method: 'POST', cookie: demo, body: { latitude: 47.16, longitude: 27.58 } })).status, 403)
+  })
+
+  test('an address on DRIVER_EMAILS becomes a driver on sign-in', async () => {
+    const cookie = await signIn('env-driver@example.com')
+    assert.equal((await call('/api/me', { cookie })).body.user.role, 'driver')
+    assert.equal((await call('/api/admin/customers', { cookie })).status, 403)
+    assert.equal((await call('/api/driver/pickups', { cookie })).status, 200)
+  })
+
+  test('a driver sees pickups and deliveries only, and can mark a delivery', async () => {
+    const owner = await signIn(OWNER)
+    await signIn('driver-role@example.com')
+    const dev = await signIn(DEV)
+    const users = await call('/api/dev/users?q=driver-role', { cookie: dev })
+    const id = users.body.users?.[0]?.id
+    assert.ok(id, 'the driver account is listed for the dev dashboard')
+    const set = await call(`/api/dev/users/${id}/role`, { method: 'PATCH', cookie: dev, body: { role: 'driver' } })
+    assert.equal(set.status, 200)
+    // The signed session cookie keeps the old role for a few minutes, so sign in again for a fresh one.
+    const driver = await signIn('driver-role@example.com')
+    assert.equal((await call('/api/me', { cookie: driver })).body.user.role, 'driver')
+
+    // A pickup job and a plain workshop job.
+    const withPickup = { ...bookingBody('pk@example.com', slot(11)), pickup: { address: 'Str. Palas 7A, Iași', lat: 47.1585, lon: 27.6014, trips: 'both', quote: { totalLei: 60, oneWayKm: 4 } } }
+    const pk = await call('/api/bookings', { method: 'POST', body: withPickup })
+    assert.equal(pk.status, 201)
+
+    // What a driver may read.
+    const jobs = await call('/api/driver/jobs', { cookie: driver })
+    assert.equal(jobs.status, 200)
+    assert.ok(jobs.body.items.every((j: any) => j.pickup), 'only pickup jobs')
+    assert.equal(jobs.body.items.some((j: any) => j.code === pk.body.code), true)
+    const one = jobs.body.items.find((j: any) => j.code === pk.body.code)
+    for (const hidden of ['finalLei', 'statusHistory', 'userId', 'customerId', 'photoIds', 'intake', 'repair']) assert.equal(one[hidden], undefined, hidden)
+    assert.equal((await call(`/api/driver/bookings/${pk.body.code}`, { cookie: driver })).status, 200)
+    assert.equal((await call('/api/driver/pickups', { cookie: driver })).status, 200)
+    assert.equal((await call('/api/driver/busy?from=2026-11-20&to=2026-12-20', { cookie: driver })).status, 200)
+
+    // What a driver may not.
+    for (const path of ['/api/admin/bookings', '/api/admin/customers', '/api/admin/warranties', '/api/admin/stats', '/api/admin/settings', '/api/admin/counts', '/api/admin/calendar', '/api/admin/pickups']) {
+      assert.equal((await call(path, { cookie: driver })).status, 403, path)
+    }
+    assert.equal((await call('/api/admin/walk-ins', { method: 'POST', cookie: driver, body: {} })).status, 403)
+    assert.equal((await call(`/api/admin/bookings/${pk.body.code}/status`, { method: 'PATCH', cookie: driver, body: { status: 'done' } })).status, 403)
+    assert.equal((await call('/api/admin/driver/live', { cookie: driver })).status, 403)
+    // A workshop-only booking is invisible to the driver.
+    const shop = await call('/api/bookings', { method: 'POST', body: bookingBody('shop-only@example.com', slot(12)) })
+    assert.equal((await call(`/api/driver/bookings/${shop.body.code}`, { cookie: driver })).status, 404)
+
+    // Notes are allowed, delivery only from a finished repair.
+    assert.equal((await call(`/api/driver/bookings/${pk.body.code}/status`, { method: 'PATCH', cookie: driver, body: { note: 'Device collected' } })).status, 200)
+    assert.equal((await call(`/api/driver/bookings/${pk.body.code}/status`, { method: 'PATCH', cookie: driver, body: { delivered: true } })).status, 409, 'not ready yet')
+    assert.equal((await call(`/api/driver/bookings/${pk.body.code}/status`, { method: 'PATCH', cookie: driver, body: {} })).status, 400)
+    await call(`/api/admin/bookings/${pk.body.code}/status`, { method: 'PATCH', cookie: owner, body: { status: 'ready', notify: false } })
+    const delivered = await call(`/api/driver/bookings/${pk.body.code}/status`, { method: 'PATCH', cookie: driver, body: { delivered: true } })
+    assert.equal(delivered.status, 200)
+    assert.equal(delivered.body.status, 'done')
+
+    // A driver shares the van's position like staff do.
+    assert.equal((await call('/api/driver/location', { method: 'POST', cookie: driver, body: { latitude: 47.16, longitude: 27.58 } })).status, 204)
   })
 
   test('owner lists, filters and searches bookings, and sees the week calendar and pickups', async () => {
