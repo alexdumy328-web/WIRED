@@ -7,8 +7,6 @@ import { getModel } from './devices'
 
 const q = new URLSearchParams(location.search)
 const num = (k: string, d: number) => (q.has(k) ? Number(q.get(k)) : d)
-sceneState.explode = num('explode', 0)
-sceneState.model = (q.get('model') as ModelId | null) || null
 sceneState.highlight = q.get('hl') || null
 
 if (import.meta.env.DEV) Object.assign(window as unknown as Record<string, unknown>, { __devices: { getModel }, __sceneState: sceneState })
@@ -29,8 +27,8 @@ function frameStyle(aspect: Aspect): React.CSSProperties {
 function Preview() {
   const [theme, setTheme] = useState<Theme>((q.get('theme') as Theme) || 'dark')
   const [aspect, setAspect] = useState<Aspect>((q.get('aspect') as Aspect) || 'full')
-  const [model, setModel] = useState<ModelId | ''>(sceneState.model ?? '')
-  const [explode, setExplode] = useState(sceneState.explode > 0.5)
+  const [model, setModel] = useState<ModelId>((q.get('model') as ModelId | null) || 'laptop')
+  const [explode, setExplode] = useState(num('explode', 1) > 0.5)
   const [hl, setHl] = useState(sceneState.highlight ?? '')
   const [rm, setRm] = useState(q.get('rm') === '1')
   const ui = q.get('ui') !== '0'
@@ -38,17 +36,7 @@ function Preview() {
   useEffect(() => {
     document.body.dataset.theme = theme
   }, [theme])
-  // Mirror scene-driven changes back into the controls.
-  useEffect(() => {
-    const id = setInterval(() => {
-      setModel(sceneState.model ?? '')
-      setExplode(sceneState.explode > 0.5)
-    }, 250)
-    return () => clearInterval(id)
-  }, [])
-
-  const pickModel = (m: ModelId | '') => {
-    sceneState.model = m || null
+  const pickModel = (m: ModelId) => {
     sceneState.highlight = null
     setHl('')
     setModel(m)
@@ -57,23 +45,22 @@ function Preview() {
   return (
     <>
       <div style={frameStyle(aspect)} data-testid="frame">
-        <DeviceStage theme={theme} reducedMotion={rm} partLabels={PART_LABELS} />
+        <DeviceStage model={model} explode={explode ? 1 : 0} theme={theme} reducedMotion={rm} partLabels={PART_LABELS} />
       </div>
       {ui && (
         <div style={{ position: 'fixed', left: 12, bottom: 12, display: 'grid', gap: 6, padding: 12, borderRadius: 10, background: 'rgba(127,127,127,.18)', backdropFilter: 'blur(8px)', minWidth: 300, zIndex: 50 }}>
           <label>
             model{' '}
-            <select value={model} onChange={(e) => pickModel(e.target.value as ModelId | '')}>
-              <option value="">(none)</option>
+            <select value={model} onChange={(e) => pickModel(e.target.value as ModelId)}>
               {MODELS.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>{' '}
-            <label><input type="checkbox" checked={explode} onChange={(e) => { sceneState.explode = e.target.checked ? 1 : 0; setExplode(e.target.checked) }} /> explode</label>
+            <label><input type="checkbox" checked={explode} onChange={(e) => setExplode(e.target.checked)} /> explode</label>
           </label>
           <label>
             highlight{' '}
             <select value={hl} onChange={(e) => { sceneState.highlight = e.target.value || null; setHl(e.target.value) }}>
               <option value="">(none)</option>
-              {model && (MODEL_PARTS[model] as readonly string[]).map((p) => <option key={p} value={p}>{p}</option>)}
+              {(MODEL_PARTS[model] as readonly string[]).map((p) => <option key={p} value={p}>{p}</option>)}
             </select>
           </label>
           <label>

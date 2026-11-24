@@ -5,6 +5,7 @@ import { catalog } from '../data/catalog'
 import { preselect } from '../lib/booking-store'
 import { Section } from '../components/Section'
 import { JobRow, StageCard } from './Services'
+import { sceneState } from '../three/contract'
 import { Check, Pin } from '../components/Icons'
 
 type Tab = 'auto' | 'appliances'
@@ -12,10 +13,11 @@ type Tab = 'auto' | 'appliances'
 export function Mobile() {
   const { t } = useI18n()
   const [tab, setTab] = useState<Tab>('auto')
+  const model = tab === 'auto' ? 'auto' : 'largeAppliance'
   const jobs = catalog.filter((j) => j.mode === 'mobile' && (tab === 'auto' ? j.category === 'auto' : j.category === 'appliance'))
 
   return (
-    <Section id="mobil" model={tab === 'auto' ? 'auto' : 'largeAppliance'} title={t.mobile.title} lead={t.mobile.lead}>
+    <Section id="mobil" title={t.mobile.title} lead={t.mobile.lead}>
       <div role="tablist" aria-label={t.mobile.title} className="inline-flex rounded-full border border-line p-1">
         {(['auto', 'appliances'] as const).map((k) => (
           <button
@@ -23,7 +25,10 @@ export function Mobile() {
             role="tab"
             type="button"
             aria-selected={tab === k}
-            onClick={() => setTab(k)}
+            onClick={() => {
+              sceneState.highlight = null
+              setTab(k)
+            }}
             className={`relative rounded-full px-5 py-2 text-[15px] font-semibold transition-colors ${tab === k ? 'text-bg' : 'text-muted hover:text-ink'}`}
           >
             {tab === k && <motion.span layoutId="mobile-pill" className="absolute inset-0 rounded-full bg-ink" transition={{ type: 'spring', bounce: 0.18, duration: 0.45 }} />}
@@ -34,10 +39,10 @@ export function Mobile() {
 
       <div className="mt-2 grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-10">
       <div className="hidden lg:block">
-        <StageCard className="sticky top-24" tall label={t.mobile.tabs[tab]} hint={t.services.stageHint} />
+        <StageCard model={model} className="sticky top-24" tall label={t.mobile.tabs[tab]} hint={t.services.stageHint} />
       </div>
       <div className="min-w-0">
-      <StageCard className="mt-5 lg:hidden" label={t.mobile.tabs[tab]} hint={t.services.stageHint} />
+      <StageCard model={model} className="mt-5 lg:hidden" label={t.mobile.tabs[tab]} hint={t.services.stageHint} />
       <AnimatePresence mode="wait" initial={false}>
         <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.22 }}>
           <ul className="mt-7 grid gap-3 sm:grid-cols-2">

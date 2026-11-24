@@ -5,8 +5,8 @@ import { catalog } from '../data/catalog'
 import { estimate, formatEta, formatLei } from '../lib/estimate'
 import { daysAhead, slotsFor } from '../lib/slots'
 import { closeBooking, useBooking } from '../lib/booking-store'
-import { pauseDeviceSections, showModel } from '../lib/device-view'
 import { modelFor } from '../lib/models'
+import { sceneState } from '../three/contract'
 import { lockPage } from '../lib/scroll'
 import { inertOutside } from '../lib/inert'
 import { Logo } from '../components/Logo'
@@ -93,11 +93,12 @@ function BookingModal() {
     setStep(pre.jobIds.length ? 1 : 0)
   }, [pre.nonce, pre.mode, pre.jobIds])
 
-  // While open: page scroll locked, sections stop changing the 3D device, focus moves in.
+  // While open: page scroll locked, focus moves in.
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null
+    // A part lit by hovering a price row stays lit on touch screens; start the popup clean.
+    sceneState.highlight = null
     lockPage(true)
-    pauseDeviceSections(true)
     // Everything beside the dialog goes inert, so Tab cannot reach the page hidden behind it.
     const node = dialog.current
     const undoInert = inertOutside(node)
@@ -105,7 +106,6 @@ function BookingModal() {
     return () => {
       undoInert()
       lockPage(false)
-      pauseDeviceSections(false)
       prev?.focus?.()
     }
   }, [])
@@ -149,11 +149,9 @@ function BookingModal() {
     }
   }
 
-  // The 3D viewer shows the device for the first picked job, otherwise a laptop (or the car parts).
-  const firstJob = picked[0]
-  useEffect(() => {
-    showModel(firstJob ? modelFor(firstJob) : mode === 'mobile' ? 'auto' : 'laptop')
-  }, [firstJob, mode])
+  // The 3D viewer shows the device for the job picked last, otherwise a laptop (or the car parts).
+  const lastJob = catalog.find((j) => j.id === jobIds[jobIds.length - 1])
+  const model = lastJob ? modelFor(lastJob) : mode === 'mobile' ? 'auto' : 'laptop'
 
   const dirty =
     !done &&
@@ -336,7 +334,7 @@ function BookingModal() {
       exit={{ opacity: 0, y: 24 }}
       transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
     >
-      <DevicePanel className="absolute inset-y-0 right-0 hidden w-[40vw] border-l border-line bg-surface-2 lg:block" />
+      <DevicePanel model={model} inDialog className="absolute inset-y-0 right-0 hidden w-[40vw] border-l border-line bg-surface-2 lg:block" />
       <div className="flex h-16 shrink-0 items-center justify-between border-b border-line px-4 sm:px-6 lg:mr-[40vw]">
         <Logo />
         <button type="button" onClick={requestClose} className="grid size-10 place-items-center rounded-full border border-line transition-colors hover:border-ink" aria-label={t.booking.close}>

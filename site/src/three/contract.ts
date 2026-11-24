@@ -1,18 +1,11 @@
 /**
  * Contract between the page and the 3D device viewer.
  *
- * The page writes into `sceneState` (no React re-renders); the viewer reads it every frame.
+ * Each viewer gets its device as a prop. The hovered price-list job is shared: the page writes
+ * it into `sceneState` (no React re-renders) and every viewer reads it each frame.
  */
 export const sceneState = {
-  /** Exploded-view amount, 0 = assembled, 1 = fully exploded. */
-  explode: 0,
-  /**
-   * Which service device is on show. null = the default (the laptop).
-   * The viewer animates the device apart on its own (staggered, ~1.2 s) once `explode` is 1,
-   * and back together when `explode` goes to 0 or `model` changes.
-   */
-  model: null as ModelId | null,
-  /** Part id of the current model to light up in gold with its label (see MODEL_PARTS), or null. */
+  /** Part id to light up in gold with its label (see MODEL_PARTS), or null. Ignored by a model without that part. */
   highlight: null as string | null,
 }
 
@@ -40,10 +33,13 @@ export type Theme = 'dark' | 'light'
 
 /**
  * Device viewer: one exploded device on a neutral turntable.
- * Reads sceneState.model / explode / highlight (model null shows the laptop).
+ * Changing `model` reassembles the current device and explodes the new one (staggered, ~1.2 s).
  * Drag to rotate; slow idle turntable unless reducedMotion. Transparent background.
  */
 export type DeviceStageProps = {
+  model: ModelId
+  /** Exploded-view amount, 0 = assembled, 1 = fully exploded (default). */
+  explode?: number
   theme: Theme
   reducedMotion: boolean
   className?: string

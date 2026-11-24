@@ -288,7 +288,6 @@ const en: Dict = {
     },
   },
   scrollHold: 'Scroll once more to leave the form.',
-  windowOverview: 'The whole workshop',
   faq: {
     title: 'Frequently asked questions',
     items: [

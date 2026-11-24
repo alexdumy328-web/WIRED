@@ -4,7 +4,7 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber'
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Color, MeshStandardMaterial, NeutralToneMapping, Vector3, type Group, type PerspectiveCamera } from 'three'
 import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib'
-import { sceneState, type DeviceStageProps, type ModelId, type Theme } from './contract'
+import type { DeviceStageProps, ModelId, Theme } from './contract'
 import { DeviceModel, type DeviceRuntime } from './DeviceModel'
 import { getModel, modelPoints } from './devices'
 import { fitView } from './devices/fit'
@@ -13,7 +13,6 @@ import { GeoBuilder } from './builder'
 import { useBucketMaterials } from './materials'
 import { DemandDriver, ReadySignal, useDocumentVisible } from './runtime'
 
-const FALLBACK: ModelId = 'laptop'
 const PLINTH_H = 0.05 // in plinth units (radius 1)
 
 /** Where a model sits on the plinth: assembled footprint centred, bottom on the top face. */
@@ -79,9 +78,13 @@ const _fit: Vector3[] = []
 const _out = { pos: new Vector3(), target: new Vector3() }
 const _dir = new Vector3()
 
-function StageContent({ theme, reducedMotion, partLabels, controls }: { theme: Theme; reducedMotion: boolean; partLabels?: Record<string, string>; controls: React.RefObject<OrbitControlsImpl | null> }) {
+type ContentProps = { model: ModelId; explode: number; theme: Theme; reducedMotion: boolean; partLabels?: Record<string, string>; controls: React.RefObject<OrbitControlsImpl | null> }
+
+function StageContent({ model, explode, theme, reducedMotion, partLabels, controls }: ContentProps) {
   const mats = useBucketMaterials(theme)
-  const [shown, setShown] = useState<ModelId>(() => sceneState.model ?? FALLBACK)
+  const [shown, setShown] = useState<ModelId>(model)
+  const want = useRef(model)
+  want.current = model
   const leaving = useRef(false)
   const runtime = useRef<DeviceRuntime>({ id: null, g: 0, presence: 0 })
   const lifter = useRef<Group>(null)
@@ -106,13 +109,12 @@ function StageContent({ theme, reducedMotion, partLabels, controls }: { theme: T
 
   const onLeft = useCallback(() => {
     leaving.current = false
-    setShown(sceneState.model ?? FALLBACK)
+    setShown(want.current)
   }, [])
 
   useFrame((_, rawDt) => {
     const dt = Math.min(rawDt, 0.1)
-    const want = sceneState.model ?? FALLBACK
-    leaving.current = want !== shown
+    leaving.current = want.current !== shown
     radius.current = frame.radius
     const rt = runtime.current
     const g = rt.id === shown ? rt.g : 0
@@ -121,7 +123,7 @@ function StageContent({ theme, reducedMotion, partLabels, controls }: { theme: T
 
     // Camera: fit the device (as a turntable cylinder, so the fit holds while it spins) + plinth.
     const s = st.current
-    const goalE = leaving.current ? 0 : Math.min(1, Math.max(0, Number(sceneState.explode) || 0))
+    const goalE = leaving.current ? 0 : Math.min(1, Math.max(0, explode))
     s.e = reducedMotion ? goalE : s.e + (goalE - s.e) * (1 - Math.exp(-dt / 0.45))
     // Fit the parts as they are (offset onto the plinth) plus the plinth rim, from the current view direction.
     const corners = modelPoints(frame.a, s.e, _corners)
@@ -180,7 +182,7 @@ function StageContent({ theme, reducedMotion, partLabels, controls }: { theme: T
       </Environment>
       <Plinth theme={theme} radius={radius} />
       <ContactShadows
-        key={`${shown}-${reducedMotion ? sceneState.explode : 'live'}`}
+        key={`${shown}-${reducedMotion ? explode : 'live'}`}
         position={[0, 0.003, 0]}
         scale={frame.radius * 2.1}
         resolution={512}
@@ -196,6 +198,7 @@ function StageContent({ theme, reducedMotion, partLabels, controls }: { theme: T
           id={shown}
           mats={mats}
           reducedMotion={reducedMotion}
+          explode={explode}
           leaving={leaving}
           onLeft={onLeft}
           partLabels={partLabels}
@@ -207,10 +210,10 @@ function StageContent({ theme, reducedMotion, partLabels, controls }: { theme: T
 }
 
 /**
- * Standalone viewer for one exploded device on a turntable plinth (no shop).
- * Reads sceneState.model / explode / highlight; transparent background.
+ * Standalone viewer for one exploded device on a turntable plinth.
+ * Shows `model`; reads the shared sceneState.highlight. Transparent background.
  */
-export default function DeviceStage({ theme, reducedMotion, className, paused = false, partLabels }: DeviceStageProps) {
+export default function DeviceStage({ model, explode = 1, theme, reducedMotion, className, paused = false, partLabels }: DeviceStageProps) {
   const visible = useDocumentVisible()
   const controls = useRef<OrbitControlsImpl | null>(null)
   return (
@@ -238,9 +241,9 @@ export default function DeviceStage({ theme, reducedMotion, className, paused = 
         minPolarAngle={0.55}
         maxPolarAngle={1.42}
       />
-      {reducedMotion && visible && <DemandDriver />}
+      {reducedMotion && visible && <DemandDriver sig={`${model}|${explode}`} />}
       <Suspense fallback={null}>
-        <StageContent theme={theme} reducedMotion={reducedMotion} partLabels={partLabels} controls={controls} />
+        <StageContent model={model} explode={explode} theme={theme} reducedMotion={reducedMotion} partLabels={partLabels} controls={controls} />
       </Suspense>
       <ReadySignal />
     </Canvas>

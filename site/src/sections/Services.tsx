@@ -8,7 +8,7 @@ import { preselect } from '../lib/booking-store'
 import type { Job } from '../types'
 import { Plus } from '../components/Icons'
 import { jobPart, modelFor } from '../lib/models'
-import { sceneState } from '../three/contract'
+import { sceneState, type ModelId } from '../three/contract'
 import { Section } from '../components/Section'
 import { DevicePanel } from '../components/Scene3D'
 
@@ -75,10 +75,11 @@ export function JobRow({ job, onBook }: { job: Job; onBook: () => void }) {
 export function Services() {
   const { t } = useI18n()
   const [cat, setCat] = useState<ShopCat>(shopCats[0])
+  const model = modelFor({ category: cat, mode: 'shop' })
   const jobs = catalog.filter((j) => j.category === cat && j.mode === 'shop')
 
   return (
-    <Section id="servicii" model={modelFor({ category: cat, mode: 'shop' })} title={t.services.title} lead={`${t.services.lead} ${t.services.labour}`}>
+    <Section id="servicii" className="pt-12 sm:pt-16" title={t.services.title} lead={`${t.services.lead} ${t.services.labour}`}>
       <div className="grid gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-10">
         <div className="min-w-0">
           <div role="tablist" aria-label={t.services.title} className="-mx-1 flex flex-wrap gap-2">
@@ -91,7 +92,10 @@ export function Services() {
                   type="button"
                   aria-selected={active}
                   aria-controls="servicii-panel"
-                  onClick={() => setCat(c)}
+                  onClick={() => {
+                    sceneState.highlight = null
+                    setCat(c)
+                  }}
                   className={`relative rounded-full px-4 py-2 text-[15px] font-semibold transition-colors ${active ? 'text-bg' : 'text-muted hover:text-ink'}`}
                   style={{ fontStretch: '108%' }}
                 >
@@ -107,7 +111,7 @@ export function Services() {
           </div>
           <p className="mt-4 text-muted">{t.services.categories[cat].blurb}</p>
 
-          <StageCard className="mt-5 lg:hidden" label={t.services.categories[cat].name} hint={t.services.stageHint} />
+          <StageCard model={model} className="mt-5 lg:hidden" label={t.services.categories[cat].name} hint={t.services.stageHint} />
 
           <div id="servicii-panel" role="tabpanel" className="mt-5 rounded-[24px] border border-line bg-surface px-5 sm:px-7">
             <AnimatePresence mode="wait" initial={false}>
@@ -127,7 +131,7 @@ export function Services() {
           </div>
         </div>
         <div className="hidden lg:block">
-          <StageCard className="sticky top-24" tall label={t.services.categories[cat].name} hint={t.services.stageHint} />
+          <StageCard model={model} className="sticky top-24" tall label={t.services.categories[cat].name} hint={t.services.stageHint} />
         </div>
       </div>
     </Section>
@@ -138,7 +142,7 @@ export function Services() {
  * The device viewer card. Phones: a band that sticks under the header while you scroll the
  * list. Desktop: a tall card pinned beside the list for as long as the section is on screen.
  */
-export function StageCard({ className = '', tall = false, label, hint }: { className?: string; tall?: boolean; label: string; hint: string }) {
+export function StageCard({ model, className = '', tall = false, label, hint }: { model: ModelId; className?: string; tall?: boolean; label: string; hint: string }) {
   return (
     <motion.div
       initial={{ opacity: 0, clipPath: 'inset(8% 8% 8% 8% round 32px)' }}
@@ -147,7 +151,7 @@ export function StageCard({ className = '', tall = false, label, hint }: { class
       transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
       className={`${tall ? '' : 'sticky top-16 z-20'} ${className}`}
     >
-      <DevicePanel className={`rounded-[24px] border border-line bg-surface-2 ${tall ? 'h-[calc(100svh-8rem)] max-h-[760px] rounded-[32px]' : 'h-[34svh]'}`}>
+      <DevicePanel model={model} className={`rounded-[24px] border border-line bg-surface-2 ${tall ? 'h-[calc(100svh-8rem)] max-h-[760px] rounded-[32px]' : 'h-[34svh]'}`}>
         <div className="pointer-events-none absolute left-3 top-3 z-10 rounded-full border border-line bg-bg/80 px-3 py-1.5 text-[13px] font-semibold backdrop-blur">{label}</div>
         {tall && <p className="pointer-events-none absolute inset-x-4 bottom-4 z-10 text-center text-[13px] text-muted">{hint}</p>}
       </DevicePanel>

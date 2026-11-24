@@ -4,7 +4,7 @@ import type { ModelSpec } from './types'
 import { C, rng } from '../materials'
 
 /**
- * Late-70s stereo cassette deck on the microscope bench. Front = +z, floor at y = 0.
+ * Late-70s stereo cassette deck. Front = +z, floor at y = 0.
  * Brushed aluminium faceplate with two warm-lit VU meters, piano-key transport,
  * smoked cassette door. Exploded: the cover lifts, the faceplate pulls forward,
  * the transport rises with its heads and belts floating out of it, and the caps,

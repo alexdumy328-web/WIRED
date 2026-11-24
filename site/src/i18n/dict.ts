@@ -170,8 +170,6 @@ export type Dict = {
   }
   /** Shown once when a filled form holds the page scroll. */
   scrollHold: string
-  /** Label of the 3D window when it shows the whole shop. */
-  windowOverview: string
   faq: { title: string; items: { q: string; a: string }[] } // 6-8 items
   contact: {
     title: string

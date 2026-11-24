@@ -4,7 +4,7 @@ import type { ModelSpec } from './types'
 import { rng } from '../materials'
 
 /**
- * Console / laptop logic board on the green ESD mat at the microscope bench.
+ * Console / laptop logic board on a green ESD mat.
  * Board-level repair, so the explode is small and mostly vertical: the RF
  * shield lid, the HDMI port, polymer caps, power stages lift a few cm, and the
  * main BGA package tilts up to show its solder balls over the matching pad grid.

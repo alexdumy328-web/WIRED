@@ -4,10 +4,9 @@ import type { ModelSpec } from './devices/types'
 import { C, rng } from './materials'
 
 /**
- * 14" ultrabook on the second bench, exploded bottom-up:
+ * 14" ultrabook, exploded bottom-up:
  *   bottom cover + screws, battery, motherboard, cooling fan, DC jack, keyboard deck, display panel, lid.
  * Authored with depth along x (user at +x) and width along z; `frontYaw` turns the front to +z.
- * When no device is singled out it sits assembled, lid open, on its stand.
  */
 const D = 0.235 // depth (x)
 const Wd = 0.33 // width (z)

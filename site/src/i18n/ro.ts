@@ -288,7 +288,6 @@ const ro: Dict = {
     },
   },
   scrollHold: 'Derulează încă o dată ca să ieși din formular.',
-  windowOverview: 'Tot atelierul',
   faq: {
     title: 'Întrebări frecvente',
     items: [

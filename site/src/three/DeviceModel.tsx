@@ -16,6 +16,8 @@ export type DeviceModelProps = {
   id: ModelId
   mats: Record<Bucket, Material>
   reducedMotion: boolean
+  /** Exploded-view amount, 0 = assembled, 1 = fully exploded. */
+  explode: number
   /** Set to true to make the device reassemble and leave; `onLeft` fires when it is gone. */
   leaving?: { current: boolean }
   onLeft?: () => void
@@ -38,6 +40,7 @@ export function DeviceModel({
   id,
   mats,
   reducedMotion,
+  explode,
   leaving,
   onLeft,
   partLabels,
@@ -77,7 +80,7 @@ export function DeviceModel({
     const dt = Math.min(rawDt, 0.1)
     const s = st.current
     const isLeaving = !!leaving?.current
-    const goal = isLeaving ? 0 : clamp01(Number(sceneState.explode) || 0)
+    const goal = isLeaving ? 0 : clamp01(explode)
     const g0 = s.g
     const p0 = s.presence
     if (reducedMotion) s.g = goal
@@ -149,7 +152,7 @@ export function DeviceModel({
     }
   })
 
-  const children2 = useMemo(() => {
+  const byParent = useMemo(() => {
     const kids = new Map<number, PartAsset[]>()
     for (const p of asset.parts) {
       const list = kids.get(p.parent) ?? []
@@ -183,13 +186,13 @@ export function DeviceModel({
           renderOrder={k === 'glass' ? 2 : 0}
         />
       ))}
-      {(children2.get(p.index) ?? []).map(renderPart)}
+      {(byParent.get(p.index) ?? []).map(renderPart)}
     </group>
   )
 
   return (
     <group ref={root} scale={st.current.presence > 0 ? 1 : 1e-4}>
-      <group rotation-y={asset.spec.frontYaw ?? 0}>{(children2.get(-1) ?? []).map(renderPart)}</group>
+      <group rotation-y={asset.spec.frontYaw ?? 0}>{(byParent.get(-1) ?? []).map(renderPart)}</group>
     </group>
   )
 }

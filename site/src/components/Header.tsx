@@ -160,17 +160,17 @@ export function Header() {
       className={`fixed inset-x-0 top-0 z-50 transition-[background-color,border-color] duration-300 ${scrolled ? 'scrim border-b border-line' : 'border-b border-transparent'}`}
     >
       <div className="mx-auto flex h-16 max-w-[1320px] items-center gap-6 px-4 sm:px-6">
-        <a href={onHome ? '#top' : '/'} onClick={onHome ? undefined : linkTo('/')} className="rounded-md" aria-label="Norgelis Tech">
+        <a href={onHome ? '#top' : '/'} onClick={onHome ? undefined : linkTo('/')} className="shrink-0 rounded-md" aria-label="Norgelis Tech">
           <Logo draw />
         </a>
-        <nav className="ml-4 hidden items-center gap-5 whitespace-nowrap text-[15px] lg:flex">
+        <nav className="ml-4 hidden items-center gap-5 whitespace-nowrap text-[15px] xl:flex">
           {links.map(([href, label]) => (
             <a key={href} href={base + href} className="text-muted transition-colors hover:text-ink">
               <Roll text={label} />
             </a>
           ))}
         </nav>
-        <div className="ml-auto flex items-center gap-2.5">
+        <div className="ml-auto flex shrink-0 items-center gap-2.5">
           <OpenStatus className="mr-2 hidden min-[1560px]:inline-flex" />
           <div className="hidden items-center gap-2 sm:flex">
             {langSwitch}
@@ -182,7 +182,7 @@ export function Header() {
           </button>
           <button
             type="button"
-            className="grid size-10 place-items-center rounded-full border border-line lg:hidden"
+            className="grid size-10 place-items-center rounded-full border border-line xl:hidden"
             onClick={() => setOpen(true)}
             aria-label={t.nav.openMenu}
             aria-expanded={open}

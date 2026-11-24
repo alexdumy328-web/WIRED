@@ -43,7 +43,6 @@ curl -X PATCH https://<your-domain>/api/bookings/NT-4K7Q/status \
 | Path | What |
 |---|---|
 | `src/three/` | 3D device viewer and the device models. `contract.ts` is the only interface the page uses. |
-| `src/lib/stations.ts` | Maps each page section and service category to a camera station. |
 | `src/sections/` | Page sections in scroll order (see `src/App.tsx`). |
 | `src/i18n/` | `dict.ts` (shape), `ro.ts` (default), `en.ts`. |
 | `src/data/catalog.ts` | Price list: jobs, prices in lei, turnaround. |
