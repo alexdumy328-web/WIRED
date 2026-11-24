@@ -1,6 +1,6 @@
 # Norgelis Tech website
 
-React 19 + Vite + Tailwind 4 site for Norgelis Tech (electronics repair, Iași) with a scroll-driven 3D model of the workshop (three.js via React Three Fiber) and a booking API (Express 5 + MongoDB, file-store fallback).
+React 19 + Vite + Tailwind 4 site for Norgelis Tech (electronics repair, Iași) with 3D exploded views of the devices we repair (three.js via React Three Fiber) and a booking API (Express 5 + MongoDB, file-store fallback).
 
 ## Run
 
@@ -42,8 +42,7 @@ curl -X PATCH https://<your-domain>/api/bookings/NT-4K7Q/status \
 
 | Path | What |
 |---|---|
-| `src/three/` | 3D workshop. `contract.ts` is the only interface the page uses. |
-| `src/lib/stations.ts` | Maps each page section and service category to a camera station. |
+| `src/three/` | 3D device viewer and the device models. `contract.ts` is the only interface the page uses. |
 | `src/sections/` | Page sections in scroll order (see `src/App.tsx`). |
 | `src/i18n/` | `dict.ts` (shape), `ro.ts` (default), `en.ts`. |
 | `src/data/catalog.ts` | Price list: jobs, prices in lei, turnaround. |

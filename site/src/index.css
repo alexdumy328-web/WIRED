@@ -1,10 +1,8 @@
 @import 'tailwindcss';
 
-/* Tokens come from the room: matte black paint, LED-lit white walls,
+/* Tokens come from the workshop: matte black paint, LED-lit white walls,
    concrete floor grey, ENIG gold pads, green and blue soldermask. */
 :root {
-  /* Width of the desktop 3D window; the content column leaves this room on the right. */
-  --win-w: clamp(360px, 38vw, 620px);
   --bg: #f2f4f5;
   --surface: #ffffff;
   --surface-2: #e8ebed;
@@ -212,7 +210,7 @@ html.lenis body {
 
 }
 
-/* Scrim behind text that sits over the 3D scene. */
+/* Frosted background for the fixed header. */
 .scrim {
   background: var(--scrim);
   -webkit-backdrop-filter: blur(14px) saturate(1.2);
@@ -227,35 +225,6 @@ html.lenis body {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
-}
-
-@layer components {
-
-}
-
-/* Hotspot pills rendered by the 3D scene (drei <Html>). */
-.nt-hotspot {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.45rem;
-  padding: 0.4rem 0.8rem 0.4rem 0.55rem;
-  border-radius: 999px;
-  background: var(--scrim);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  border: 1px solid color-mix(in oklab, var(--gold-soft) 55%, transparent);
-  color: var(--ink);
-  font: 600 13px/1 var(--font-sans);
-  font-stretch: 110%;
-  white-space: nowrap;
-  cursor: pointer;
-  pointer-events: auto;
-  transition: border-color 150ms ease, transform 150ms ease;
-}
-.nt-hotspot:hover,
-.nt-hotspot:focus-visible {
-  border-color: var(--gold-soft);
-  transform: translateY(-1px);
 }
 
 /* Per-letter roll on hover: each letter slides up to reveal its copy. */
@@ -298,7 +267,7 @@ a:focus-visible > .roll .roll-ch {
   }
 }
 
-/* Part label next to a highlighted part in the 3D window. */
+/* Part label next to a highlighted part in the 3D viewer. */
 .nt-part-label {
   display: inline-block;
   padding: 0.3rem 0.65rem;
@@ -345,6 +314,18 @@ a:focus-visible > .roll .roll-ch {
   font-size: 12px !important;
   font-weight: 600 !important;
   padding: 4px 8px !important;
+}
+
+.leaflet-control-attribution {
+  margin: 0 10px 8px 0 !important;
+  padding: 1px 8px !important;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--bg) 85%, transparent) !important;
+  color: var(--muted) !important;
+  font-size: 11px !important;
+}
+.leaflet-control-attribution a {
+  color: var(--ink) !important;
 }
 
 .leaflet-tooltip-top:before {

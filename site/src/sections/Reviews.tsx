@@ -12,7 +12,6 @@ export function Reviews() {
   return (
     <Section
       id="recenzii"
-      stop="pcbWall"
       title={t.reviews.title}
       aside={
         <div className="text-right">

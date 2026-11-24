@@ -1,11 +1,10 @@
 import type { GeoBuilder } from '../builder'
-import { LAPTOP_SEAT } from '../Bench'
 import { C } from '../materials'
 import { blower, chip, choke, flex, jst, K, pcb, screw, slots, smd, sphere, tube } from './kit'
 import type { ModelSpec } from './types'
 
 /**
- * Laptop cooling service: a laptop lying upside down on its stand, bottom cover off.
+ * Laptop cooling service: a laptop lying upside down, bottom cover off.
  * Width along x (0.33), depth along z (0.235, front edge at +z), lid closed underneath.
  * Explodes: screws + bottom cover lift away, SSD and RAM pop out, fan lifts, heatsink lifts
  * and the CPU die shows its fresh grey thermal paste.
@@ -150,9 +149,6 @@ function ram(b: GeoBuilder) {
 
 export const IT: ModelSpec = {
   id: 'it',
-  replaces: ['laptop'],
-  place: { pos: [LAPTOP_SEAT[0], LAPTOP_SEAT[1], LAPTOP_SEAT[2]], yaw: Math.PI / 2 },
-  view: { az: -28, el: 34 },
   span: 0.35,
   parts: [
     { id: '_chassis', rank: 6, build: chassis },

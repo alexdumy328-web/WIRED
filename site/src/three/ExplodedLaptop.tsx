@@ -1,14 +1,12 @@
 import type { GeoBuilder } from './builder'
-import { LAPTOP_SEAT } from './Bench'
 import { blower, chip, choke, flex, jst, K, pcb, screw, slots, smd, tube } from './devices/kit'
 import type { ModelSpec } from './devices/types'
 import { C, rng } from './materials'
 
 /**
- * 14" ultrabook on the second bench, exploded bottom-up:
+ * 14" ultrabook, exploded bottom-up:
  *   bottom cover + screws, battery, motherboard, cooling fan, DC jack, keyboard deck, display panel, lid.
  * Authored with depth along x (user at +x) and width along z; `frontYaw` turns the front to +z.
- * When no device is singled out it sits assembled, lid open, on its stand.
  */
 const D = 0.235 // depth (x)
 const Wd = 0.33 // width (z)
@@ -239,9 +237,6 @@ function screen(b: GeoBuilder) {
 export const LAPTOP: ModelSpec = {
   id: 'laptop',
   frontYaw: -Math.PI / 2,
-  idle: true,
-  place: { pos: [LAPTOP_SEAT[0], LAPTOP_SEAT[1], LAPTOP_SEAT[2]], yaw: Math.PI / 2 },
-  view: { az: -32, el: 24 },
   parts: [
     { id: 'bottom', rank: 6, build: bottom },
     { id: '_screws', rank: 5, build: screws, xpos: [0, -0.05, 0] },

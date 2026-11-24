@@ -4,7 +4,7 @@ import type { ModelSpec } from './types'
 import { rng } from '../materials'
 
 /**
- * Console / laptop logic board on the green ESD mat at the microscope bench.
+ * Console / laptop logic board on a green ESD mat.
  * Board-level repair, so the explode is small and mostly vertical: the RF
  * shield lid, the HDMI port, polymer caps, power stages lift a few cm, and the
  * main BGA package tilts up to show its solder balls over the matching pad grid.
@@ -168,9 +168,6 @@ function shield(b: GeoBuilder) {
 export const BOARD: ModelSpec = {
   id: 'board',
   // Lies on the ESD mat in front of the oscilloscope; the vintage deck takes this spot when it is on show.
-  idle: true,
-  place: { pos: [0.5, 0.904, -1.62], yaw: Math.PI / 2 },
-  view: { az: 20, el: 32, fov: 30 },
   parts: [
     { id: 'pcb', rank: 4, build: board },
     { id: 'shield', rank: 0, build: shield, pos: [SHIELD.x, T + 0.0024, SHIELD.z], xpos: [SHIELD.x - 0.012, T + 0.065, SHIELD.z - 0.004], xrot: [0.3, 0, 0.18] },

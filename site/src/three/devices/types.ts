@@ -38,8 +38,6 @@ export type ModelSpec = {
    * points to +z. Applied inside the model, before any placement.
    */
   frontYaw?: number
-  /** Camera direction relative to the front: azimuth / elevation in degrees, plus fov. */
-  view: { az: number; el: number; fov?: number }
   /**
    * Share of the explode timeline each part spends moving (default 0.5). Lower means
    * the ranks follow each other more strictly: outer parts are clear before inner ones move.
@@ -47,12 +45,4 @@ export type ModelSpec = {
   span?: number
   /** Where the device stage camera starts, degrees around the device from its front (default about 30). */
   stageAz?: number
-  /** Placement in the workshop (world). The yaw turns the model's front. */
-  place: { pos: V3; yaw: number }
-  /** Workshop-only props that never move (trolley, dolly...). Not shown on the device stage. */
-  shopBase?: (b: GeoBuilder) => void
-  /** Shown assembled as a normal prop at its spot when no other device takes the spot. */
-  idle?: boolean
-  /** Idle props hidden while this model is on show (it takes their spot). */
-  replaces?: ModelId[]
 }

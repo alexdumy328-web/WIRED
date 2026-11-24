@@ -2,10 +2,10 @@ import { Component, lazy, Suspense, useEffect, useRef, useState, type ReactNode 
 import { useI18n } from '../i18n'
 import { partLabels } from '../i18n/parts'
 import { useReducedMotion, useTheme } from '../lib/theme'
-import type { StopId } from '../three/contract'
+import { useBooking } from '../lib/booking-store'
+import type { ModelId } from '../three/contract'
 import { Loader } from '../scene/Loader'
 
-const ShopHost = lazy(() => import('../scene/SceneHost').then((m) => ({ default: m.ShopHost })))
 const StageHost = lazy(() => import('../scene/SceneHost').then((m) => ({ default: m.StageHost })))
 
 class Boundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
@@ -54,57 +54,29 @@ function useNearby<T extends HTMLElement>() {
 /** Keep the caller's positioning (absolute/fixed); default to relative so the loader and labels anchor. */
 const pos = (c: string) => (/\b(absolute|fixed|sticky)\b/.test(c) ? c : `relative ${c}`)
 
-const fallbackImg = <img src="/img/lab.jpg" alt="" className="absolute inset-0 size-full object-cover" />
-
-type ShopProps = {
+type PanelProps = {
+  model: ModelId
+  /** Exploded-view amount, 0 = assembled, 1 = fully exploded (default). */
+  explode?: number
   className?: string
-  interactive?: boolean
-  onSelect?: (id: StopId) => void
+  /** The panel inside the booking popup; page panels pause while the popup covers them. */
+  inDialog?: boolean
+  children?: ReactNode
 }
 
-/** The whole shop (hero card, or full screen on the workshop page). */
-export function ShopPanel({ className = '', interactive = false, onSelect }: ShopProps) {
-  const { t, lang } = useI18n()
-  const { resolved } = useTheme()
-  const reduced = useReducedMotion()
-  const { ref, near, visible } = useNearby<HTMLDivElement>()
-  return (
-    <div ref={ref} className={`overflow-hidden bg-surface-2 ${pos(className)}`}>
-      {!webgl ? (
-        fallbackImg
-      ) : near ? (
-        <Boundary fallback={fallbackImg}>
-          <Suspense fallback={<Loader progress={0} done={false} />}>
-            <ShopHost
-              theme={resolved}
-              reducedMotion={reduced}
-              className="absolute inset-0"
-              showHotspots
-              interactive={interactive}
-              labels={t.hotspots}
-              onSelect={onSelect}
-              paused={!visible}
-              partLabels={partLabels(lang)}
-            />
-          </Suspense>
-        </Boundary>
-      ) : null}
-    </div>
-  )
-}
-
-/** One exploded device on a plinth (services, mobile, booking popup). */
-export function DevicePanel({ className = '', children }: { className?: string; children?: ReactNode }) {
+/** One exploded device on a plinth (services, process, mobile, booking popup). */
+export function DevicePanel({ model, explode, className = '', inDialog = false, children }: PanelProps) {
   const { lang } = useI18n()
   const { resolved } = useTheme()
   const reduced = useReducedMotion()
   const { ref, near, visible } = useNearby<HTMLDivElement>()
+  const covered = useBooking().open && !inDialog
   return (
     <div ref={ref} className={`overflow-hidden ${pos(className)}`}>
       {webgl && near && (
         <Boundary fallback={null}>
           <Suspense fallback={<Loader progress={0} done={false} />}>
-            <StageHost theme={resolved} reducedMotion={reduced} className="absolute inset-0" paused={!visible} partLabels={partLabels(lang)} />
+            <StageHost model={model} explode={explode} theme={resolved} reducedMotion={reduced} className="absolute inset-0" paused={!visible || covered} partLabels={partLabels(lang)} />
           </Suspense>
         </Boundary>
       )}

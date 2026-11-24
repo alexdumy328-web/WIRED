@@ -15,12 +15,10 @@ import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeom
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 
 /**
- * Material buckets. Every static prop in the diorama is baked into one merged
- * BufferGeometry per bucket (vertex coloured), so the whole room costs a
- * handful of draw calls instead of hundreds.
+ * Material buckets. Each device part is baked into one merged BufferGeometry
+ * per bucket (vertex coloured), so a whole device costs a handful of draw calls.
  */
 export type Bucket = 'matte' | 'satin' | 'gloss' | 'metal' | 'glow' | 'glass' | 'frosted'
-export const BUCKETS: readonly Bucket[] = ['matte', 'satin', 'gloss', 'metal', 'glow', 'glass', 'frosted']
 
 export type V3 = readonly [number, number, number]
 /** Rotation: a number is a Y rotation in radians, a tuple is an XYZ Euler. */
@@ -45,13 +43,8 @@ function compose(pos: V3, rot: Rot, scale: number | V3 = 1): Matrix4 {
 }
 
 export class GeoBuilder {
-  readonly lite: boolean
   private parts = new Map<Bucket, BufferGeometry[]>()
   private stack: Matrix4[] = [new Matrix4()]
-
-  constructor(lite = false) {
-    this.lite = lite
-  }
 
   private get top(): Matrix4 {
     return this.stack[this.stack.length - 1]

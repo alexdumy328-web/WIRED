@@ -1,7 +1,7 @@
 import type { Job } from '../types'
 import type { ModelId } from '../three/contract'
 
-/** Which exploded device a job shows in the 3D window. */
+/** Which exploded device a job shows in the 3D viewer. */
 export function modelFor(job: Pick<Job, 'category' | 'mode'>): ModelId {
   if (job.category === 'appliance') return job.mode === 'mobile' ? 'largeAppliance' : 'appliance'
   return job.category

@@ -13,14 +13,19 @@ export type Dict = {
     faq: string
     book: string // short CTA in the header
     track: string // "track a repair"
-    workshop3d: string // link to the interactive 3D workshop page
     themeLight: string
     themeDark: string
     themeSystem: string
     language: string
     openMenu: string
     closeMenu: string
+    /** Side rail of section dots (desktop). */
+    sections: string // aria-label of the rail
+    top: string // the first screen in the rail
+    contact: string
   }
+  /** The bar pinned to the bottom of phone screens. */
+  actionBar: { label: string; call: string; whatsapp: string; book: string }
   status: {
     openNow: string // "Open now, until {time}"
     closedNow: string // "Closed, opens {day} at {time}"
@@ -30,16 +35,8 @@ export type Dict = {
     lead: string // 1-2 sentences
     ctaBook: string
     ctaPrices: string
-    scrollHint: string
-  }
-  /** Short labels (1-3 words) on clickable hotspots inside the 3D shop. */
-  hotspots: {
-    pcbWall: string // the wall of repaired boards
-    bench: string // board-level / micro-soldering bench
-    laptop: string // laptops, PCs, IT
-    coffee: string // espresso machines and appliances
-    counter: string // reception, booking
-    door: string // car electrics at your car
+    /** Four short facts under the hero: a 1-3 word title and a short note. */
+    facts: { title: string; note: string }[]
   }
   services: {
     title: string
@@ -70,6 +67,7 @@ export type Dict = {
   process: {
     title: string
     steps: { title: string; body: string }[] // exactly 5, real sequence
+    step: string // "Step {n} of {total}" on the 3D card
   }
   eta: {
     title: string
@@ -177,26 +175,8 @@ export type Dict = {
       server: string
     }
   }
-  /** The interactive 3D workshop page. */
-  workshopPage: {
-    title: string
-    lead: string
-    explore: string // button on the hero card that opens the page
-    stations: string
-    parts: string // heading of the part list
-    partsHint: string
-    explode: string
-    assemble: string
-    tour: string
-    stopTour: string
-    back: string
-    controls: string // how to move the camera
-    stationNames: Record<'overview' | 'pcbWall' | 'bench' | 'laptop' | 'coffee' | 'counter' | 'door', string>
-  }
   /** Shown once when a filled form holds the page scroll. */
   scrollHold: string
-  /** Label of the 3D window when it shows the whole shop. */
-  windowOverview: string
   faq: { title: string; items: { q: string; a: string }[] } // 6-8 items
   contact: {
     title: string

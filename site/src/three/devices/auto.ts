@@ -4,39 +4,10 @@ import { bolt, chip, elcap, extrude, extrudeGeo, harness, K, lathe, pcb, screw, 
 import type { ModelSpec } from './types'
 
 /**
- * Mobile car electrics: parts laid out on a service trolley on the pavement next to the van.
- * Local origin = trolley top. Front (+z) faces the camera.
+ * Mobile car electrics. Front (+z) faces the camera.
  * Headlight unit (housing, lens, LED projector module), ECU (lid opens to show its board),
  * dashcam, a short wiring harness and the OBD-II port.
  */
-const TOP = 0.8
-
-function trolley(b: GeoBuilder) {
-  const blk = '#1b1c1f'
-  const W = 0.68
-  const D = 0.44
-  for (const y of [-0.012, -0.5]) {
-    b.box('satin', blk, [W, 0.012, D], [0, y, 0], 0, 0.004)
-    for (const s of [-1, 1]) {
-      b.box('satin', blk, [W, 0.03, 0.01], [0, y + 0.02, s * (D / 2 - 0.005)])
-      b.box('satin', blk, [0.01, 0.03, D], [s * (W / 2 - 0.005), y + 0.02, 0])
-    }
-  }
-  for (const sx of [-1, 1])
-    for (const sz of [-1, 1]) {
-      b.box('satin', blk, [0.025, TOP - 0.06, 0.025], [sx * (W / 2 - 0.02), -TOP / 2 + 0.03, sz * (D / 2 - 0.02)])
-      b.box('metal', '#9da2a7', [0.04, 0.012, 0.04], [sx * (W / 2 - 0.03), -TOP + 0.075, sz * (D / 2 - 0.03)])
-      b.cyl('matte', '#0e0e0f', 0.035, 0.035, 0.026, [sx * (W / 2 - 0.03), -TOP + 0.035, sz * (D / 2 - 0.03)], [Math.PI / 2, 0, 0], 16)
-      b.cyl('metal', '#b9bdc1', 0.012, 0.012, 0.03, [sx * (W / 2 - 0.03), -TOP + 0.035, sz * (D / 2 - 0.03)], [Math.PI / 2, 0, 0], 10)
-    }
-  tube(b, 'metal', '#c3c7cb', [[-W / 2 - 0.0, 0.0, -0.15], [-W / 2 - 0.06, 0.06, -0.15], [-W / 2 - 0.06, 0.06, 0.15], [-W / 2, 0.0, 0.15]], 0.011, { radial: 10, seg: 40 })
-  // Rubber work mat, a multimeter and a crimp tool on the lower shelf.
-  b.box('matte', '#2a2c2f', [W - 0.04, 0.004, D - 0.04], [0, -0.004, 0])
-  b.box('gloss', '#f0b71c', [0.09, 0.03, 0.16], [0.12, -0.479, 0.05], 0.3, 0.01)
-  b.box('glow', '#b9d6a6', [0.06, 0.003, 0.05], [0.12, -0.463, 0.08], 0.3)
-  b.box('gloss', '#c8262b', [0.2, 0.018, 0.03], [-0.15, -0.485, -0.05], -0.2, 0.008)
-}
-
 function headlightShell(): Shape {
   // Side profile of a modern swept headlight housing (x across, y up).
   const s = new Shape()
@@ -230,9 +201,6 @@ function dongle(b: GeoBuilder) {
 
 export const AUTO: ModelSpec = {
   id: 'auto',
-  place: { pos: [5.0, TOP, 2.66], yaw: 0.7 },
-  view: { az: 6, el: 30 },
-  shopBase: trolley,
   parts: [
     { id: 'headlight', rank: 0, build: headlight, pos: [-0.13, 0.075, -0.06], rot: [-0.25, 0.2, 0], xpos: [-0.16, 0.25, -0.1], xrot: [-0.1, 0.25, 0] },
     // Lens off first (forward, then up out of the way), then the projector slides out the front opening.

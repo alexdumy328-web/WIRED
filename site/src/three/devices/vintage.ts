@@ -4,7 +4,7 @@ import type { ModelSpec } from './types'
 import { C, rng } from '../materials'
 
 /**
- * Late-70s stereo cassette deck on the microscope bench. Front = +z, floor at y = 0.
+ * Late-70s stereo cassette deck. Front = +z, floor at y = 0.
  * Brushed aluminium faceplate with two warm-lit VU meters, piano-key transport,
  * smoked cassette door. Exploded: the cover lifts, the faceplate pulls forward,
  * the transport rises with its heads and belts floating out of it, and the caps,
@@ -284,9 +284,6 @@ function potKnobs(b: GeoBuilder) {
 export const VINTAGE: ModelSpec = {
   id: 'vintage',
   // Shares the ESD mat with the logic board: hides the idle board while it is on show.
-  replaces: ['board'],
-  place: { pos: [0.48, 0.904, -1.6], yaw: Math.PI / 2 },
-  view: { az: 25, el: 24 },
   span: 0.32,
   parts: [
     { id: '_chassis', rank: 6, build: chassis },

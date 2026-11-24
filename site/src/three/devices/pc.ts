@@ -3,7 +3,7 @@ import { axialFan, chip, choke, circlePath, extrude, harness, header, jst, K, pc
 import type { ModelSpec } from './types'
 
 /**
- * Black mid-tower ATX case with a tempered-glass left panel, on the second bench.
+ * Black mid-tower ATX case with a tempered-glass left panel.
  * Authored front = +z, width along x (glass side at -x), floor at y = 0.
  * Exploded sideways out of the open (glass) side: glass first, then front fans,
  * GPU, PSU, and the motherboard carrying its RAM, cooler and M.2 stick.
@@ -291,11 +291,8 @@ const onBoard = (lx: number, ly: number, lz: number): V3 => [MB[0] - ly, MB[1] +
 
 export const PC: ModelSpec = {
   id: 'pc',
-  // Front of the bench, between the bench supply and the laptop stand (clear of both).
   // The glass side is what the camera should see: turn it to +z (case front ends up on +x).
   frontYaw: Math.PI / 2,
-  place: { pos: [0.52, 0.9, -2.83], yaw: Math.PI / 2 },
-  view: { az: 30, el: 20 },
   span: 0.3,
   parts: [
     { id: '_chassis', rank: 6, build: chassis },

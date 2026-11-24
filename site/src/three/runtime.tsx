@@ -29,18 +29,20 @@ export function ReadySignal() {
 }
 
 /**
- * With reduced motion a canvas renders on demand: this watches sceneState
- * (written by the page without React) and requests frames when it changes.
+ * With reduced motion a canvas renders on demand: this watches sceneState (written by the
+ * page without React) plus the viewer's own `sig`, and requests a few frames when either changes.
  */
-export function DemandDriver() {
+export function DemandDriver({ sig: own = '' }: { sig?: string }) {
   const invalidate = useThree((s) => s.invalidate)
+  const ownRef = useRef(own)
+  ownRef.current = own
   useEffect(() => {
     let raf = 0
     let last = ''
     let warm = 12
     const tick = () => {
       const s = sceneState
-      const sig = `${s.t.toFixed(4)}|${s.focus}|${s.frame}|${s.explode}|${s.model}|${s.highlight}|${s.tour}`
+      const sig = `${ownRef.current}|${s.highlight}`
       if (sig !== last) {
         last = sig
         warm = Math.max(warm, 4)

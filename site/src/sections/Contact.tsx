@@ -1,22 +1,37 @@
+import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useI18n } from '../i18n'
 import { Section } from '../components/Section'
 import { Logo } from '../components/Logo'
 import { OpenStatus } from '../components/OpenStatus'
 import { Phone, Pin } from '../components/Icons'
 
+const ShopMap = lazy(() => import('../components/ShopMap'))
+
+/** Loads the map chunk (Leaflet) only when Contact gets within a screen of the viewport. */
+function useNear<T extends HTMLElement>() {
+  const ref = useRef<T>(null)
+  const [near, setNear] = useState(false)
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const io = new IntersectionObserver(([e]) => e.isIntersecting && setNear(true), { rootMargin: '100% 0px' })
+    io.observe(el)
+    return () => io.disconnect()
+  }, [])
+  return { ref, near }
+}
+
+/** Contact details. The map position lives in lib/pickup.ts. */
 export const SHOP = {
-  lat: 47.166015,
-  lng: 27.558417,
   phone: '+40700000000', // TODO: real number
   maps: 'https://maps.app.goo.gl/ka5738mbWirnKRPJ9',
 }
 
 export function Contact() {
   const { t } = useI18n()
-  const d = 0.004
-  const bbox = [SHOP.lng - d * 1.6, SHOP.lat - d, SHOP.lng + d * 1.6, SHOP.lat + d].join(',')
+  const { ref: mapRef, near: mapNear } = useNear<HTMLDivElement>()
   return (
-    <Section id="contact" stop="door" title={t.contact.title}>
+    <Section id="contact" title={t.contact.title}>
       <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-14">
         <div>
           <p className="flex gap-3 text-lg">
@@ -42,12 +57,13 @@ export function Contact() {
             </a>
           </div>
         </div>
-        <iframe
-          title={t.contact.directions}
-          className="h-80 w-full rounded-[24px] border border-line grayscale-[0.5]"
-          loading="lazy"
-          src={`https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${SHOP.lat},${SHOP.lng}`}
-        />
+        <div ref={mapRef} role="region" aria-label={t.contact.directions} className="relative isolate h-80 overflow-hidden rounded-[24px] border border-line bg-surface-2 lg:h-[26rem]">
+          {mapNear && (
+            <Suspense fallback={null}>
+              <ShopMap label={t.contact.address} />
+            </Suspense>
+          )}
+        </div>
       </div>
     </Section>
   )

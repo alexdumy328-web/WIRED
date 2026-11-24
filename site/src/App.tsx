@@ -1,14 +1,15 @@
-import { lazy, Suspense, useEffect } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import Lenis from 'lenis'
 import { I18nProvider, useI18n } from './i18n'
 import { ThemeProvider, useReducedMotion } from './lib/theme'
-import { sceneState } from './three/contract'
 import { Header } from './components/Header'
 import { TraceField } from './components/TraceField'
 import { BookingCta } from './sections/BookingCta'
 import { setLenis } from './lib/scroll'
+import { useHeroSnap } from './lib/hero-snap'
+import { SectionRail } from './components/SectionRail'
+import { ActionBar } from './components/ActionBar'
 import { pageOf, usePath } from './lib/router'
-import { WorkshopPage } from './pages/WorkshopPage'
 import { Hero } from './sections/Hero'
 import { Services } from './sections/Services'
 import { Mobile } from './sections/Mobile'
@@ -19,12 +20,15 @@ import { Booking } from './sections/Booking'
 import { Faq } from './sections/Faq'
 import { Contact, Footer } from './sections/Contact'
 
+/** Lenis smooth scrolling, off with reduced motion. Returns the running instance. */
 function useSmoothScroll() {
   const reduced = useReducedMotion()
+  const [instance, setInstance] = useState<Lenis | null>(null)
   useEffect(() => {
     if (reduced) return
-    const lenis = new Lenis({ lerp: 0.1, anchors: { offset: -64 }, prevent: (n) => n.closest?.('[data-lenis-prevent]') != null })
+    const lenis = new Lenis({ lerp: 0.1, anchors: true, prevent: (n) => n.closest?.('[data-lenis-prevent]') != null })
     setLenis(lenis)
+    setInstance(lenis)
     let raf = 0
     const loop = (time: number) => {
       lenis.raf(time)
@@ -34,18 +38,11 @@ function useSmoothScroll() {
     return () => {
       cancelAnimationFrame(raf)
       setLenis(null)
+      setInstance(null)
       lenis.destroy()
     }
   }, [reduced])
-  useEffect(() => {
-    if (reduced) return
-    const on = (e: PointerEvent) => {
-      sceneState.pointer.x = (e.clientX / window.innerWidth) * 2 - 1
-      sceneState.pointer.y = (e.clientY / window.innerHeight) * 2 - 1
-    }
-    window.addEventListener('pointermove', on, { passive: true })
-    return () => window.removeEventListener('pointermove', on)
-  }, [reduced])
+  return instance
 }
 
 function Home() {
@@ -69,6 +66,8 @@ function Home() {
         <Contact />
       </main>
       <Footer />
+      <SectionRail />
+      <ActionBar />
       <Booking />
     </>
   )
@@ -79,9 +78,9 @@ const OwnerPage = lazy(() => import('./pages/OwnerPage').then((m) => ({ default:
 const DevPage = lazy(() => import('./pages/DevPage').then((m) => ({ default: m.DevPage })))
 
 function Page() {
-  useSmoothScroll()
+  const lenis = useSmoothScroll()
   const page = pageOf(usePath())
-  if (page === '/atelier') return <WorkshopPage />
+  useHeroSnap(page === null ? lenis : null)
   if (page === null) return <Home />
   return (
     <Suspense fallback={null}>

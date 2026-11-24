@@ -67,6 +67,8 @@ writeFileSync(
         { src: '^/assets/(.*)$', headers: { 'cache-control': 'public, max-age=31536000, immutable' }, continue: true },
         { src: '^/api/(.*)$', dest: '/api?__path=$1' },
         { src: '^/api/?$', dest: '/api?__path=' },
+        // The 3D workshop page is gone; send old links home.
+        { src: '^/atelier/?$', status: 308, headers: { Location: '/' } },
         { handle: 'filesystem' },
         { src: '^/(.*)$', dest: '/index.html' },
       ],
