@@ -4,8 +4,7 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import { Color, MeshBasicMaterial, MeshStandardMaterial, Vector3, type Camera, type Group, type Material } from 'three'
 import type { Bucket } from './builder'
 import { MODEL_PARTS, sceneState, type ModelId } from './contract'
-import { ASSEMBLE_TIME, EXPLODE_TIME, getMerged, getModel, partPose, partProgress, type PartAsset } from './devices'
-import { shadowFlags } from './Room'
+import { ASSEMBLE_TIME, EXPLODE_TIME, getModel, partPose, partProgress, type PartAsset } from './devices'
 
 const GOLD = new Color('#D9A93F')
 const GOLD_EMISSIVE = new Color('#D9A93F').multiplyScalar(0.9)
@@ -17,19 +16,11 @@ export type DeviceModelProps = {
   id: ModelId
   mats: Record<Bucket, Material>
   reducedMotion: boolean
-  /** Plain prop: always assembled, never highlighted, shares the scene materials. */
-  idle?: boolean
   /** Set to true to make the device reassemble and leave; `onLeft` fires when it is gone. */
   leaving?: { current: boolean }
   onLeft?: () => void
-  /** How the device arrives: scale in from exploded ('scatter') or simply appear ('none'). */
-  enter?: 'scatter' | 'none'
-  /** Shrink away after reassembling (false when an identical idle prop takes over). */
-  fadeOut?: boolean
   partLabels?: Record<string, string>
   runtime?: DeviceRuntime
-  castShadow?: boolean
-  children?: ReactNode
 }
 
 type MatEntry = { m: Material; base: Material }
@@ -47,15 +38,10 @@ export function DeviceModel({
   id,
   mats,
   reducedMotion,
-  idle = false,
   leaving,
   onLeft,
-  enter = 'scatter',
-  fadeOut = true,
   partLabels,
   runtime,
-  castShadow = true,
-  children,
 }: DeviceModelProps) {
   const asset = useMemo(() => getModel(id), [id])
   const root = useRef<Group>(null)
@@ -64,7 +50,6 @@ export function DeviceModel({
   const labelLay = useRef<LabelLayout>({ side: -1, x: 0, y: 0, init: false })
   const gl = useThree((s) => s.gl)
   useEffect(() => {
-    if (idle) return
     const ui = createLabelUi(gl.domElement.parentElement)
     if (!ui) return
     labelUi.current = ui
@@ -72,33 +57,34 @@ export function DeviceModel({
       ui.wrap?.remove()
       labelUi.current = { wrap: null, label: null, line: null, dot: null }
     }
-  }, [gl, idle])
-  const st = useRef({ g: enter === 'scatter' && !idle ? 1 : 0, presence: enter === 'scatter' ? 0 : 1, left: false, h: new Float32Array(asset.parts.length), dim: new Float32Array(asset.parts.length), init: false })
+  }, [gl])
+  const st = useRef({ g: 1, presence: 0, left: false, h: new Float32Array(asset.parts.length), dim: new Float32Array(asset.parts.length), init: false })
   const [label, setLabel] = useState<string | null>(null)
 
   // Per-part material clones so one part can glow while the others dim.
-  const partMats = useMemo(() => {
-    if (idle) return null
-    return asset.parts.map((p) => {
-      const m = new Map<Bucket, MatEntry>()
-      for (const [k] of p.geos) m.set(k, { m: mats[k].clone(), base: mats[k] })
-      return m
-    })
-  }, [asset, mats, idle])
-  useEffect(() => () => partMats?.forEach((m) => m.forEach((e) => e.m.dispose())), [partMats])
+  const partMats = useMemo(
+    () =>
+      asset.parts.map((p) => {
+        const m = new Map<Bucket, MatEntry>()
+        for (const [k] of p.geos) m.set(k, { m: mats[k].clone(), base: mats[k] })
+        return m
+      }),
+    [asset, mats],
+  )
+  useEffect(() => () => partMats.forEach((m) => m.forEach((e) => e.m.dispose())), [partMats])
 
   useFrame((state, rawDt) => {
     const dt = Math.min(rawDt, 0.1)
     const s = st.current
     const isLeaving = !!leaving?.current
-    const goal = idle || isLeaving ? 0 : clamp01(Number(sceneState.explode) || 0)
+    const goal = isLeaving ? 0 : clamp01(Number(sceneState.explode) || 0)
     const g0 = s.g
     const p0 = s.presence
     if (reducedMotion) s.g = goal
     else s.g = toward(s.g, goal, dt / (goal > s.g ? EXPLODE_TIME : ASSEMBLE_TIME))
     if (isLeaving) {
       if (s.g <= 0.001) {
-        if (!fadeOut || reducedMotion) s.presence = 0
+        if (reducedMotion) s.presence = 0
         else s.presence = toward(s.presence, 0, dt / 0.2)
         if (s.presence <= 0 && !s.left) {
           s.left = true
@@ -126,25 +112,22 @@ export function DeviceModel({
           o.visible = t > 0.01
         }
       }
-      if (castShadow) shadowFlags.dirty = true
       s.init = true
     }
 
     // Highlight: gold tint + soft pulse on the chosen part, the rest dims a little.
-    const hl = idle || isLeaving ? null : validHighlight(id)
-    if (partMats) {
-      const pulse = reducedMotion ? 0.5 : 0.5 + 0.5 * Math.sin(state.clock.elapsedTime * 3.6)
-      for (const p of asset.parts) {
-        const on = hl !== null && p.hi === hl ? 1 : 0
-        const dimGoal = hl !== null && !on ? 1 : 0
-        const h = reducedMotion ? on : toward(s.h[p.index], on, dt / 0.25)
-        const d = reducedMotion ? dimGoal : toward(s.dim[p.index], dimGoal, dt / 0.25)
-        const changed = h !== s.h[p.index] || d !== s.dim[p.index] || h > 0
-        s.h[p.index] = h
-        s.dim[p.index] = d
-        if (!changed && s.init) continue
-        for (const e of partMats[p.index].values()) applyTint(e, h, d, pulse)
-      }
+    const hl = isLeaving ? null : validHighlight(id)
+    const pulse = reducedMotion ? 0.5 : 0.5 + 0.5 * Math.sin(state.clock.elapsedTime * 3.6)
+    for (const p of asset.parts) {
+      const on = hl !== null && p.hi === hl ? 1 : 0
+      const dimGoal = hl !== null && !on ? 1 : 0
+      const h = reducedMotion ? on : toward(s.h[p.index], on, dt / 0.25)
+      const d = reducedMotion ? dimGoal : toward(s.dim[p.index], dimGoal, dt / 0.25)
+      const changed = h !== s.h[p.index] || d !== s.dim[p.index] || h > 0
+      s.h[p.index] = h
+      s.dim[p.index] = d
+      if (!changed && s.init) continue
+      for (const e of partMats[p.index].values()) applyTint(e, h, d, pulse)
     }
     const want = hl
     if (want !== label) {
@@ -195,8 +178,7 @@ export function DeviceModel({
         <mesh
           key={k}
           geometry={g}
-          material={partMats ? partMats[p.index].get(k)!.m : mats[k]}
-          castShadow={castShadow && k !== 'glow' && k !== 'glass'}
+          material={partMats[p.index].get(k)!.m}
           receiveShadow={k !== 'glow'}
           renderOrder={k === 'glass' ? 2 : 0}
         />
@@ -205,21 +187,9 @@ export function DeviceModel({
     </group>
   )
 
-  if (idle) {
-    // Static prop: the assembled model merged per material.
-    return (
-      <group ref={root} scale={st.current.presence > 0 ? 1 : 1e-4}>
-        {getMerged(id).map(([k, g]) => (
-          <mesh key={k} geometry={g} material={mats[k]} castShadow={castShadow && k !== 'glow' && k !== 'glass'} receiveShadow={k !== 'glow'} renderOrder={k === 'glass' ? 2 : 0} />
-        ))}
-        {children}
-      </group>
-    )
-  }
   return (
     <group ref={root} scale={st.current.presence > 0 ? 1 : 1e-4}>
       <group rotation-y={asset.spec.frontYaw ?? 0}>{(children2.get(-1) ?? []).map(renderPart)}</group>
-      {children}
     </group>
   )
 }

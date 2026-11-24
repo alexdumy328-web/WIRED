@@ -29,16 +29,8 @@ export type Dict = {
     lead: string // 1-2 sentences
     ctaBook: string
     ctaPrices: string
-    scrollHint: string
-  }
-  /** Short labels (1-3 words) on clickable hotspots inside the 3D shop. */
-  hotspots: {
-    pcbWall: string // the wall of repaired boards
-    bench: string // board-level / micro-soldering bench
-    laptop: string // laptops, PCs, IT
-    coffee: string // espresso machines and appliances
-    counter: string // reception, booking
-    door: string // car electrics at your car
+    /** Four short facts under the hero: a 1-3 word title and a short note. */
+    facts: { title: string; note: string }[]
   }
   services: {
     title: string

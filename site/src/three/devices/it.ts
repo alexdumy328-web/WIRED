@@ -1,5 +1,4 @@
 import type { GeoBuilder } from '../builder'
-import { LAPTOP_SEAT } from '../Bench'
 import { C } from '../materials'
 import { blower, chip, choke, flex, jst, K, pcb, screw, slots, smd, sphere, tube } from './kit'
 import type { ModelSpec } from './types'
@@ -150,9 +149,6 @@ function ram(b: GeoBuilder) {
 
 export const IT: ModelSpec = {
   id: 'it',
-  replaces: ['laptop'],
-  place: { pos: [LAPTOP_SEAT[0], LAPTOP_SEAT[1], LAPTOP_SEAT[2]], yaw: Math.PI / 2 },
-  view: { az: -28, el: 34 },
   span: 0.35,
   parts: [
     { id: '_chassis', rank: 6, build: chassis },

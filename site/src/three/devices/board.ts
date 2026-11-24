@@ -168,9 +168,6 @@ function shield(b: GeoBuilder) {
 export const BOARD: ModelSpec = {
   id: 'board',
   // Lies on the ESD mat in front of the oscilloscope; the vintage deck takes this spot when it is on show.
-  idle: true,
-  place: { pos: [0.5, 0.904, -1.62], yaw: Math.PI / 2 },
-  view: { az: 20, el: 32, fov: 30 },
   parts: [
     { id: 'pcb', rank: 4, build: board },
     { id: 'shield', rank: 0, build: shield, pos: [SHIELD.x, T + 0.0024, SHIELD.z], xpos: [SHIELD.x - 0.012, T + 0.065, SHIELD.z - 0.004], xrot: [0.3, 0, 0.18] },

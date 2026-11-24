@@ -1,11 +1,11 @@
 import { useI18n } from '../i18n'
 import { openBooking } from '../lib/booking-store'
-import { useStation } from '../lib/stations'
+import { useDeviceSection } from '../lib/device-view'
 
 /** In-page anchor for "#programare": a short pitch and the button that opens the booking popup. */
 export function BookingCta() {
   const { t } = useI18n()
-  const ref = useStation<HTMLElement>({ stop: 'counter' })
+  const ref = useDeviceSection<HTMLElement>(null)
   return (
     <section id="programare" ref={ref} className="relative scroll-mt-20 py-20 sm:py-24">
       <div className="rounded-[28px] border border-line bg-surface p-6 sm:p-10">

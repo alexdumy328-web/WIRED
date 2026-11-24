@@ -284,9 +284,6 @@ function potKnobs(b: GeoBuilder) {
 export const VINTAGE: ModelSpec = {
   id: 'vintage',
   // Shares the ESD mat with the logic board: hides the idle board while it is on show.
-  replaces: ['board'],
-  place: { pos: [0.48, 0.904, -1.6], yaw: Math.PI / 2 },
-  view: { az: 25, el: 24 },
   span: 0.32,
   parts: [
     { id: '_chassis', rank: 6, build: chassis },

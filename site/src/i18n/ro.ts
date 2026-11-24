@@ -30,15 +30,12 @@ const ro: Dict = {
     lead: 'Laptopuri, PC-uri, espressoare și electrica auto. Lucrăm în atelierul nostru de pe Bd. Alexandru cel Bun sau venim la tine, la mașină ori acasă.',
     ctaBook: 'Fă o programare',
     ctaPrices: 'Vezi prețurile',
-    scrollHint: 'Derulează pentru a vedea atelierul',
-  },
-  hotspots: {
-    pcbWall: 'Plăci reparate',
-    bench: 'Micro-lipituri',
-    laptop: 'Laptopuri și PC',
-    coffee: 'Espressoare',
-    counter: 'Recepție',
-    door: 'Service mobil',
+    facts: [
+      { title: 'Diagnostic gratuit', note: 'dacă faci reparația la noi' },
+      { title: '3 luni garanție', note: 'la manoperă, plus garanția pieselor' },
+      { title: 'Service mobil', note: 'la mașina ta sau acasă, în Iași' },
+      { title: 'Prețuri afișate', note: 'cu TVA inclus, înainte să vii' },
+    ],
   },
   services: {
     title: 'Servicii și prețuri',

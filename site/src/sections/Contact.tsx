@@ -16,7 +16,7 @@ export function Contact() {
   const d = 0.004
   const bbox = [SHOP.lng - d * 1.6, SHOP.lat - d, SHOP.lng + d * 1.6, SHOP.lat + d].join(',')
   return (
-    <Section id="contact" stop="door" title={t.contact.title}>
+    <Section id="contact" title={t.contact.title}>
       <div className="grid gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)] lg:gap-14">
         <div>
           <p className="flex gap-3 text-lg">

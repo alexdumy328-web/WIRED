@@ -1,23 +1,18 @@
-/** Dev-only preview for the workshop scene: open /three-preview.html on the Vite dev server. */
+/** Dev-only preview for the device viewer: open /three-preview.html on the Vite dev server. */
 import { StrictMode, useEffect, useState } from 'react'
 import { createRoot } from 'react-dom/client'
-import { MODEL_PARTS, MODELS, sceneState, STOPS, type ModelId, type StopId, type Theme } from './contract'
+import { MODEL_PARTS, MODELS, sceneState, type ModelId, type Theme } from './contract'
 import DeviceStage from './DeviceStage'
 import { getModel } from './devices'
-import WorkshopCanvas from './WorkshopCanvas'
 
 const q = new URLSearchParams(location.search)
 const num = (k: string, d: number) => (q.has(k) ? Number(q.get(k)) : d)
-sceneState.t = num('t', 0)
-sceneState.frame = num('frame', q.has('model') ? 0 : 0.35)
 sceneState.explode = num('explode', 0)
 sceneState.model = (q.get('model') as ModelId | null) || null
 sceneState.highlight = q.get('hl') || null
-sceneState.focus = (q.get('focus') as StopId | null) || null
 
 if (import.meta.env.DEV) Object.assign(window as unknown as Record<string, unknown>, { __devices: { getModel }, __sceneState: sceneState })
 
-type View = 'shop' | 'stage'
 type Aspect = 'full' | 'portrait' | 'landscape' | 'band'
 
 const PART_LABELS: Record<string, string> = Object.fromEntries(
@@ -33,33 +28,19 @@ function frameStyle(aspect: Aspect): React.CSSProperties {
 
 function Preview() {
   const [theme, setTheme] = useState<Theme>((q.get('theme') as Theme) || 'dark')
-  const [view, setView] = useState<View>((q.get('view') as View) || 'shop')
   const [aspect, setAspect] = useState<Aspect>((q.get('aspect') as Aspect) || 'full')
-  const [t, setT] = useState(sceneState.t)
-  const [focus, setFocus] = useState<StopId | ''>(sceneState.focus ?? '')
   const [model, setModel] = useState<ModelId | ''>(sceneState.model ?? '')
   const [explode, setExplode] = useState(sceneState.explode > 0.5)
   const [hl, setHl] = useState(sceneState.highlight ?? '')
-  const [frame, setFrame] = useState(sceneState.frame)
   const [rm, setRm] = useState(q.get('rm') === '1')
-  const [hs, setHs] = useState(q.get('hs') !== '0')
   const ui = q.get('ui') !== '0'
 
   useEffect(() => {
     document.body.dataset.theme = theme
   }, [theme])
-  useEffect(() => {
-    const move = (e: PointerEvent) => {
-      sceneState.pointer.x = (e.clientX / innerWidth) * 2 - 1
-      sceneState.pointer.y = -((e.clientY / innerHeight) * 2 - 1)
-    }
-    addEventListener('pointermove', move)
-    return () => removeEventListener('pointermove', move)
-  }, [])
   // Mirror scene-driven changes back into the controls.
   useEffect(() => {
     const id = setInterval(() => {
-      setFocus(sceneState.focus ?? '')
       setModel(sceneState.model ?? '')
       setExplode(sceneState.explode > 0.5)
     }, 250)
@@ -71,40 +52,15 @@ function Preview() {
     sceneState.highlight = null
     setHl('')
     setModel(m)
-    if (m && view !== 'stage') {
-      const stop = ({ laptop: 'laptop', pc: 'laptop', it: 'laptop', board: 'bench', vintage: 'bench', coffee: 'coffee', appliance: 'coffee', auto: 'door', largeAppliance: 'door' } as const)[m]
-      sceneState.focus = stop
-      setFocus(stop)
-    }
   }
 
   return (
     <>
       <div style={frameStyle(aspect)} data-testid="frame">
-        {view === 'stage' ? (
-          <DeviceStage theme={theme} reducedMotion={rm} partLabels={PART_LABELS} />
-        ) : (
-          <WorkshopCanvas
-            theme={theme}
-            reducedMotion={rm}
-            showHotspots={hs}
-            partLabels={PART_LABELS}
-            onSelect={(id) => {
-              sceneState.focus = id
-              setFocus(id)
-            }}
-          />
-        )}
+        <DeviceStage theme={theme} reducedMotion={rm} partLabels={PART_LABELS} />
       </div>
       {ui && (
         <div style={{ position: 'fixed', left: 12, bottom: 12, display: 'grid', gap: 6, padding: 12, borderRadius: 10, background: 'rgba(127,127,127,.18)', backdropFilter: 'blur(8px)', minWidth: 300, zIndex: 50 }}>
-          <div style={{ display: 'flex', gap: 6 }}>
-            {(['shop', 'stage'] as const).map((v) => (
-              <button key={v} onClick={() => setView(v)} style={{ fontWeight: view === v ? 700 : 400 }}>
-                {v === 'shop' ? 'shop (hero)' : 'device stage'}
-              </button>
-            ))}
-          </div>
           <label>
             model{' '}
             <select value={model} onChange={(e) => pickModel(e.target.value as ModelId | '')}>
@@ -129,29 +85,9 @@ function Preview() {
               <option value="band">band 2.0</option>
             </select>
           </label>
-          {view !== 'stage' && (
-            <>
-              <label>
-                t {t.toFixed(2)}{' '}
-                <input type="range" min={0} max={4} step={0.01} value={t} style={{ width: '100%' }} onChange={(e) => { const v = Number(e.target.value); sceneState.t = v; setT(v) }} />
-              </label>
-              <label>
-                focus{' '}
-                <select value={focus} onChange={(e) => { const v = e.target.value as StopId | ''; sceneState.focus = v || null; setFocus(v) }}>
-                  <option value="">(tour / t)</option>
-                  {STOPS.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </label>
-              <label>
-                frame {frame.toFixed(2)}{' '}
-                <input type="range" min={-1} max={1} step={0.01} value={frame} style={{ width: '100%' }} onChange={(e) => { const v = Number(e.target.value); sceneState.frame = v; setFrame(v) }} />
-              </label>
-            </>
-          )}
           <div style={{ display: 'flex', gap: 12 }}>
             <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>theme: {theme}</button>
             <label><input type="checkbox" checked={rm} onChange={(e) => setRm(e.target.checked)} /> reduced motion</label>
-            <label><input type="checkbox" checked={hs} onChange={(e) => setHs(e.target.checked)} /> hotspots</label>
           </div>
         </div>
       )}

@@ -30,15 +30,12 @@ const en: Dict = {
     lead: 'Laptops, PCs, espresso machines and car electrics. We work in our workshop on Bd. Alexandru cel Bun, or we come to you, to your car or your home.',
     ctaBook: 'Book a repair',
     ctaPrices: 'See prices',
-    scrollHint: 'Scroll to see the workshop',
-  },
-  hotspots: {
-    pcbWall: 'Repaired boards',
-    bench: 'Micro-soldering',
-    laptop: 'Laptops and PCs',
-    coffee: 'Espresso machines',
-    counter: 'Reception',
-    door: 'Mobile service',
+    facts: [
+      { title: 'Free diagnosis', note: 'if you go ahead with the repair' },
+      { title: '3-month warranty', note: 'on labour, parts carry their own' },
+      { title: 'Mobile service', note: 'at your car or home, in Iași' },
+      { title: 'Prices up front', note: 'VAT included, before you come in' },
+    ],
   },
   services: {
     title: 'Services and prices',

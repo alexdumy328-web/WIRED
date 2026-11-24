@@ -200,7 +200,6 @@ function StageContent({ theme, reducedMotion, partLabels, controls }: { theme: T
           onLeft={onLeft}
           partLabels={partLabels}
           runtime={runtime.current}
-          castShadow={false}
         />
       </group>
     </>

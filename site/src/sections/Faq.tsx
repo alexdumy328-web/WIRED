@@ -8,7 +8,7 @@ export function Faq() {
   const { t } = useI18n()
   const [open, setOpen] = useState<number | null>(0)
   return (
-    <Section id="intrebari" stop="overview" title={t.faq.title}>
+    <Section id="intrebari" title={t.faq.title}>
       <div className="max-w-[52rem]">
 <ul className="border-t border-line">
             {t.faq.items.map((item, i) => {

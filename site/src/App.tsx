@@ -2,7 +2,6 @@ import { lazy, Suspense, useEffect } from 'react'
 import Lenis from 'lenis'
 import { I18nProvider, useI18n } from './i18n'
 import { ThemeProvider, useReducedMotion } from './lib/theme'
-import { sceneState } from './three/contract'
 import { Header } from './components/Header'
 import { TraceField } from './components/TraceField'
 import { BookingCta } from './sections/BookingCta'
@@ -35,15 +34,6 @@ function useSmoothScroll() {
       setLenis(null)
       lenis.destroy()
     }
-  }, [reduced])
-  useEffect(() => {
-    if (reduced) return
-    const on = (e: PointerEvent) => {
-      sceneState.pointer.x = (e.clientX / window.innerWidth) * 2 - 1
-      sceneState.pointer.y = (e.clientY / window.innerHeight) * 2 - 1
-    }
-    window.addEventListener('pointermove', on, { passive: true })
-    return () => window.removeEventListener('pointermove', on)
   }, [reduced])
 }
 

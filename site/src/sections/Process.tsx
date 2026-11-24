@@ -7,7 +7,7 @@ export function Process() {
   const { t } = useI18n()
   const steps = t.process.steps
   return (
-    <Section id="proces" stop="bench" title={t.process.title}>
+    <Section id="proces" title={t.process.title}>
       <ol className="relative grid gap-8 md:grid-cols-5 md:gap-6">
         <motion.span
           aria-hidden="true"

@@ -294,8 +294,6 @@ export const PC: ModelSpec = {
   // Front of the bench, between the bench supply and the laptop stand (clear of both).
   // The glass side is what the camera should see: turn it to +z (case front ends up on +x).
   frontYaw: Math.PI / 2,
-  place: { pos: [0.52, 0.9, -2.83], yaw: Math.PI / 2 },
-  view: { az: 30, el: 20 },
   span: 0.3,
   parts: [
     { id: '_chassis', rank: 6, build: chassis },

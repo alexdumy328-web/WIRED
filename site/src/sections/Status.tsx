@@ -195,7 +195,6 @@ export function Status() {
   return (
     <Section
       id="status"
-      stop="counter"
       title={t.eta.title}
       lead={t.eta.lead}
       aside={

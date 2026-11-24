@@ -260,9 +260,6 @@ function hopper(b: GeoBuilder) {
 export const COFFEE_MACHINE: ModelSpec = {
   id: 'coffee',
   // The espresso machine is the coffee desk's standing prop (assembled) when no other device is on show there.
-  idle: true,
-  place: { pos: [0.31, 0.76, -4.77], yaw: Math.PI / 2 },
-  view: { az: 30, el: 22 },
   span: 0.35,
   parts: [
     { id: '_frame', rank: 7, build: frame },

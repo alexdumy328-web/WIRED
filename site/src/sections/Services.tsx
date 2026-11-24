@@ -7,7 +7,6 @@ import { rateFor } from '../lib/pricing'
 import { preselect } from '../lib/booking-store'
 import type { Job } from '../types'
 import { Plus } from '../components/Icons'
-import { categoryStop } from '../lib/stations'
 import { jobPart, modelFor } from '../lib/models'
 import { sceneState } from '../three/contract'
 import { Section } from '../components/Section'
@@ -79,7 +78,7 @@ export function Services() {
   const jobs = catalog.filter((j) => j.category === cat && j.mode === 'shop')
 
   return (
-    <Section id="servicii" stop={categoryStop[cat]} model={modelFor({ category: cat, mode: 'shop' })} title={t.services.title} lead={`${t.services.lead} ${t.services.labour}`}>
+    <Section id="servicii" model={modelFor({ category: cat, mode: 'shop' })} title={t.services.title} lead={`${t.services.lead} ${t.services.labour}`}>
       <div className="grid gap-8 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:gap-10">
         <div className="min-w-0">
           <div role="tablist" aria-label={t.services.title} className="-mx-1 flex flex-wrap gap-2">

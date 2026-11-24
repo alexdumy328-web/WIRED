@@ -40,7 +40,7 @@ export function DemandDriver() {
     let warm = 12
     const tick = () => {
       const s = sceneState
-      const sig = `${s.t.toFixed(4)}|${s.focus}|${s.frame}|${s.explode}|${s.model}|${s.highlight}`
+      const sig = `${s.explode}|${s.model}|${s.highlight}`
       if (sig !== last) {
         last = sig
         warm = Math.max(warm, 4)

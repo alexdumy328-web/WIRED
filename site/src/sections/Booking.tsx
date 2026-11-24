@@ -5,7 +5,7 @@ import { catalog } from '../data/catalog'
 import { estimate, formatEta, formatLei } from '../lib/estimate'
 import { daysAhead, slotsFor } from '../lib/slots'
 import { closeBooking, useBooking } from '../lib/booking-store'
-import { focus, pauseStations } from '../lib/stations'
+import { pauseDeviceSections, showModel } from '../lib/device-view'
 import { modelFor } from '../lib/models'
 import { lockPage } from '../lib/scroll'
 import { inertOutside } from '../lib/inert'
@@ -93,11 +93,11 @@ function BookingModal() {
     setStep(pre.jobIds.length ? 1 : 0)
   }, [pre.nonce, pre.mode, pre.jobIds])
 
-  // While open: page scroll locked, sections stop steering the 3D window, focus moves in.
+  // While open: page scroll locked, sections stop changing the 3D device, focus moves in.
   useEffect(() => {
     const prev = document.activeElement as HTMLElement | null
     lockPage(true)
-    pauseStations(true)
+    pauseDeviceSections(true)
     // Everything beside the dialog goes inert, so Tab cannot reach the page hidden behind it.
     const node = dialog.current
     const undoInert = inertOutside(node)
@@ -105,7 +105,7 @@ function BookingModal() {
     return () => {
       undoInert()
       lockPage(false)
-      pauseStations(false)
+      pauseDeviceSections(false)
       prev?.focus?.()
     }
   }, [])
@@ -149,11 +149,10 @@ function BookingModal() {
     }
   }
 
-  // The 3D window shows the device for the first picked job, otherwise the counter (or the van).
+  // The 3D viewer shows the device for the first picked job, otherwise a laptop (or the car parts).
   const firstJob = picked[0]
   useEffect(() => {
-    if (firstJob) focus('counter', modelFor(firstJob))
-    else focus(mode === 'mobile' ? 'door' : 'counter', mode === 'mobile' ? 'auto' : 'laptop')
+    showModel(firstJob ? modelFor(firstJob) : mode === 'mobile' ? 'auto' : 'laptop')
   }, [firstJob, mode])
 
   const dirty =

@@ -1,10 +1,9 @@
 import type { ReactNode } from 'react'
-import { useStation } from '../lib/stations'
-import type { ModelId, StopId } from '../three/contract'
+import { useDeviceSection } from '../lib/device-view'
+import type { ModelId } from '../three/contract'
 
 type Props = {
   id: string
-  stop: StopId
   model?: ModelId | null
   title: string
   lead?: string
@@ -13,9 +12,9 @@ type Props = {
   children: ReactNode
 }
 
-/** A plain page section in the content column; `stop`/`model` steer the 3D window while it is in view. */
-export function Section({ id, stop, model = null, title, lead, aside, className = '', children }: Props) {
-  const ref = useStation<HTMLElement>({ stop, model })
+/** A plain page section in the content column; `model` is the device the 3D viewer shows while it is in view. */
+export function Section({ id, model = null, title, lead, aside, className = '', children }: Props) {
+  const ref = useDeviceSection<HTMLElement>(model)
   return (
     <section id={id} ref={ref} className={`relative scroll-mt-20 py-20 sm:py-24 ${className}`}>
       <header className="flex flex-wrap items-end justify-between gap-x-10 gap-y-4">

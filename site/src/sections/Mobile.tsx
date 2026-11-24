@@ -15,7 +15,7 @@ export function Mobile() {
   const jobs = catalog.filter((j) => j.mode === 'mobile' && (tab === 'auto' ? j.category === 'auto' : j.category === 'appliance'))
 
   return (
-    <Section id="mobil" stop="door" model={tab === 'auto' ? 'auto' : 'largeAppliance'} title={t.mobile.title} lead={t.mobile.lead}>
+    <Section id="mobil" model={tab === 'auto' ? 'auto' : 'largeAppliance'} title={t.mobile.title} lead={t.mobile.lead}>
       <div role="tablist" aria-label={t.mobile.title} className="inline-flex rounded-full border border-line p-1">
         {(['auto', 'appliances'] as const).map((k) => (
           <button

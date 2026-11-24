@@ -3,8 +3,7 @@ import { chip, circlePath, elcap, extrude, jst, K, knob, lathe, pcb, roundRect, 
 import type { ModelSpec } from './types'
 
 /**
- * Front-loading washing machine (600 x 850 x 560 mm) on the pavement by the van, on its way
- * to / from a customer's home (sack truck behind it). Front at +z, floor at y = 0.
+ * Front-loading washing machine (600 x 850 x 560 mm). Front at +z, floor at y = 0.
  * Explodes: door swings out, control board rises, drum slides out the front, heater and drain
  * pump come out underneath, motor (with belt) out the left side. The cabinet + tub stay.
  */
@@ -206,21 +205,6 @@ function controlBoard(b: GeoBuilder) {
   b.cyl('metal', '#c3c7cb', 0.003, 0.003, 0.03, [-0.04, t + 0.007, -0.07], [Math.PI / 2, 0, 0], 10)
 }
 
-function sackTruck(b: GeoBuilder) {
-  // Hand truck standing beside the machine (we come to your home).
-  b.group([-W / 2 - 0.34, 0, 0.3], [-0.16, 0, 0], () => {
-    for (const s of [-1, 1]) {
-      b.cyl('metal', '#3a3d42', 0.014, 0.014, 1.15, [s * 0.2, 0.58, 0], 0, 10)
-      b.cyl('matte', '#121213', 0.11, 0.11, 0.05, [s * 0.26, 0.11, -0.07], [0, 0, Math.PI / 2], 20)
-      b.cyl('metal', '#b9bdc1', 0.05, 0.05, 0.052, [s * 0.26, 0.11, -0.07], [0, 0, Math.PI / 2], 14)
-    }
-    for (const y of [0.35, 0.7, 1.0]) b.cyl('metal', '#3a3d42', 0.01, 0.01, 0.4, [0, y, 0], [0, 0, Math.PI / 2], 8)
-    tube(b, 'metal', '#3a3d42', [[-0.2, 1.15, 0], [-0.16, 1.24, -0.02], [0.16, 1.24, -0.02], [0.2, 1.15, 0]], 0.014, { radial: 8, seg: 30 })
-    b.box('metal', '#4a4e53', [0.44, 0.008, 0.22], [0, 0.004, 0.11], 0, 0.003)
-    b.box('gloss', '#f0b71c', [0.42, 0.04, 0.004], [0, 0.6, 0.016])
-  })
-}
-
 const MOTOR = [-0.06, 0.11, -0.13] as const
 const PULLEY = [0, PORT.y, -0.245] as const
 
@@ -232,13 +216,9 @@ const PULLEY = [0, PORT.y, -0.245] as const
  */
 export const WASHER: ModelSpec = {
   id: 'largeAppliance',
-  // Right end of the pavement, facing the street: the parts line up toward the kerb and the
-  // camera looks from the open right-hand side, where the floor row lies.
-  place: { pos: [5.15, 0, 2.0], yaw: 0 },
-  view: { az: 48, el: 22 },
+  // The stage camera starts from the open right-hand side, where the floor row lies.
   stageAz: 42,
   span: 0.3,
-  shopBase: sackTruck,
   parts: [
     { id: 'cabinet', rank: 6, build: cabinet },
     { id: '_drive', rank: 6, group: 'motor', build: (b) => drive(b, [MOTOR[0] - PULLEY[0], MOTOR[1] - PULLEY[1]]), pos: PULLEY },

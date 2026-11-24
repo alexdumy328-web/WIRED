@@ -1,5 +1,4 @@
 import type { GeoBuilder } from '../builder'
-import { COFFEE } from '../Coffee'
 import { chip, elcap, K, knob, lathe, pcb, screw, slots, tube } from './kit'
 import type { ModelSpec } from './types'
 
@@ -159,9 +158,6 @@ function cable(b: GeoBuilder) {
 
 export const BLENDER: ModelSpec = {
   id: 'appliance',
-  replaces: ['coffee'],
-  place: { pos: [COFFEE.x - 0.02, COFFEE.top, COFFEE.z + 0.02], yaw: Math.PI / 2 },
-  view: { az: -28, el: 18 },
   // Housing is well clear before the dial and switch module come forward through its panel.
   span: 0.3,
   parts: [
