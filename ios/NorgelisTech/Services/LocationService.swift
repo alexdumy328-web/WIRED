@@ -42,7 +42,7 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
 
     /// A trip asked to track before permission was answered. Starts once it is granted.
     private var wantsTracking = false
-    private var wantsBackground = true
+    private var wantsBackground = false
     private var isAuthorized: Bool {
         locationManager.authorizationStatus == .authorizedWhenInUse || locationManager.authorizationStatus == .authorizedAlways
     }
@@ -53,7 +53,7 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
 
     // MARK: - Tracking Management
 
-    func startTracking(allowBackground: Bool = true) {
+    func startTracking(allowBackground: Bool = false) {
         wantsTracking = true
         wantsBackground = allowBackground
         guard isAuthorized else {
@@ -65,9 +65,9 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
 
     private func beginUpdates() {
         #if os(iOS)
-        if wantsBackground {
-            // Background location updates capability
-            // Note: requires "location" in UIBackgroundModes in Info.plist
+        // Background updates crash the app unless the build declares the "location" background mode.
+        let modes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String] ?? []
+        if wantsBackground, modes.contains("location") {
             locationManager.allowsBackgroundLocationUpdates = true
             locationManager.showsBackgroundLocationIndicator = true
             locationManager.pausesLocationUpdatesAutomatically = false
@@ -202,6 +202,7 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("[LocationService] Error: \(error.localizedDescription)")
+        // A failed fix is not fatal. The next update or a new permission answer tries again.
+        _ = error
     }
 }

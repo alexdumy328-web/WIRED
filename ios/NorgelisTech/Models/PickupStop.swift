@@ -22,3 +22,21 @@ struct PickupStop: Identifiable, Hashable {
         hasher.combine(isCompleted)
     }
 }
+
+extension PickupStop {
+    /// A stop built from one of today's pickup jobs on the server.
+    init(job: PickupJob, isCompleted: Bool = false) {
+        self.init(
+            id: job.code,
+            bookingCode: job.code,
+            customerName: job.name,
+            customerPhone: job.phone,
+            address: job.address,
+            coordinate: CLLocationCoordinate2D(latitude: job.lat, longitude: job.lon),
+            type: job.trips,
+            isUrgent: job.urgent,
+            scheduledTime: ShopCalendar.time(job.slot),
+            isCompleted: isCompleted
+        )
+    }
+}

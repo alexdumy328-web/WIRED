@@ -22,6 +22,7 @@ enum AuthProblem: Error, Equatable {
     case weakPassword
     case mailUnavailable
     case offline
+    case unavailable
     case other
 
     var key: String {
@@ -34,6 +35,7 @@ enum AuthProblem: Error, Equatable {
         case .weakPassword: return "auth.error.weak_password"
         case .mailUnavailable: return "auth.error.mail_unavailable"
         case .offline: return "auth.error.offline"
+        case .unavailable: return "auth.error.unavailable"
         case .other: return "auth.error.generic"
         }
     }
@@ -73,10 +75,13 @@ final class AuthStore: ObservableObject {
             viewer = me.user
             googleAvailable = me.providers?.google ?? false
             if me.user == nil { api.clearSession() }
+            // Sample data is a tool for owners and devs. Nobody else keeps it on.
+            if me.user?.staffRole?.isManager != true { api.useMockData = false }
         } catch APIError.networkError {
             // Offline: keep what we had.
         } catch APIError.unauthorized {
             viewer = nil
+            api.useMockData = false
             api.clearSession()
         } catch is CancellationError {
             // A newer refresh is running.
@@ -134,8 +139,18 @@ final class AuthStore: ObservableObject {
             ended = false
         }
         api.clearSession()
+        api.useMockData = false
         viewer = nil
         return ended
+    }
+
+    /// Deletes the signed-in account on the server, then signs out here. Needs the server to allow it
+    /// (Better Auth `user.deleteUser`); without that the route is missing and this throws `.unavailable`.
+    func deleteAccount() async throws {
+        try await call { try await self.api.requestVoid("POST", "api/auth/delete-user", body: [:]) }
+        api.clearSession()
+        api.useMockData = false
+        viewer = nil
     }
 
     // MARK: - Errors
@@ -152,10 +167,11 @@ final class AuthStore: ObservableObject {
         }
     }
 
-    private static func problem(status: Int, code: String?) -> AuthProblem {
+    nonisolated static func problem(status: Int, code: String?) -> AuthProblem {
         let c = (code ?? "").uppercased()
         // Match the code first: Better Auth also answers 403 for too many attempts and for a refused Origin.
         if c.contains("ORIGIN") { return .other }
+        if status == 404 { return .unavailable }
         if status == 429 || c.contains("TOO_MANY") { return .tooMany }
         if c.contains("NOT_VERIFIED") { return .unverified }
         if c.contains("OTP") || c.contains("INVALID_CODE") || c.contains("EXPIRED") { return .wrongCode }

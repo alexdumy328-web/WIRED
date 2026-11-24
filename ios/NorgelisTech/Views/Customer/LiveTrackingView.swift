@@ -67,6 +67,7 @@ struct LiveTrackingView: View {
                 Text("customer.live.heading \(stop.address)")
                     .font(.subheadline)
                     .foregroundColor(.secondary)
+                CallDriverButton()
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)

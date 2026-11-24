@@ -4,23 +4,22 @@ import Combine
 
 @MainActor
 final class AppState: ObservableObject {
-    @Published var selectedRole: UserRole = .driver
-    @Published var isDevRolePickerVisible: Bool = true
-    @Published var isSettingsPresented: Bool = false
-    @Published var isAccountPresented: Bool = false
-
     // Driver tracking state
     /// Today's stops. Completed ones first, then the remaining ones in the order the driver will go.
-    @Published var stops: [PickupStop] = MockData.driverStops
+    @Published var stops: [PickupStop] = APIClient.shared.useMockData ? MockData.driverStops : []
+    /// True while today's stops load from the server.
+    @Published var stopsLoading = false
+    /// Set when the stops could not load.
+    @Published var stopsError: String?
     @Published var currentEnRouteStop: PickupStop?
     @Published var isDriverEnRoute: Bool = false
-    @Published var driverCoordinate: CLLocationCoordinate2D = MockData.shopCoordinate
+    @Published var driverCoordinate: CLLocationCoordinate2D = Shop.coordinate
     @Published var etaMinutes: Int = 12
     /// The stop whose details are open in the driver panel.
     @Published var focusedStopID: String?
 
     // Bookings state for Owner and Customer
-    @Published var bookings: [Booking] = MockData.bookings
+    @Published var bookings: [Booking] = APIClient.shared.useMockData ? MockData.bookings : []
     @Published var currentCustomerBooking: Booking?
     @Published var customerSearchQuery: String = APIClient.shared.useMockData ? "NT-4K7Q" : ""
     /// What the last lookup said, in words, when it found nothing.
@@ -35,10 +34,9 @@ final class AppState: ObservableObject {
     private var tripTask: Task<Void, Never>?
     private var lookupTask: Task<Void, Never>?
     /// Where the current plan starts, so a real position fix far from it replans.
-    private var lastPlanOrigin = MockData.shopCoordinate
+    private var lastPlanOrigin = Shop.coordinate
 
     init() {
-        // Default to first booking for customer view convenience
         // Sample data shows a demo booking. Live data starts empty, so nobody sees someone else's job.
         self.currentCustomerBooking = APIClient.shared.useMockData ? MockData.bookings.first : nil
 
@@ -51,7 +49,7 @@ final class AppState: ObservableObject {
                     guard let self else { return }
                     let here = CLLocation(latitude: coord.latitude, longitude: coord.longitude)
                     // A position far from Iasi is a simulator's default city or garbage. Never follow it.
-                    let shop = CLLocation(latitude: MockData.shopCoordinate.latitude, longitude: MockData.shopCoordinate.longitude)
+                    let shop = CLLocation(latitude: Shop.coordinate.latitude, longitude: Shop.coordinate.longitude)
                     guard here.distance(from: shop) < 150_000 else { return }
                     if self.isDriverEnRoute {
                         self.driverCoordinate = coord
@@ -79,6 +77,10 @@ final class AppState: ObservableObject {
                     self.customerLookupBusy = false
                     self.customerLookupError = nil
                     self.currentCustomerBooking = sample ? MockData.bookings.first : nil
+                    self.bookings = sample ? MockData.bookings : []
+                    self.stops = sample ? MockData.driverStops : []
+                    self.replan()
+                    Task { await self.loadStops() }
                 }
             }
             .store(in: &cancellables)
@@ -102,6 +104,34 @@ final class AppState: ObservableObject {
     func replan() {
         lastPlanOrigin = driverCoordinate
         planner.plan(origin: driverCoordinate, stops: remainingStops)
+    }
+
+    /// Today's pickups and drop-offs. Sample data uses the built-in list. A live sign-in asks the server.
+    func loadStops() async {
+        if apiClient.useMockData {
+            stopsError = nil
+            return
+        }
+        stopsLoading = true
+        stopsError = nil
+        defer { stopsLoading = false }
+        do {
+            let reply: PickupsResponse = try await apiClient.request("GET", "api/admin/pickups", query: [
+                URLQueryItem(name: "date", value: ShopCalendar.dateString()),
+            ])
+            guard !apiClient.useMockData else { return }
+            let done = Set(stops.filter(\.isCompleted).map(\.id))
+            let fresh = reply.jobs.map { job in
+                PickupStop(job: job, isCompleted: done.contains(job.code))
+            }
+            // A trip under way keeps its stop even if the list changed under it.
+            stops = fresh.filter(\.isCompleted) + fresh.filter { !$0.isCompleted }
+            replan()
+        } catch is CancellationError {
+            return
+        } catch {
+            stopsError = error.localizedDescription
+        }
     }
 
     func moveRemaining(from offsets: IndexSet, to destination: Int) {
@@ -130,7 +160,7 @@ final class AppState: ObservableObject {
         focusedStopID = nil
 
         // Real location service with background mode enabled.
-        locationService.startTracking(allowBackground: true)
+        locationService.startTracking(allowBackground: false)
 
         tripTask?.cancel()
         tripTask = Task { [weak self] in
@@ -227,16 +257,16 @@ final class AppState: ObservableObject {
         }
     }
 
-    /// Puts the driver demo back to the start.
+    /// Puts the driver demo back to the start (sample data only).
     func resetDriverDemo() {
         tripTask?.cancel()
-        stops = MockData.driverStops
-        bookings = MockData.bookings
+        stops = apiClient.useMockData ? MockData.driverStops : []
+        bookings = apiClient.useMockData ? MockData.bookings : []
         currentCustomerBooking = apiClient.useMockData ? MockData.bookings.first : nil
         isDriverEnRoute = false
         currentEnRouteStop = nil
         focusedStopID = nil
-        driverCoordinate = MockData.shopCoordinate
+        driverCoordinate = Shop.coordinate
         locationService.stopTracking()
         replan()
     }

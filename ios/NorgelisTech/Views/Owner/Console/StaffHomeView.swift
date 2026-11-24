@@ -1,29 +1,14 @@
 import SwiftUI
 
-/// The owner area: today's overview, jobs, customers, schedule and the rest of the workshop.
-struct OwnerConsoleView: View {
+/// Everything for a staff account: today's overview, jobs, the driver map, the schedule and the rest.
+/// Technicians see no prices or settings. Owners and devs also get the backend settings.
+struct StaffHomeView: View {
     @EnvironmentObject var store: OwnerStore
     @EnvironmentObject var apiClient: APIClient
     @EnvironmentObject var auth: AuthStore
-
-    /// Live data needs a staff login. Sample data does not.
-    private var needsLogin: Bool {
-        !apiClient.useMockData && auth.viewer?.isStaff != true
-    }
+    @EnvironmentObject var appState: AppState
 
     var body: some View {
-        if needsLogin {
-            if auth.loaded {
-                StaffLoginRequired()
-            } else {
-                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-        } else {
-            console
-        }
-    }
-
-    private var console: some View {
         TabView(selection: $store.tab) {
             TodayTab()
                 .tabItem { Label("console.tab.today", systemImage: "sun.max.fill") }
@@ -31,9 +16,9 @@ struct OwnerConsoleView: View {
             JobsTab()
                 .tabItem { Label("console.tab.jobs", systemImage: "wrench.and.screwdriver.fill") }
                 .tag(OwnerStore.Tab.jobs)
-            CustomersTab()
-                .tabItem { Label("console.tab.customers", systemImage: "person.2.fill") }
-                .tag(OwnerStore.Tab.customers)
+            DriverRootView()
+                .tabItem { Label("console.tab.driver", systemImage: "car.fill") }
+                .tag(OwnerStore.Tab.driver)
             ScheduleTab()
                 .tabItem { Label("console.tab.schedule", systemImage: "calendar") }
                 .tag(OwnerStore.Tab.schedule)
@@ -41,19 +26,45 @@ struct OwnerConsoleView: View {
                 .tabItem { Label("console.tab.more", systemImage: "ellipsis.circle.fill") }
                 .tag(OwnerStore.Tab.more)
         }
-        .task(id: "\(apiClient.useMockData)-\(apiClient.baseURLString)-\(auth.viewer?.id ?? "")") { await store.bootstrap() }
+        .task(id: "\(apiClient.useMockData)-\(apiClient.baseURLString)-\(auth.viewer?.id ?? "")") {
+            await store.bootstrap()
+            await appState.loadStops()
+        }
+    }
+}
+
+/// A reminder that nothing on screen is real. Shown at the top of Today and More while sample data is on.
+struct SampleNotice: View {
+    @EnvironmentObject var apiClient: APIClient
+
+    var body: some View {
+        if apiClient.useMockData {
+            Label("console.sample.banner", systemImage: "exclamationmark.triangle.fill")
+                .font(.footnote.bold())
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(12)
+                .background(Theme.rose.opacity(0.16), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                .foregroundColor(Theme.rose)
+        }
     }
 }
 
 struct MoreTab: View {
     @EnvironmentObject var store: OwnerStore
     @EnvironmentObject var apiClient: APIClient
-    @EnvironmentObject var appState: AppState
 
     var body: some View {
         NavigationStack {
             List {
+                if apiClient.useMockData {
+                    Section { SampleNotice() }.listRowBackground(Color.clear).listRowInsets(EdgeInsets())
+                }
                 Section {
+                    NavigationLink {
+                        CustomersTab(embedded: true)
+                    } label: {
+                        Label("console.tab.customers", systemImage: "person.2.fill")
+                    }
                     NavigationLink {
                         WarrantiesView()
                     } label: {
@@ -72,28 +83,25 @@ struct MoreTab: View {
                     }
                 }
 
-                Section("console.more.account") {
-                    HStack {
-                        Label("console.more.role", systemImage: "person.badge.key.fill")
-                        Spacer()
-                        Text(LocalizedStringKey(store.role.titleKey)).foregroundColor(.secondary)
+                Section {
+                    NavigationLink { AccountView() } label: { Label("auth.account.title", systemImage: "person.crop.circle.fill") }
+                    if store.role.isManager {
+                        NavigationLink { BackendSettingsView() } label: { Label("console.more.dev_settings", systemImage: "server.rack") }
                     }
-                    if apiClient.useMockData {
+                }
+
+                if !store.role.isManager {
+                    Section { Text("console.more.technician_note").font(.footnote).foregroundColor(.secondary) }
+                }
+                if apiClient.useMockData {
+                    Section("console.more.account") {
                         Picker("console.more.preview_as", selection: Binding(get: { store.role }, set: { store.chooseMockRole($0) })) {
                             ForEach(StaffRole.allCases) { Text(LocalizedStringKey($0.titleKey)).tag($0) }
                         }
                     }
-                    if !store.role.isManager {
-                        Text("console.more.technician_note").font(.footnote).foregroundColor(.secondary)
-                    }
                 }
-
-                Section("console.more.data") {
-                    Toggle("console.more.sample_data", isOn: $apiClient.useMockData)
-                    Text(LocalizedStringKey(apiClient.useMockData ? "console.more.sample_on" : "console.more.sample_off"))
-                        .font(.footnote).foregroundColor(.secondary)
-                    if let error = store.lastError { Text(error).font(.footnote).foregroundColor(Theme.danger) }
-                    Button { appState.isSettingsPresented = true } label: { Label("console.more.dev_settings", systemImage: "gearshape") }
+                if let error = store.lastError {
+                    Section { Text(error).font(.footnote).foregroundColor(Theme.danger) }
                 }
             }
             .navigationTitle(LocalizedStringKey("console.tab.more"))

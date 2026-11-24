@@ -78,7 +78,7 @@ final class APIClient: ObservableObject {
         }
     }
 
-    /// Owner console and driver run on built-in sample data until this is off.
+    /// Owners and devs can switch the console and driver map to built-in sample data. Off by default, and cleared at sign-out.
     @Published var useMockData: Bool {
         didSet { UserDefaults.standard.set(useMockData, forKey: "norgelis_use_mock") }
     }
@@ -159,13 +159,13 @@ final class APIClient: ObservableObject {
         self.baseURLString = savedURL ?? Self.buildDefaultURL
 
         self.cookies = Self.loadCookies()
-        self.useMockData = UserDefaults.standard.object(forKey: "norgelis_use_mock") as? Bool ?? true
+        self.useMockData = UserDefaults.standard.object(forKey: "norgelis_use_mock") as? Bool ?? false
     }
 
-    /// The build's default address (`NorgelisAPIBaseURL` in Info.plist), else localhost.
+    /// The build's default address (`NorgelisAPIBaseURL` in Info.plist), else the production site.
     private static var buildDefaultURL: String {
         let configured = Bundle.main.object(forInfoDictionaryKey: "NorgelisAPIBaseURL") as? String
-        return configured.flatMap { $0.isEmpty ? nil : $0 } ?? "http://localhost:8787"
+        return configured.flatMap { $0.isEmpty ? nil : $0 } ?? "https://norgelis.ro"
     }
 
     var baseURL: URL? {

@@ -19,54 +19,75 @@
 		312E7B32A5AF2F3A6D7B9A5A /* StatsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1000FCE241120348B37F86DE /* StatsTab.swift */; };
 		32E0EA95F804DAE0FBC7F273 /* ScheduleTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8788B081887184ADA2F9E9D /* ScheduleTab.swift */; };
 		3A8F887034D8EBAB2A23DF12 /* OwnerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 620A429BCEA41CBB958C7F8A /* OwnerStore.swift */; };
-		3D3165897A45E51291C3A266 /* DevSettingsSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = 72F75513ADD4CD691582923D /* DevSettingsSheet.swift */; };
 		448AAFCFCF4F26AC7235874E /* Theme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28F395CC0D785227DA003BA9 /* Theme.swift */; };
-		4519977934CD9C31C3CA532D /* RolePickerBar.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC5769863689A4328D6595CD /* RolePickerBar.swift */; };
+		478408F64ED7681040884BAA /* BookingModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B8F2101A7E07B5E155AA13BA /* BookingModel.swift */; };
+		50C536955850DD5A74E97A1C /* Shop.swift in Sources */ = {isa = PBXBuildFile; fileRef = A593E067E4544B18E17C37B8 /* Shop.swift */; };
 		52BCFBEC1B4C6AD577F6F342 /* AuthStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = F490C116CE536750005103B5 /* AuthStore.swift */; };
 		591C64F7A941A983B0CFC84B /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F9450E7F038C309CBD57807 /* APIClient.swift */; };
 		597500261874022043B4F9F3 /* DriverRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 83445BA20548B7813B954853 /* DriverRootView.swift */; };
 		5DC79E101410BC4723E650E2 /* DriverPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 359D45A175734DDF469D68B9 /* DriverPanel.swift */; };
+		5DFFAEE0A0259B78D7223C8F /* catalog.json in Resources */ = {isa = PBXBuildFile; fileRef = 44D138235C8ECFF818F8C8FD /* catalog.json */; };
 		622CAFB467E74BB0851A8B32 /* Keychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3896954FFA3703713D5C4351 /* Keychain.swift */; };
+		67DFD9CA47D73975C73C283E /* NorgelisTechTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1F740B3D910CCDA8373805C /* NorgelisTechTests.swift */; };
 		6CF8CE6EF19764C20E9DE5D9 /* TodayTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 495E2C25CA64217A0F3E6D7D /* TodayTab.swift */; };
 		6DDACB42639C512150996CE6 /* InfoPlist.strings in Resources */ = {isa = PBXBuildFile; fileRef = 1EF488557DEF3749A8B3C9C5 /* InfoPlist.strings */; };
 		790A1645A7E50040D2B6C833 /* OwnerRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D4696B0900390557FCF1713 /* OwnerRepository.swift */; };
 		7B3E22C9008A4BB2521A7B16 /* DriverRoutePlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = 413D8F0DD2993BBCBA81AA7A /* DriverRoutePlanner.swift */; };
 		7CC74CF685AB94766B0E213C /* OwnerSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 953E62233030FCCBC2F56EBD /* OwnerSettingsView.swift */; };
 		7EDB37648B1B3461F210AFCB /* Booking.swift in Sources */ = {isa = PBXBuildFile; fileRef = 06EFA63EEE20BF9E1E6E267B /* Booking.swift */; };
-		81C0FE3B41335B32C708E3E0 /* CustomerRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1B2977F4C90C063355A975DA /* CustomerRootView.swift */; };
 		81FE8E5DFCD4E641B2E50969 /* DriverRadarCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C9FD522D1BB4B6E50601C26 /* DriverRadarCard.swift */; };
 		8308E6FACF83657FA86A9CC5 /* MockData.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8DDD17F647B3F57FCC9C051 /* MockData.swift */; };
 		83443F4690E191BF8F8087DF /* WalkInSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF761FFCE7EA85614AFBB148 /* WalkInSheet.swift */; };
 		8369297C3EF3ADC95AE7A5FA /* BookingDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF4F52A82B63EE6E6057D6DF /* BookingDetailView.swift */; };
 		894408347FDA4C7330B38DD6 /* SignInView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 439DE18833CEDA36EC475B5B /* SignInView.swift */; };
 		8FAA4F5CFECD9906BBDFED92 /* Workshop.swift in Sources */ = {isa = PBXBuildFile; fileRef = 803335B3567628905CF47352 /* Workshop.swift */; };
+		90FDAB06D816D60C2A94A415 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 844B2E138D7579249B6FEED0 /* PrivacyInfo.xcprivacy */; };
 		910D14E22F58AEA2A88290D4 /* PickupStop.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9B75631B70726E898394D09 /* PickupStop.swift */; };
 		92AB8E26661B88696CFC9CCE /* CustomersTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BCECAFE4A76C03232FB6945 /* CustomersTab.swift */; };
-		9480F42947D71BDEAEB8C788 /* OwnerConsoleView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C07F75B8D1F7FB3F8CCFD82D /* OwnerConsoleView.swift */; };
 		9738947027AECA048659316C /* DriverMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A0E6CEFF8D69F1691135AC9 /* DriverMapView.swift */; };
 		997B5905150D427A06FB0750 /* BookingStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE3FA3DC62554F3205AFF3A /* BookingStatus.swift */; };
+		A0AAED7AF4095F219F1CCA6F /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 114865215185903BAC779F64 /* WelcomeView.swift */; };
+		A11AAAFA93866EAD72681517 /* Catalog.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3177286FFAFE6A04BD273A47 /* Catalog.swift */; };
+		A4D63622D4956DE14B6C189D /* CustomerHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BBF4EBADC7A0357BC13EC144 /* CustomerHomeView.swift */; };
+		B9EF3ED59E7501F7AA11D91D /* BookingFlowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 745A6F18B12A677670352347 /* BookingFlowView.swift */; };
 		C0D25EA8D6A9AB2EA4D387EE /* LiveTrackingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 48031E51F98DBE94D86C491D /* LiveTrackingView.swift */; };
+		C4D8B6D71867B733F467ADE7 /* SlotPlanner.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6928F5FF8143D350A3A3FDB /* SlotPlanner.swift */; };
+		CD4C78902C0A4392EB207029 /* StaffHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B67D15A7153C227D2B5A8E4B /* StaffHomeView.swift */; };
+		D81C182FE14D8474B5F04807 /* BackendSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00F0CEF2771351EB91E5649F /* BackendSettingsView.swift */; };
 		DEA403BE43C6B98797800886 /* MockOwnerRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F2FE5D9B2D194AA3D12A691 /* MockOwnerRepository.swift */; };
 		EB0418BD46AF3D47D20ECEB8 /* JobsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5396BDE49B1D31DDFC6118F /* JobsTab.swift */; };
-		EE9DBEB75D0F670C145F67CE /* UserRole.swift in Sources */ = {isa = PBXBuildFile; fileRef = 76D5D7DD84DBCD740F891576 /* UserRole.swift */; };
 		F72A69D2E336759028C9C241 /* Localizable.strings in Resources */ = {isa = PBXBuildFile; fileRef = 86979048417B5AC785D532E3 /* Localizable.strings */; };
 		FC09F290C0966AE3E004B7A5 /* DriverLocation.swift in Sources */ = {isa = PBXBuildFile; fileRef = CAA5805A99415F6558829339 /* DriverLocation.swift */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		AF34A8EF42E282A1E1C879A3 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F73F77ABFCE3E36BDEF8EF6B /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B14495B27D6FBEE5F0AF4200;
+			remoteInfo = NorgelisTech;
+		};
+/* End PBXContainerItemProxy section */
+
 /* Begin PBXFileReference section */
+		00F0CEF2771351EB91E5649F /* BackendSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackendSettingsView.swift; sourceTree = "<group>"; };
 		06EFA63EEE20BF9E1E6E267B /* Booking.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Booking.swift; sourceTree = "<group>"; };
 		1000FCE241120348B37F86DE /* StatsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatsTab.swift; sourceTree = "<group>"; };
-		1B2977F4C90C063355A975DA /* CustomerRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerRootView.swift; sourceTree = "<group>"; };
+		114865215185903BAC779F64 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		1D528A3E819AA56AAD606D18 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		1D7A82FC4C6942C2F99279E9 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		28F395CC0D785227DA003BA9 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		2C9FD522D1BB4B6E50601C26 /* DriverRadarCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverRadarCard.swift; sourceTree = "<group>"; };
+		3177286FFAFE6A04BD273A47 /* Catalog.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Catalog.swift; sourceTree = "<group>"; };
 		359D45A175734DDF469D68B9 /* DriverPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverPanel.swift; sourceTree = "<group>"; };
 		3896954FFA3703713D5C4351 /* Keychain.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keychain.swift; sourceTree = "<group>"; };
 		389D14886ED1B0F664D2FFD8 /* ShopCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShopCalendar.swift; sourceTree = "<group>"; };
+		3E8CC7F5F03AA62E0551D8C8 /* NorgelisTechTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = NorgelisTechTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		3F2FE5D9B2D194AA3D12A691 /* MockOwnerRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockOwnerRepository.swift; sourceTree = "<group>"; };
 		413D8F0DD2993BBCBA81AA7A /* DriverRoutePlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverRoutePlanner.swift; sourceTree = "<group>"; };
 		439DE18833CEDA36EC475B5B /* SignInView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SignInView.swift; sourceTree = "<group>"; };
+		44D138235C8ECFF818F8C8FD /* catalog.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = catalog.json; sourceTree = "<group>"; };
 		462B015C55EABD0771F7A9DA /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		48031E51F98DBE94D86C491D /* LiveTrackingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveTrackingView.swift; sourceTree = "<group>"; };
 		48336DE168DAF09A9A71DBB2 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -79,17 +100,21 @@
 		6A0E6CEFF8D69F1691135AC9 /* DriverMapView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverMapView.swift; sourceTree = "<group>"; };
 		6F9450E7F038C309CBD57807 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
 		6FA2067B5B691BC744EB53BD /* ro */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = ro; path = ro.lproj/InfoPlist.strings; sourceTree = "<group>"; };
-		72F75513ADD4CD691582923D /* DevSettingsSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DevSettingsSheet.swift; sourceTree = "<group>"; };
-		76D5D7DD84DBCD740F891576 /* UserRole.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserRole.swift; sourceTree = "<group>"; };
+		745A6F18B12A677670352347 /* BookingFlowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingFlowView.swift; sourceTree = "<group>"; };
 		7BCECAFE4A76C03232FB6945 /* CustomersTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomersTab.swift; sourceTree = "<group>"; };
 		7BE3FA3DC62554F3205AFF3A /* BookingStatus.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingStatus.swift; sourceTree = "<group>"; };
 		803335B3567628905CF47352 /* Workshop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Workshop.swift; sourceTree = "<group>"; };
 		83445BA20548B7813B954853 /* DriverRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverRootView.swift; sourceTree = "<group>"; };
+		844B2E138D7579249B6FEED0 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		953E62233030FCCBC2F56EBD /* OwnerSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerSettingsView.swift; sourceTree = "<group>"; };
 		9567685E983F5201FB3CCE24 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
 		98C6305B2534614EEAA5D4E3 /* NorgelisTechApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NorgelisTechApp.swift; sourceTree = "<group>"; };
 		9D4696B0900390557FCF1713 /* OwnerRepository.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerRepository.swift; sourceTree = "<group>"; };
-		C07F75B8D1F7FB3F8CCFD82D /* OwnerConsoleView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerConsoleView.swift; sourceTree = "<group>"; };
+		A593E067E4544B18E17C37B8 /* Shop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Shop.swift; sourceTree = "<group>"; };
+		B67D15A7153C227D2B5A8E4B /* StaffHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StaffHomeView.swift; sourceTree = "<group>"; };
+		B6928F5FF8143D350A3A3FDB /* SlotPlanner.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SlotPlanner.swift; sourceTree = "<group>"; };
+		B8F2101A7E07B5E155AA13BA /* BookingModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingModel.swift; sourceTree = "<group>"; };
+		BBF4EBADC7A0357BC13EC144 /* CustomerHomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomerHomeView.swift; sourceTree = "<group>"; };
 		C5396BDE49B1D31DDFC6118F /* JobsTab.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobsTab.swift; sourceTree = "<group>"; };
 		CAA16DC80F7CEDFCB578E1CC /* Navigator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Navigator.swift; sourceTree = "<group>"; };
 		CAA5805A99415F6558829339 /* DriverLocation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverLocation.swift; sourceTree = "<group>"; };
@@ -98,7 +123,7 @@
 		D8DDD17F647B3F57FCC9C051 /* MockData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockData.swift; sourceTree = "<group>"; };
 		DF4F52A82B63EE6E6057D6DF /* BookingDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BookingDetailView.swift; sourceTree = "<group>"; };
 		DF761FFCE7EA85614AFBB148 /* WalkInSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WalkInSheet.swift; sourceTree = "<group>"; };
-		EC5769863689A4328D6595CD /* RolePickerBar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RolePickerBar.swift; sourceTree = "<group>"; };
+		E1F740B3D910CCDA8373805C /* NorgelisTechTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NorgelisTechTests.swift; sourceTree = "<group>"; };
 		F490C116CE536750005103B5 /* AuthStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthStore.swift; sourceTree = "<group>"; };
 		F9B75631B70726E898394D09 /* PickupStop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PickupStop.swift; sourceTree = "<group>"; };
 		FA9EDBE10D1C2BDA839A40A9 /* NorgelisTech.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = NorgelisTech.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -122,10 +147,19 @@
 			path = App;
 			sourceTree = "<group>";
 		};
+		153B0C1AC47B2319474F79FC /* Settings */ = {
+			isa = PBXGroup;
+			children = (
+				00F0CEF2771351EB91E5649F /* BackendSettingsView.swift */,
+			);
+			path = Settings;
+			sourceTree = "<group>";
+		};
 		34528FFBE1EF4546D663DEF2 = {
 			isa = PBXGroup;
 			children = (
 				C71A9E327CA75E0C99829916 /* NorgelisTech */,
+				5232B9C80C72388EB4B29AA0 /* NorgelisTechTests */,
 				E7587A80E502535B6D6B8D62 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -134,11 +168,29 @@
 			isa = PBXGroup;
 			children = (
 				462B015C55EABD0771F7A9DA /* Assets.xcassets */,
+				44D138235C8ECFF818F8C8FD /* catalog.json */,
 				48336DE168DAF09A9A71DBB2 /* Info.plist */,
+				844B2E138D7579249B6FEED0 /* PrivacyInfo.xcprivacy */,
 				1EF488557DEF3749A8B3C9C5 /* InfoPlist.strings */,
 				86979048417B5AC785D532E3 /* Localizable.strings */,
 			);
 			path = Resources;
+			sourceTree = "<group>";
+		};
+		4DA02B590FF916402C3BBF11 /* Welcome */ = {
+			isa = PBXGroup;
+			children = (
+				114865215185903BAC779F64 /* WelcomeView.swift */,
+			);
+			path = Welcome;
+			sourceTree = "<group>";
+		};
+		5232B9C80C72388EB4B29AA0 /* NorgelisTechTests */ = {
+			isa = PBXGroup;
+			children = (
+				E1F740B3D910CCDA8373805C /* NorgelisTechTests.swift */,
+			);
+			path = NorgelisTechTests;
 			sourceTree = "<group>";
 		};
 		6DAEA5D5D897A0739A6FD0B5 /* Models */ = {
@@ -146,9 +198,10 @@
 			children = (
 				06EFA63EEE20BF9E1E6E267B /* Booking.swift */,
 				7BE3FA3DC62554F3205AFF3A /* BookingStatus.swift */,
+				3177286FFAFE6A04BD273A47 /* Catalog.swift */,
 				CAA5805A99415F6558829339 /* DriverLocation.swift */,
 				F9B75631B70726E898394D09 /* PickupStop.swift */,
-				76D5D7DD84DBCD740F891576 /* UserRole.swift */,
+				A593E067E4544B18E17C37B8 /* Shop.swift */,
 				803335B3567628905CF47352 /* Workshop.swift */,
 			);
 			path = Models;
@@ -157,7 +210,7 @@
 		710D4B2E334EF3553037DE87 /* Customer */ = {
 			isa = PBXGroup;
 			children = (
-				1B2977F4C90C063355A975DA /* CustomerRootView.swift */,
+				BBF4EBADC7A0357BC13EC144 /* CustomerHomeView.swift */,
 				48031E51F98DBE94D86C491D /* LiveTrackingView.swift */,
 			);
 			path = Customer;
@@ -170,9 +223,9 @@
 				7BCECAFE4A76C03232FB6945 /* CustomersTab.swift */,
 				C5396BDE49B1D31DDFC6118F /* JobsTab.swift */,
 				666B97D88342322F01E5B293 /* OwnerComponents.swift */,
-				C07F75B8D1F7FB3F8CCFD82D /* OwnerConsoleView.swift */,
 				953E62233030FCCBC2F56EBD /* OwnerSettingsView.swift */,
 				D8788B081887184ADA2F9E9D /* ScheduleTab.swift */,
+				B67D15A7153C227D2B5A8E4B /* StaffHomeView.swift */,
 				1000FCE241120348B37F86DE /* StatsTab.swift */,
 				495E2C25CA64217A0F3E6D7D /* TodayTab.swift */,
 				DF761FFCE7EA85614AFBB148 /* WalkInSheet.swift */,
@@ -203,14 +256,15 @@
 		BA91D4EE75C38B38A500DA74 /* Views */ = {
 			isa = PBXGroup;
 			children = (
-				72F75513ADD4CD691582923D /* DevSettingsSheet.swift */,
-				EC5769863689A4328D6595CD /* RolePickerBar.swift */,
 				1D7A82FC4C6942C2F99279E9 /* RootView.swift */,
 				28F395CC0D785227DA003BA9 /* Theme.swift */,
 				04A9173E5E0D8ED7D90D00DE /* Auth */,
+				EC24E561A3F24409317EBC5C /* Booking */,
 				710D4B2E334EF3553037DE87 /* Customer */,
 				A7EE10EE1445F576F499E49E /* Driver */,
 				93A8313031B77F1F4B22E1DA /* Owner */,
+				153B0C1AC47B2319474F79FC /* Settings */,
+				4DA02B590FF916402C3BBF11 /* Welcome */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -232,6 +286,7 @@
 			children = (
 				6F9450E7F038C309CBD57807 /* APIClient.swift */,
 				F490C116CE536750005103B5 /* AuthStore.swift */,
+				B8F2101A7E07B5E155AA13BA /* BookingModel.swift */,
 				413D8F0DD2993BBCBA81AA7A /* DriverRoutePlanner.swift */,
 				3896954FFA3703713D5C4351 /* Keychain.swift */,
 				9567685E983F5201FB3CCE24 /* LocationService.swift */,
@@ -241,6 +296,7 @@
 				9D4696B0900390557FCF1713 /* OwnerRepository.swift */,
 				620A429BCEA41CBB958C7F8A /* OwnerStore.swift */,
 				389D14886ED1B0F664D2FFD8 /* ShopCalendar.swift */,
+				B6928F5FF8143D350A3A3FDB /* SlotPlanner.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -249,13 +305,40 @@
 			isa = PBXGroup;
 			children = (
 				FA9EDBE10D1C2BDA839A40A9 /* NorgelisTech.app */,
+				3E8CC7F5F03AA62E0551D8C8 /* NorgelisTechTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		EC24E561A3F24409317EBC5C /* Booking */ = {
+			isa = PBXGroup;
+			children = (
+				745A6F18B12A677670352347 /* BookingFlowView.swift */,
+			);
+			path = Booking;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		A62A7B0E17A6C3888639A206 /* NorgelisTechTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 2E07DDFB2AB67B0D90AF3666 /* Build configuration list for PBXNativeTarget "NorgelisTechTests" */;
+			buildPhases = (
+				29109245603D39228E31B11F /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				35B67B05B4E27116E98DE0D2 /* PBXTargetDependency */,
+			);
+			name = NorgelisTechTests;
+			packageProductDependencies = (
+			);
+			productName = NorgelisTechTests;
+			productReference = 3E8CC7F5F03AA62E0551D8C8 /* NorgelisTechTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 		B14495B27D6FBEE5F0AF4200 /* NorgelisTech */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = 3101EB0BC847E3E0EB1F1B18 /* Build configuration list for PBXNativeTarget "NorgelisTech" */;
@@ -283,6 +366,9 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1600;
 				TargetAttributes = {
+					A62A7B0E17A6C3888639A206 = {
+						ProvisioningStyle = Automatic;
+					};
 					B14495B27D6FBEE5F0AF4200 = {
 						DevelopmentTeam = "";
 						ProvisioningStyle = Automatic;
@@ -305,6 +391,7 @@
 			projectRoot = "";
 			targets = (
 				B14495B27D6FBEE5F0AF4200 /* NorgelisTech */,
+				A62A7B0E17A6C3888639A206 /* NorgelisTechTests */,
 			);
 		};
 /* End PBXProject section */
@@ -317,6 +404,8 @@
 				1CDAD0A55AB50EEE2100EA77 /* Assets.xcassets in Resources */,
 				6DDACB42639C512150996CE6 /* InfoPlist.strings in Resources */,
 				F72A69D2E336759028C9C241 /* Localizable.strings in Resources */,
+				90FDAB06D816D60C2A94A415 /* PrivacyInfo.xcprivacy in Resources */,
+				5DFFAEE0A0259B78D7223C8F /* catalog.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -330,12 +419,15 @@
 				591C64F7A941A983B0CFC84B /* APIClient.swift in Sources */,
 				1AC760ABFE4AE732C04BA9D8 /* AppState.swift in Sources */,
 				52BCFBEC1B4C6AD577F6F342 /* AuthStore.swift in Sources */,
+				D81C182FE14D8474B5F04807 /* BackendSettingsView.swift in Sources */,
 				7EDB37648B1B3461F210AFCB /* Booking.swift in Sources */,
 				8369297C3EF3ADC95AE7A5FA /* BookingDetailView.swift in Sources */,
+				B9EF3ED59E7501F7AA11D91D /* BookingFlowView.swift in Sources */,
+				478408F64ED7681040884BAA /* BookingModel.swift in Sources */,
 				997B5905150D427A06FB0750 /* BookingStatus.swift in Sources */,
-				81C0FE3B41335B32C708E3E0 /* CustomerRootView.swift in Sources */,
+				A11AAAFA93866EAD72681517 /* Catalog.swift in Sources */,
+				A4D63622D4956DE14B6C189D /* CustomerHomeView.swift in Sources */,
 				92AB8E26661B88696CFC9CCE /* CustomersTab.swift in Sources */,
-				3D3165897A45E51291C3A266 /* DevSettingsSheet.swift in Sources */,
 				FC09F290C0966AE3E004B7A5 /* DriverLocation.swift in Sources */,
 				9738947027AECA048659316C /* DriverMapView.swift in Sources */,
 				5DC79E101410BC4723E650E2 /* DriverPanel.swift in Sources */,
@@ -351,27 +443,44 @@
 				047B823A3625EB3EEE0FCC4E /* Navigator.swift in Sources */,
 				230CDEB9E924E65FC0427472 /* NorgelisTechApp.swift in Sources */,
 				2BEB3C5144FF1375E3AC2A74 /* OwnerComponents.swift in Sources */,
-				9480F42947D71BDEAEB8C788 /* OwnerConsoleView.swift in Sources */,
 				790A1645A7E50040D2B6C833 /* OwnerRepository.swift in Sources */,
 				7CC74CF685AB94766B0E213C /* OwnerSettingsView.swift in Sources */,
 				3A8F887034D8EBAB2A23DF12 /* OwnerStore.swift in Sources */,
 				910D14E22F58AEA2A88290D4 /* PickupStop.swift in Sources */,
-				4519977934CD9C31C3CA532D /* RolePickerBar.swift in Sources */,
 				05F575A00ACB2716907FB760 /* RootView.swift in Sources */,
 				32E0EA95F804DAE0FBC7F273 /* ScheduleTab.swift in Sources */,
+				50C536955850DD5A74E97A1C /* Shop.swift in Sources */,
 				12F4BEF22E3E5C239C4E3D24 /* ShopCalendar.swift in Sources */,
 				894408347FDA4C7330B38DD6 /* SignInView.swift in Sources */,
+				C4D8B6D71867B733F467ADE7 /* SlotPlanner.swift in Sources */,
+				CD4C78902C0A4392EB207029 /* StaffHomeView.swift in Sources */,
 				312E7B32A5AF2F3A6D7B9A5A /* StatsTab.swift in Sources */,
 				448AAFCFCF4F26AC7235874E /* Theme.swift in Sources */,
 				6CF8CE6EF19764C20E9DE5D9 /* TodayTab.swift in Sources */,
-				EE9DBEB75D0F670C145F67CE /* UserRole.swift in Sources */,
 				83443F4690E191BF8F8087DF /* WalkInSheet.swift in Sources */,
 				1BFFBD7A301561FE1DA03C0C /* WarrantiesView.swift in Sources */,
+				A0AAED7AF4095F219F1CCA6F /* WelcomeView.swift in Sources */,
 				8FAA4F5CFECD9906BBDFED92 /* Workshop.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		29109245603D39228E31B11F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				67DFD9CA47D73975C73C283E /* NorgelisTechTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		35B67B05B4E27116E98DE0D2 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B14495B27D6FBEE5F0AF4200 /* NorgelisTech */;
+			targetProxy = AF34A8EF42E282A1E1C879A3 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXVariantGroup section */
 		1EF488557DEF3749A8B3C9C5 /* InfoPlist.strings */ = {
@@ -395,6 +504,26 @@
 /* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
+		57C26B68F0115B118377F749 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ro.norgelis.app.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NorgelisTech.app/NorgelisTech";
+			};
+			name = Release;
+		};
 		5A393070C7D2502B01924BD8 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -429,6 +558,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -442,6 +572,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -449,9 +580,29 @@
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
+		};
+		5B6D513C7816EC4F91A517E1 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Automatic;
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ro.norgelis.app.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/NorgelisTech.app/NorgelisTech";
+			};
+			name = Debug;
 		};
 		7B2857E3DEB93B6B992F2E5C /* Release */ = {
 			isa = XCBuildConfiguration;
@@ -460,20 +611,30 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_TEAM = "";
-				GENERATE_INFOPLIST_KEY_UIBackgroundModes = location;
 				INFOPLIST_FILE = NorgelisTech/Resources/Info.plist;
+				INFOPLIST_PREPROCESS = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				NORGELIS_API_BASE_URL = "";
+				NORGELIS_API_BASE_URL = "https://norgelis.ro";
+				NORGELIS_DRIVER_PHONE = "";
+				NORGELIS_PHONE = "";
+				NORGELIS_PRIVACY_URL = "";
 				NORGELIS_SITE_ORIGIN = "";
+				NORGELIS_SUPPORT_EMAIL = "";
+				NORGELIS_TERMS_URL = "";
 				PRODUCT_BUNDLE_IDENTIFIER = ro.norgelis.app;
 				PRODUCT_NAME = NorgelisTech;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				STRIP_INSTALLED_PRODUCT = YES;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				TARGETED_DEVICE_FAMILY = 1;
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
@@ -511,6 +672,7 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
@@ -530,6 +692,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
+				MARKETING_VERSION = 1.0.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -538,7 +701,7 @@
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -550,25 +713,41 @@
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = "";
-				GENERATE_INFOPLIST_KEY_UIBackgroundModes = location;
 				INFOPLIST_FILE = NorgelisTech/Resources/Info.plist;
+				INFOPLIST_PREPROCESS = YES;
+				INFOPLIST_PREPROCESSOR_DEFINITIONS = "DEBUG_BUILD=1";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				NORGELIS_API_BASE_URL = "";
+				NORGELIS_API_BASE_URL = "https://norgelis.ro";
+				NORGELIS_DRIVER_PHONE = "";
+				NORGELIS_PHONE = "";
+				NORGELIS_PRIVACY_URL = "";
 				NORGELIS_SITE_ORIGIN = "";
+				NORGELIS_SUPPORT_EMAIL = "";
+				NORGELIS_TERMS_URL = "";
 				PRODUCT_BUNDLE_IDENTIFIER = ro.norgelis.app;
 				PRODUCT_NAME = NorgelisTech;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		2E07DDFB2AB67B0D90AF3666 /* Build configuration list for PBXNativeTarget "NorgelisTechTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				5B6D513C7816EC4F91A517E1 /* Debug */,
+				57C26B68F0115B118377F749 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		3101EB0BC847E3E0EB1F1B18 /* Build configuration list for PBXNativeTarget "NorgelisTech" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -576,7 +755,7 @@
 				7B2857E3DEB93B6B992F2E5C /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 		61640D04CE220127D413C0BC /* Build configuration list for PBXProject "NorgelisTech" */ = {
 			isa = XCConfigurationList;
@@ -585,7 +764,7 @@
 				5A393070C7D2502B01924BD8 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Debug;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

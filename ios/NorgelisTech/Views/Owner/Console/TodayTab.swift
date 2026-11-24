@@ -24,6 +24,7 @@ struct TodayTab: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
+                    SampleNotice()
                     kpis
 
                     Button {
