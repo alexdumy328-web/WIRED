@@ -32,7 +32,7 @@ describe('buildBookingIcs', () => {
   it('creates a valid 1-hour VEVENT with escaped fields', () => {
     const ics = buildBookingIcs({
       code: 'NT-4K7Q',
-      title: 'Norgelis Tech — NT-4K7Q',
+      title: 'Norgelis Tech, NT-4K7Q',
       slot: '2026-11-26T08:00:00Z',
       location: 'Bd. Alexandru cel Bun 49, Iași',
       description: 'Code: NT-4K7Q\nBring charger',

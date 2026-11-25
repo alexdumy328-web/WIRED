@@ -477,7 +477,7 @@ function BookingModal() {
                     onClick={() => {
                       const ics = buildBookingIcs({
                         code: done,
-                        title: `Norgelis Tech — ${done}`,
+                        title: `Norgelis Tech, ${done}`,
                         slot: bookedRecap.slot,
                         location: bookedRecap.whereText,
                         description: `${t.booking.success.code}: ${done}\n${t.booking.summary.price}: ${bookedRecap.price}`,

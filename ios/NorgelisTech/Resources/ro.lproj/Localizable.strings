@@ -421,7 +421,7 @@
 "dev.health.ok %@" = "Conectat! Store: %@";
 
 /* Production flow */
-"welcome.lead" = "Reparații electronice în Iași — atelier, ridicare sau la tine.";
+"welcome.lead" = "Reparații electronice în Iași, la atelier sau la tine.";
 "welcome.book" = "Programare";
 "welcome.sign_in" = "Autentifică-te";
 "welcome.create" = "Creează cont";
@@ -438,7 +438,7 @@
 "booking.title" = "Programare nouă";
 "booking.new" = "Programare nouă";
 "booking.kind.hint.shop" = "Aduci aparatul pe Bd. Alexandru cel Bun 49.";
-"booking.kind.hint.pickup" = "Ridicăm și livrăm înapoi. Transportul se taxează separat.";
+"booking.kind.hint.pickup" = "Ridicăm și livrăm aparatul. Transportul costă separat.";
 "booking.kind.hint.mobile" = "Venim noi la mașina ta sau acasă la tine, în Iași.";
 "booking.section.what" = "Ce trebuie reparat";
 "booking.section.when" = "Când";
@@ -665,8 +665,8 @@
 "customer.booking.work_done" = "Lucrări efectuate";
 "customer.booking.updated %@" = "Actualizat %@";
 "customer.docs.title" = "Documente";
-"customer.docs.sheet" = "Fișa de service (PDF)";
-"customer.docs.warranty %@" = "Garanție PDF (până la %@)";
+"customer.docs.sheet" = "Fișa de service PDF";
+"customer.docs.warranty %@" = "Garanție PDF, până la %@";
 "customer.docs.failed" = "Nu am putut descărca documentul. Încearcă din nou.";
 "customer.whatsapp.about %@" = "Bună, legat de programarea %@";
 "customer.cancel.button" = "Anulează programarea";
@@ -683,10 +683,10 @@
 "customer.driver.on_the_way_named %@" = "%@ a plecat spre tine!";
 "customer.live.at_address %@" = "Te așteaptă la %@.";
 "customer.live.waiting_door" = "Te așteaptă la adresă.";
-"customer.live.offline" = "Conexiune pierdută — reîncercăm…";
+"customer.live.offline" = "Conexiune pierdută. Reîncercăm...";
 "customer.live.stale %lld" = "Ultima actualizare acum %lld min";
 "customer.live.recenter" = "Recentrează";
-"booking.kind.hint.dropoff" = "Îl aduci la atelier, noi îl livrăm înapoi. Transportul se taxează separat.";
+"booking.kind.hint.dropoff" = "Îl aduci la atelier, iar noi îl livrăm înapoi. Transportul costă separat.";
 "booking.address.dropoff" = "Adresa de livrare";
 "booking.address.search_failed" = "Căutarea adresei nu funcționează acum.";
 "booking.address.pick_hint" = "Alege o adresă din lista de mai jos.";
@@ -698,7 +698,7 @@
 "booking.eta.day_one" = "1 zi";
 "booking.eta.days %lld" = "%lld zile";
 "booking.eta.days_range %lld %lld" = "%lld–%lld zile";
-"booking.payment_note" = "Plata se face la predare (numerar sau card). Diagnosticul e gratuit dacă faci reparația la noi.";
+"booking.payment_note" = "Plătești cu cardul sau numerar la predare. Diagnosticul e gratuit dacă faci reparația la noi.";
 "booking.missing.prefix %@" = "Mai lipsesc: %@";
 "booking.missing.service" = "serviciul sau descrierea";
 "booking.missing.issue" = "ce s-a întâmplat";
