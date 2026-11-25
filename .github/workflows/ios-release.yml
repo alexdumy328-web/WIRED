@@ -25,11 +25,18 @@ permissions:
 jobs:
   build-ipa:
     name: Build Unsigned NorgelisTech.ipa
-    runs-on: macos-15
+    # The newest image, and below its newest Xcode. Theme.swift still builds on an older Xcode.
+    runs-on: macos-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Use the newest Xcode on the runner
+        run: |
+          XCODE=$(ls -d /Applications/Xcode_*.app 2>/dev/null | sort -V | tail -1)
+          [ -n "$XCODE" ] && sudo xcode-select -s "$XCODE"
+          xcodebuild -version
 
       - name: Ensure XcodeGen is installed
         run: |

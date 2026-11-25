@@ -593,6 +593,7 @@ const en: Dict = {
     made: 'Made in Iași.',
     privacy: 'Privacy',
     terms: 'Terms',
+    getApp: 'iPhone app',
   },
   legal: { updated: 'Last updated', contact: 'Contact details', operator: 'Operator', address: 'Address', phone: 'Phone', home: 'Back to the site' },
 }

@@ -409,6 +409,6 @@ export type Dict = {
     users: { search: string; email: string; name: string; role: string; verified: string; created: string; saved: string; self: string; error: string }
     limits: { name: string; window: string; max: string; allowed: string; blocked: string; tracked: string }
   }
-  footer: { rights: string; made: string; privacy: string; terms: string }
+  footer: { rights: string; made: string; privacy: string; terms: string; getApp: string }
   legal: { updated: string; contact: string; operator: string; address: string; phone: string; home: string }
 }
