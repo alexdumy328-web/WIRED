@@ -3,10 +3,13 @@ import { AnimatePresence, motion } from 'motion/react'
 import { fmt, useI18n } from '../i18n'
 import { catalog, categoryOrder } from '../data/catalog'
 import { Section } from '../components/Section'
+import { Close } from '../components/Icons'
+import { DriverStatusBanner } from '../components/DriverStatusBanner'
+import { normalizeBookingCode } from '../lib/booking-helpers'
 import { useScrollGuard } from '../lib/scroll-guard'
 import type { BookingStatus } from '../types'
 
-type Lookup = { code: string; status: BookingStatus; updatedAt: string }
+type Lookup = { code: string; status: BookingStatus; updatedAt: string; jobIds?: string[]; custom?: string }
 const statusOrder: BookingStatus[] = ['received', 'diagnosis', 'waiting-parts', 'repairing', 'ready', 'done']
 
 /** Typical turnaround per shop category, in hours: median of job minimums to median of job maximums. */
@@ -74,7 +77,7 @@ function TurnaroundChart() {
 }
 
 function Tracker() {
-  const { t, lang } = useI18n()
+  const { t, lang, L } = useI18n()
   const [code, setCode] = useState('')
   const [state, setState] = useState<'idle' | 'loading' | 'notFound' | 'error'>('idle')
   const [result, setResult] = useState<Lookup | null>(null)
@@ -82,8 +85,9 @@ function Tracker() {
   const hold = useScrollGuard(formRef, code.trim().length > 0)
 
   const lookup = async (raw: string) => {
-    const c = raw.trim().toUpperCase()
+    const c = normalizeBookingCode(raw)
     if (!c) return
+    setCode(c)
     setState('loading')
     setResult(null)
     try {
@@ -102,14 +106,21 @@ function Tracker() {
     void lookup(code)
   }
 
-  // Booking emails link to /?cod=NT-XXXX#status: fill the code in and look it up straight away.
+  // Booking emails link to /?cod=NT-XXXX#status, and the Booking confirmation CTA dispatches nt:track.
   useEffect(() => {
-    const c = new URLSearchParams(window.location.search).get('cod')?.trim().toUpperCase() ?? ''
-    if (!/^NT-[A-Z0-9]{4}$/.test(c)) return
-    setCode(c)
-    void lookup(c)
-    // The hash alone may land before the page has its height; bring the tracker into view once laid out.
-    requestAnimationFrame(() => document.getElementById('status')?.scrollIntoView({ block: 'start' }))
+    const raw = new URLSearchParams(window.location.search).get('cod') ?? ''
+    const c = normalizeBookingCode(raw)
+    if (/^NT-[A-Z0-9]{4}$/.test(c)) {
+      setCode(c)
+      void lookup(c)
+      requestAnimationFrame(() => document.getElementById('status')?.scrollIntoView({ block: 'start' }))
+    }
+    const onTrack = (ev: Event) => {
+      const detail = (ev as CustomEvent<string>).detail
+      if (typeof detail === 'string') void lookup(detail)
+    }
+    window.addEventListener('nt:track', onTrack)
+    return () => window.removeEventListener('nt:track', onTrack)
     // eslint-disable-next-line react-hooks/exhaustive-deps -- once, on arrival
   }, [])
 
@@ -119,6 +130,15 @@ function Tracker() {
   const when = result
     ? new Intl.DateTimeFormat(lang === 'ro' ? 'ro-RO' : 'en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/Bucharest' }).format(new Date(result.updatedAt))
     : ''
+  const serviceNames = result
+    ? [
+        ...(result.jobIds ?? [])
+          .map((id) => catalog.find((job) => job.id === id)?.name)
+          .filter((n): n is NonNullable<typeof n> => Boolean(n))
+          .map((n) => L(n)),
+        ...(result.custom ? [result.custom] : []),
+      ]
+    : []
 
   return (
     <div>
@@ -130,17 +150,33 @@ function Tracker() {
         <label className="sr-only" htmlFor="track-code">
           {t.track.title}
         </label>
-        <input
-          id="track-code"
-          className="field uppercase sm:max-w-[14rem]"
-          value={code}
-          onChange={(e) => setCode(e.target.value)}
-          placeholder={t.track.placeholder}
-          autoComplete="off"
-          spellCheck={false}
-          maxLength={12}
-        />
-        <button type="submit" className="btn btn-ghost" disabled={state === 'loading'}>
+        <div className="relative sm:max-w-[14rem] sm:flex-1">
+          <input
+            id="track-code"
+            className="field pr-10 uppercase"
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
+            placeholder={t.track.placeholder}
+            autoComplete="off"
+            spellCheck={false}
+            maxLength={12}
+          />
+          {code && (
+            <button
+              type="button"
+              onClick={() => {
+                setCode('')
+                setResult(null)
+                setState('idle')
+              }}
+              aria-label={t.track.clear}
+              className="absolute right-2 top-1/2 grid size-7 -translate-y-1/2 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-ink"
+            >
+              <Close className="size-3.5" />
+            </button>
+          )}
+        </div>
+        <button type="submit" className="btn btn-ghost disabled:opacity-50" disabled={state === 'loading' || !code.trim()}>
           {t.track.button}
         </button>
       </form>
@@ -158,10 +194,15 @@ function Tracker() {
         <AnimatePresence>
           {result && (
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="mt-5">
-              <p className="text-[13px] text-muted">{result.code}</p>
+              <p className="font-mono text-[13px] text-muted">{result.code}</p>
               <p className="font-semibold" style={{ fontStretch: '110%' }}>
                 {t.track.statuses[result.status]}
               </p>
+              {serviceNames.length > 0 && (
+                <p className="mt-1 text-[14px] text-muted">
+                  {t.track.services}: {serviceNames.join(', ')}
+                </p>
+              )}
               {/* A cancelled booking has no place on the progress bar. */}
               {idx >= 0 && (
                 <ol className="mt-3 flex gap-1.5" aria-label={t.track.title}>
@@ -170,6 +211,10 @@ function Tracker() {
                   ))}
                 </ol>
               )}
+              <DriverStatusBanner
+                code={result.code}
+                active={result.status === 'received' || result.status === 'ready' || result.status === 'unrepairable'}
+              />
               <p className="mt-2 text-[13px] text-muted">{fmt(t.track.updated, { when })}</p>
             </motion.div>
           )}

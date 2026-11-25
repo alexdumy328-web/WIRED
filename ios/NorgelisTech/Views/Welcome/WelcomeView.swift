@@ -17,21 +17,32 @@ struct WelcomeView: View {
         GeometryReader { proxy in
             ScrollView {
                 // The main block is centred in the space above. The shop's contact details are pinned to the bottom.
-                VStack(spacing: 28) {
-                    Spacer(minLength: 0)
-                    hero
-                    actions
-                    Spacer(minLength: 0)
-                    ContactBar()
+                VStack(spacing: 20) {
+                    Spacer(minLength: 12)
+                    VStack(spacing: 24) {
+                        hero
+                        actions
+                    }
+                    .padding(20)
+                    .tintedGlassCard(radius: 26)
+                    Spacer(minLength: 12)
+                    ContactBar(embedded: true)
+                        .padding(14)
+                        .tintedGlassCard(radius: 22)
                 }
-                .padding(.horizontal, 24)
-                .padding(.top, 24)
+                .padding(.horizontal, 16)
+                .padding(.top, 16)
                 .padding(.bottom, 12)
                 .frame(minHeight: proxy.size.height)
             }
             .scrollBounceBehavior(.basedOnSize)
         }
-        .background(Color(.systemBackground))
+        .background {
+            ZStack {
+                Color(.systemBackground).ignoresSafeArea()
+                TraceFieldView()
+            }
+        }
         // A booking link from an email opens the lookup with that code, no account needed.
         .onReceive(push.$openCode.compactMap { $0 }) { code in
             appState.searchBooking(code: code)
@@ -123,6 +134,8 @@ struct ContactBar: View {
     @Environment(\.openURL) private var openURL
     /// Re-draws when the server's feedback link arrives.
     @ObservedObject private var remote = RemoteConfig.shared
+    /// True when placed inside a tinted container (uses a subtly raised pill fill).
+    var embedded = false
 
     var body: some View {
         VStack(spacing: 10) {
@@ -153,12 +166,21 @@ struct ContactBar: View {
 
     private func button(_ icon: String, _ title: LocalizedStringKey, action: @escaping () -> Void) -> some View {
         Button(action: action) {
-            Label(title, systemImage: icon)
-                .font(.subheadline.bold())
-                .lineLimit(1)
-                .padding(.horizontal, 10)
-                .frame(maxWidth: .infinity, minHeight: 44)
-                .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+            HStack(spacing: 5) {
+                Image(systemName: icon)
+                    .font(.footnote.weight(.semibold))
+                    .accessibilityHidden(true)
+                Text(title)
+                    .font(.footnote.weight(.semibold))
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)
+            }
+            .padding(.horizontal, 10)
+            .frame(maxWidth: .infinity, minHeight: 44)
+            .background(
+                embedded ? Color(.tertiarySystemFill) : Color(.secondarySystemBackground),
+                in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+            )
         }
         .buttonStyle(.plain)
     }

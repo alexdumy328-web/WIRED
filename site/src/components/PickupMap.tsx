@@ -43,6 +43,9 @@ export type PickupMapLabels = {
   quoteError: string
   shop: string
   urgent: string
+  retry?: string
+  callUs?: string
+  dropoffHint?: string
 }
 
 type QuoteResponse = PickupQuote & {
@@ -131,9 +134,10 @@ export default function PickupMap(props: {
   lang: 'ro' | 'en'
   labels: PickupMapLabels
   urgent?: boolean
+  phone?: string
   className?: string
 }): JSX.Element {
-  const { value, onChange, lang, labels, urgent = false, className } = props
+  const { value, onChange, lang, labels, urgent = false, phone, className } = props
   const { resolved } = useTheme()
   const searchId = useId()
   const listboxId = useId()
@@ -709,7 +713,7 @@ export default function PickupMap(props: {
       <div
         className="grid grid-cols-3 gap-1 rounded-xl border border-line bg-surface-2/60 p-1"
         role="radiogroup"
-        aria-label={lang === 'ro' ? 'Drumuri' : 'Trips'}
+        aria-label={lang === 'ro' ? 'Tip transport' : 'Transport type'}
       >
         {(['both', 'pickup', 'dropoff'] as const).map((t) => {
           const active = trips === t
@@ -731,6 +735,9 @@ export default function PickupMap(props: {
           )
         })}
       </div>
+      {trips === 'dropoff' && labels.dropoffHint && (
+        <p className="-mt-1 text-[13px] text-muted">{labels.dropoffHint}</p>
+      )}
 
       {/* Quote Panel */}
       <div className="flex flex-col gap-3 rounded-[18px] border border-line bg-surface p-4 transition-colors sm:p-5">
@@ -744,8 +751,17 @@ export default function PickupMap(props: {
             <span>{labels.search}...</span>
           </div>
         ) : quoteError ? (
-          <div className="rounded-xl border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
-            {labels.quoteError}
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-danger/30 bg-danger/10 p-3 text-sm text-danger">
+            <span>{labels.quoteError}</span>
+            {labels.retry && (
+              <button
+                type="button"
+                className="btn btn-ghost h-9 min-h-0 px-3 text-[13px] text-ink"
+                onClick={() => void triggerQuote(point.lat, point.lon, trips, urgent, address)}
+              >
+                {labels.retry}
+              </button>
+            )}
           </div>
         ) : quote ? (
           quote.tooFar ? (
@@ -760,8 +776,13 @@ export default function PickupMap(props: {
                   {quote.insideIasi ? labels.insideIasi : labels.outsideIasi}
                 </span>
               </div>
-              <div className="rounded-xl border border-line bg-surface-2/60 p-3.5 text-sm font-semibold text-ink">
-                {labels.tooFar}
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-line bg-surface-2/60 p-3.5 text-sm font-semibold text-ink">
+                <span>{labels.tooFar}</span>
+                {phone && labels.callUs && (
+                  <a href={`tel:${phone}`} className="btn btn-gold h-9 min-h-0 px-4 text-[13px]">
+                    {labels.callUs}
+                  </a>
+                )}
               </div>
             </div>
           ) : (
