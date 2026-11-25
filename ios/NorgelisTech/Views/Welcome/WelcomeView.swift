@@ -40,17 +40,23 @@ struct WelcomeView: View {
         }
         .sheet(item: $sheet) { which in
             if which == .book {
-                BookingFlowView()
+                BookingFlowView { code in
+                    appState.searchBooking(code: code)
+                    sheet = .track
+                }
             } else {
                 NavigationStack {
                     Group {
                         switch which {
-                        case .track: TrackView()
-                        case .signUp: SignInView(startAtSignUp: true)
-                        default: SignInView()
+                        case .track:
+                            TrackView()
+                                .navigationTitle(LocalizedStringKey("customer.title"))
+                        case .signUp:
+                            SignInView(startAtSignUp: true)
+                        default:
+                            SignInView()
                         }
                     }
-                    .navigationTitle(LocalizedStringKey(which == .track ? "customer.title" : (which == .signUp ? "auth.title.sign_up" : "auth.title.sign_in")))
                     .navigationBarTitleDisplayMode(.inline)
                     .toolbar {
                         ToolbarItem(placement: .topBarLeading) {
@@ -86,7 +92,7 @@ struct WelcomeView: View {
             Button { sheet = .signIn } label: {
                 Text("welcome.sign_in").font(.headline).frame(maxWidth: .infinity).padding(.vertical, 15)
                     .background(Color.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    .foregroundColor(.white)
+                    .foregroundColor(Theme.onAccent)
             }
             Button { sheet = .signUp } label: {
                 Text("welcome.create").font(.headline).frame(maxWidth: .infinity).padding(.vertical, 15)
@@ -94,14 +100,20 @@ struct WelcomeView: View {
                     .foregroundColor(.primary)
             }
             Text("welcome.guest").font(.footnote).foregroundColor(.secondary).padding(.top, 10)
-            HStack(spacing: 8) {
-                Button { sheet = .book } label: {
-                    Label("welcome.book", systemImage: "calendar.badge.plus").font(.subheadline.bold()).frame(maxWidth: .infinity, minHeight: 44)
-                }
-                Button { sheet = .track } label: {
-                    Label("welcome.track", systemImage: "magnifyingglass").font(.subheadline.bold()).frame(maxWidth: .infinity, minHeight: 44)
-                }
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) { guestButtons }
+                VStack(spacing: 8) { guestButtons }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var guestButtons: some View {
+        Button { sheet = .book } label: {
+            Label("welcome.book", systemImage: "calendar.badge.plus").font(.subheadline.bold()).frame(maxWidth: .infinity, minHeight: 44)
+        }
+        Button { sheet = .track } label: {
+            Label("welcome.track", systemImage: "magnifyingglass").font(.subheadline.bold()).frame(maxWidth: .infinity, minHeight: 44)
         }
     }
 }
@@ -114,21 +126,28 @@ struct ContactBar: View {
 
     var body: some View {
         VStack(spacing: 10) {
-            HStack(spacing: 8) {
-                if let phone = Shop.phone {
-                    button("phone.fill", "contact.call") { open(Shop.telURL(phone)) }
-                    button("message.fill", "contact.whatsapp") { open(Shop.whatsappURL(phone)) }
-                }
-                button("map.fill", "contact.directions") {
-                    let item = MKMapItem(placemark: MKPlacemark(coordinate: Shop.coordinate))
-                    item.name = Shop.name
-                    item.openInMaps()
-                }
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: 8) { contactButtons }
+                VStack(spacing: 8) { contactButtons }
             }
             Text(Shop.address).font(.footnote).foregroundColor(.secondary).multilineTextAlignment(.center)
             if let url = Shop.feedbackURL {
                 Link(destination: url) { Label("account.feedback", systemImage: "text.bubble").font(.footnote.bold()).frame(minHeight: 44) }
             }
+            LegalLinksFooter()
+        }
+    }
+
+    @ViewBuilder
+    private var contactButtons: some View {
+        if let phone = Shop.phone {
+            button("phone.fill", "contact.call") { open(Shop.telURL(phone)) }
+            button("message.fill", "contact.whatsapp") { open(Shop.whatsappURL(phone)) }
+        }
+        button("map.fill", "contact.directions") {
+            let item = MKMapItem(placemark: MKPlacemark(coordinate: Shop.coordinate))
+            item.name = Shop.name
+            item.openInMaps()
         }
     }
 
@@ -136,6 +155,8 @@ struct ContactBar: View {
         Button(action: action) {
             Label(title, systemImage: icon)
                 .font(.subheadline.bold())
+                .lineLimit(1)
+                .padding(.horizontal, 10)
                 .frame(maxWidth: .infinity, minHeight: 44)
                 .background(Color(.secondarySystemBackground), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
         }
@@ -144,5 +165,26 @@ struct ContactBar: View {
 
     private func open(_ url: URL?) {
         if let url { openURL(url) }
+    }
+}
+
+/// Subtle Privacy & Terms footer shown on Welcome and Sign-up screens.
+struct LegalLinksFooter: View {
+    var body: some View {
+        if Shop.privacyURL != nil || Shop.termsURL != nil {
+            HStack(spacing: 12) {
+                if let url = Shop.privacyURL {
+                    Link("account.privacy", destination: url).frame(minHeight: 36)
+                }
+                if Shop.privacyURL != nil && Shop.termsURL != nil {
+                    Text("·").foregroundColor(.secondary).accessibilityHidden(true)
+                }
+                if let url = Shop.termsURL {
+                    Link("account.terms", destination: url).frame(minHeight: 36)
+                }
+            }
+            .font(.caption)
+            .foregroundColor(.secondary)
+        }
     }
 }

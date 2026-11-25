@@ -113,6 +113,8 @@ enum ShopCalendar {
 
     /// "Mon, 23 Nov"
     static func short(_ day: String) -> String { display(date(day), "EEEdMMM") }
+    /// "23 Nov"
+    static func dayMonth(_ day: String) -> String { display(date(day), "dMMM") }
     /// "23 Nov 2026"
     static func medium(_ day: String) -> String { display(date(day), "dMMMy") }
     /// "Nov"

@@ -27,6 +27,8 @@ enum Theme {
     // Semantic
     static let ok = pickup
     static let danger = adaptive(light: 0xB3372E, dark: 0xFF6B5E)
+    /// High-contrast label colour on top of AccentColor fills (white on dark gold in light mode, dark ink on bright gold in dark mode).
+    static let onAccent = adaptive(light: 0xFFFFFF, dark: 0x1A1405)
 }
 
 extension UIColor {
@@ -110,24 +112,26 @@ struct StatusBadge: View {
 
     var body: some View {
         HStack(spacing: 6) {
-            StatusDot(status: status)
+            StatusDot(status: status).accessibilityHidden(true)
             Text(LocalizedStringKey(status.titleKey))
                 .font(.caption.bold())
                 .foregroundColor(.primary)
         }
+        .accessibilityElement(children: .combine)
     }
 }
 
 /// Small coloured chip naming the kind of job.
 struct KindChip: View {
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     let kind: JobKind
 
     var body: some View {
         Label(LocalizedStringKey(kind.titleKey), systemImage: kind.iconName)
             .labelStyle(.titleAndIcon)
             .font(.caption2.bold())
-            .lineLimit(1)
-            .fixedSize()
+            .lineLimit(dynamicTypeSize.isAccessibilitySize ? 2 : 1)
+            .fixedSize(horizontal: !dynamicTypeSize.isAccessibilitySize, vertical: true)
             .padding(.horizontal, 8)
             .padding(.vertical, 3)
             .background(kind.color.opacity(0.14))
@@ -142,11 +146,7 @@ struct PriceRow: View {
 
     var body: some View {
         LabeledContent(LocalizedStringKey("booking.price.label")) {
-            if estimate.hasPrice {
-                Text("\(Int(estimate.priceFrom))–\(Int(estimate.priceTo)) lei")
-            } else {
-                Text(LocalizedStringKey("booking.price.after_diagnosis"))
-            }
+            Text(Money.estimate(estimate))
         }
     }
 }

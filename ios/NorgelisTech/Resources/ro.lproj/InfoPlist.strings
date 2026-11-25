@@ -1,2 +1,3 @@
 "CFBundleDisplayName" = "Norgelis Tech";
 "NSLocationWhenInUseUsageDescription" = "Norgelis Tech folosește locația ca să arate poziția ta pe hartă, să calculeze traseul și, în timpul unei curse, să le arate clienților și atelierului unde ești. Funcționează și când treci în Waze.";
+"NSCalendarsWriteOnlyAccessUsageDescription" = "Norgelis Tech salvează programarea în calendarul tău doar când apeși „Adaugă în calendar”.";

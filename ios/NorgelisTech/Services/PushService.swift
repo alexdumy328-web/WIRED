@@ -17,6 +17,8 @@ final class PushService: NSObject, ObservableObject {
 
     /// A booking to open: a tapped notification or Live Activity, or a booking link (Universal Link).
     @Published var openCode: String?
+    /// Current notification permission, kept up to date so screens can offer a pre-prompt or Settings shortcut.
+    @Published private(set) var authStatus: UNAuthorizationStatus = .notDetermined
 
     private let api: APIClient
     private var deviceToken: String?
@@ -83,12 +85,12 @@ final class PushService: NSObject, ObservableObject {
     // MARK: - Account
 
     /// A customer signed in (or the app opened with a session). Registers when notifications are already allowed;
-    /// asking is left to `askIfUseful()`, at a moment the reason is obvious.
+    /// asking is left to the in-app pre-prompt or Account settings, so the system prompt never fires cold.
     func signedIn(userId: String) {
         signedInUser = userId
         Task {
-            let settings = await UNUserNotificationCenter.current().notificationSettings()
-            switch settings.authorizationStatus {
+            await refreshStatus()
+            switch authStatus {
             case .authorized, .provisional, .ephemeral:
                 UIApplication.shared.registerForRemoteNotifications()
                 await uploadDevice()
@@ -98,14 +100,27 @@ final class PushService: NSObject, ObservableObject {
         }
     }
 
-    /// Asks once, when the customer has a booking to hear about (after booking, or with repairs in the list).
-    func askIfUseful() {
-        Task {
-            let center = UNUserNotificationCenter.current()
-            guard await center.notificationSettings().authorizationStatus == .notDetermined else { return }
-            let granted = (try? await center.requestAuthorization(options: [.alert, .sound, .badge])) ?? false
-            if granted { UIApplication.shared.registerForRemoteNotifications() }
+    func refreshStatus() async {
+        authStatus = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+    }
+
+    /// Triggered only when the customer explicitly taps "Turn on alerts" in the pre-prompt or Account screen.
+    func requestAlerts() async {
+        let center = UNUserNotificationCenter.current()
+        let current = await center.notificationSettings().authorizationStatus
+        authStatus = current
+        guard current == .notDetermined else { return }
+        let granted = (try? await center.requestAuthorization(options: [.alert, .sound, .badge])) ?? false
+        await refreshStatus()
+        if granted {
+            UIApplication.shared.registerForRemoteNotifications()
+            await uploadDevice()
         }
+    }
+
+    /// Kept for compatibility; callers now prefer showing an inline pre-prompt before calling `requestAlerts()`.
+    func askIfUseful() {
+        Task { await refreshStatus() }
     }
 
     /// Before the session ends: this phone stops getting the account's alerts, and any Live Activity goes.
@@ -141,10 +156,12 @@ final class PushService: NSObject, ObservableObject {
     /// The server's pushes take over when the app is in the background.
     func showDriver(code: String, device: String, status: DriverTrackingStatus) {
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
+        let phase: DriverActivityAttributes.ContentState.Phase =
+            status.arrived == true ? .arrived : ((status.etaMinutes ?? 99) <= 2 ? .arriving : .onTheWay)
         let state = DriverActivityAttributes.ContentState(
             driverName: status.driverName ?? "",
-            etaMinutes: status.etaMinutes,
-            phase: (status.etaMinutes ?? 99) <= 2 ? .arriving : .onTheWay,
+            etaMinutes: status.arrived == true ? nil : status.etaMinutes,
+            phase: phase,
             updatedAt: Date().timeIntervalSince1970
         )
         let content = ActivityContent(state: state, staleDate: Date().addingTimeInterval(180))

@@ -55,6 +55,20 @@ struct Estimate: Codable, Hashable {
     var hasPrice: Bool { priceTo > 0 }
 }
 
+struct CustomerWarranty: Codable, Hashable {
+    var id: String
+    var label: String
+    var startsOn: String
+    var endsOn: String
+    var months: Int?
+    var state: String?
+}
+
+struct TimelineEntry: Codable, Hashable {
+    var status: BookingStatus
+    var at: String
+}
+
 struct Booking: Codable, Identifiable, Hashable {
     var code: String
     var status: BookingStatus
@@ -81,6 +95,27 @@ struct Booking: Codable, Identifiable, Hashable {
     var finalLei: Int?
     var statusHistory: [StatusEntry]?
     var mapLink: String?
+    /// The customer's view of the history: each status once, with when it happened.
+    var timeline: [TimelineEntry]?
+    /// When the driver collected the device (pickup jobs).
+    var collectedAt: String?
+    /// Where an on-site visit happens.
+    var location: String?
+    /// The running warranty for this job (customer view).
+    var warranty: CustomerWarranty?
+
+    /// What the customer sees as the booking's name: the device, else the first service, else the free text.
+    var title: String {
+        if let d = device, [d.brand, d.model].contains(where: { !($0 ?? "").isEmpty }) { return d.displayName }
+        if let id = jobIds?.first, let job = Catalog.shared.jobs.first(where: { $0.id == id }) { return job.name.text }
+        if let custom, !custom.isEmpty { return custom }
+        return String(localized: "console.job.no_device")
+    }
+
+    /// The services booked, by name.
+    var serviceNames: [String] {
+        (jobIds ?? []).compactMap { id in Catalog.shared.jobs.first { $0.id == id }?.name.text } + (custom.map { [$0] } ?? [])
+    }
 
     var id: String { code }
 

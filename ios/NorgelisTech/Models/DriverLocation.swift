@@ -3,6 +3,7 @@ import Foundation
 /// What `GET /api/bookings/:code/driver` answers: whether a driver is on the way to this booking, and where.
 struct DriverTrackingStatus: Decodable, Equatable {
     var isEnRoute: Bool
+    var arrived: Bool?
     var driverName: String?
     var latitude: Double?
     var longitude: Double?

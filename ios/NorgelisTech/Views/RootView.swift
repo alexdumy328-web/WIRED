@@ -54,14 +54,15 @@ struct OfflineView: View {
 
     var body: some View {
         VStack(spacing: 16) {
-            Image(systemName: "wifi.slash").font(.system(size: 44)).foregroundColor(.secondary)
+            Image(systemName: "wifi.slash").font(.system(size: 44)).foregroundColor(.secondary).accessibilityHidden(true)
             Text("offline.title").font(.title3.bold())
             Text("offline.message").font(.subheadline).foregroundColor(.secondary).multilineTextAlignment(.center)
             Button {
                 busy = true
                 Task { await auth.refresh(); busy = false }
             } label: {
-                HStack { if busy { ProgressView().tint(.white) }; Text("common.retry").font(.headline) }
+                HStack { if busy { ProgressView().tint(Theme.onAccent) }; Text("common.retry").font(.headline) }
+                    .foregroundStyle(Theme.onAccent)
                     .frame(minWidth: 160, minHeight: 44)
             }
             .buttonStyle(.borderedProminent)

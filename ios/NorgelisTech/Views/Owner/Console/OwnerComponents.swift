@@ -32,9 +32,35 @@ enum Money {
 
     static func lei(_ value: Int) -> String { lei(Double(value)) }
 
+    private static func num(_ value: Double) -> String {
+        formatter.string(from: NSNumber(value: value.rounded())) ?? "0"
+    }
+
+    /// "180–320 lei", or "200 lei" when both ends match.
+    static func range(_ from: Double, _ to: Double) -> String {
+        if from.rounded() == to.rounded() { return lei(from) }
+        return "\(num(from))–\(lei(to))"
+    }
+
     /// "180–320 lei", or "After diagnosis" when the top of the range is 0.
     static func estimate(_ e: Estimate) -> String {
-        e.hasPrice ? "\(formatter.string(from: NSNumber(value: e.priceFrom)) ?? "0")–\(lei(e.priceTo))" : String(localized: "booking.price.after_diagnosis")
+        e.hasPrice ? range(e.priceFrom, e.priceTo) : String(localized: "booking.price.after_diagnosis")
+    }
+
+    /// Estimated repair duration ("2–4 h", "1–2 days"), matching `site/src/lib/estimate.ts`.
+    static func eta(_ hours: [Double]) -> String? {
+        guard hours.count == 2 else { return nil }
+        let minH = hours[0], maxH = hours[1]
+        guard maxH > 0 else { return nil }
+        if maxH < 24 {
+            let a = Int(minH.rounded()), b = Int(maxH.rounded())
+            return a == b ? "\(a) h" : "\(a)–\(b) h"
+        }
+        let minD = max(1, Int(ceil(minH / 24))), maxD = Int(ceil(maxH / 24))
+        if minD == maxD {
+            return String(format: String(localized: minD == 1 ? "booking.eta.day_one" : "booking.eta.days %lld"), minD)
+        }
+        return String(format: String(localized: "booking.eta.days_range %lld %lld"), minD, maxD)
     }
 }
 

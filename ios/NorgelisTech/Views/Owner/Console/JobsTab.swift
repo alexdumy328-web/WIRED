@@ -116,7 +116,7 @@ struct JobsTab: View {
                                 .font(.subheadline.weight(.semibold))
                                 .padding(.horizontal, 12).padding(.vertical, 7)
                                 .background(chip == c.id ? Color.accentColor : Color(.secondarySystemBackground))
-                                .foregroundColor(chip == c.id ? .white : .primary)
+                                .foregroundColor(chip == c.id ? Theme.onAccent : .primary)
                                 .clipShape(Capsule())
                         }
                         .buttonStyle(.plain)

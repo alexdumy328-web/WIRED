@@ -81,7 +81,7 @@ struct ScheduleTab: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 8)
                         .background(day == d.date ? Color.accentColor : (d.date == today ? Color.accentColor.opacity(0.14) : Color(.secondarySystemBackground)))
-                        .foregroundColor(day == d.date ? .white : .primary)
+                        .foregroundColor(day == d.date ? Theme.onAccent : .primary)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
                     .buttonStyle(.plain)

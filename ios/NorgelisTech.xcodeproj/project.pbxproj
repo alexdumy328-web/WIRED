@@ -49,6 +49,7 @@
 		90FDAB06D816D60C2A94A415 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 844B2E138D7579249B6FEED0 /* PrivacyInfo.xcprivacy */; };
 		910D14E22F58AEA2A88290D4 /* PickupStop.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9B75631B70726E898394D09 /* PickupStop.swift */; };
 		92AB8E26661B88696CFC9CCE /* CustomersTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BCECAFE4A76C03232FB6945 /* CustomersTab.swift */; };
+		945CF75ABD0F003FA6AB6E55 /* RepairProgress.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1E0B5D0DB9D46D92929C5DB9 /* RepairProgress.swift */; };
 		9738947027AECA048659316C /* DriverMapView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6A0E6CEFF8D69F1691135AC9 /* DriverMapView.swift */; };
 		997B5905150D427A06FB0750 /* BookingStatus.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BE3FA3DC62554F3205AFF3A /* BookingStatus.swift */; };
 		9D07C1061D6DA3587DA01013 /* DriverSharing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4EE2A2D9C6F73C2AFE12B1DE /* DriverSharing.swift */; };
@@ -112,6 +113,7 @@
 		1AA27E5EC08B544DCC88393F /* NorgelisTech.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = NorgelisTech.entitlements; sourceTree = "<group>"; };
 		1D528A3E819AA56AAD606D18 /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		1D7A82FC4C6942C2F99279E9 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		1E0B5D0DB9D46D92929C5DB9 /* RepairProgress.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RepairProgress.swift; sourceTree = "<group>"; };
 		1F0485F07FD9E92F0409F756 /* DriverActivityAttributes.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverActivityAttributes.swift; sourceTree = "<group>"; };
 		28F395CC0D785227DA003BA9 /* Theme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Theme.swift; sourceTree = "<group>"; };
 		2C9FD522D1BB4B6E50601C26 /* DriverRadarCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverRadarCard.swift; sourceTree = "<group>"; };
@@ -260,6 +262,7 @@
 			children = (
 				BBF4EBADC7A0357BC13EC144 /* CustomerHomeView.swift */,
 				48031E51F98DBE94D86C491D /* LiveTrackingView.swift */,
+				1E0B5D0DB9D46D92929C5DB9 /* RepairProgress.swift */,
 			);
 			path = Customer;
 			sourceTree = "<group>";
@@ -559,6 +562,7 @@
 				910D14E22F58AEA2A88290D4 /* PickupStop.swift in Sources */,
 				F50018D44E5D165EC6897074 /* PushService.swift in Sources */,
 				55B7C3D879B5B7053832066F /* RemoteConfig.swift in Sources */,
+				945CF75ABD0F003FA6AB6E55 /* RepairProgress.swift in Sources */,
 				05F575A00ACB2716907FB760 /* RootView.swift in Sources */,
 				32E0EA95F804DAE0FBC7F273 /* ScheduleTab.swift in Sources */,
 				50C536955850DD5A74E97A1C /* Shop.swift in Sources */,

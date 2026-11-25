@@ -502,6 +502,8 @@ describe('bookings for owners and customers', () => {
     assert.equal(arrived.status, 200)
     assert.equal(arrived.body.notified, true)
     assert.equal((await call('/api/driver/bookings/NT-ARRV/arrived', { method: 'POST', cookie: owner, body: {} })).body.notified, false, 'twice is once')
+    await new Promise((r) => setTimeout(r, 3100)) // the tracking read cache
+    assert.equal((await call('/api/bookings/NT-ARRV/driver')).body.arrived, true, 'the customer sees the driver is at the door')
     assert.equal(await mails('driver:arrived'), 1)
     assert.equal((await call('/api/driver/bookings/NT-NONE/arrived', { method: 'POST', cookie: owner, body: {} })).status, 404)
     const customer = await signIn('arrive-customer@example.com')
@@ -509,6 +511,23 @@ describe('bookings for owners and customers', () => {
 
     await call('/api/driver/location', { method: 'DELETE', cookie: owner })
     await db.collection('bookings').deleteOne({ code: 'NT-ARRV' })
+  })
+
+  test('a customer can cancel their own booking before it starts, and nobody else can', async () => {
+    const me = await signIn('cancel-me@example.com')
+    const other = await signIn('cancel-other@example.com')
+    const db = store.getDb()
+    const users = await db.collection('user').find({ email: { $in: ['cancel-me@example.com'] } }).toArray()
+    const base = { mode: 'shop', lang: 'ro', contact: { name: 'C', phone: '0700000000', email: 'cancel-me@example.com' }, userId: String(users[0]!._id), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+    await db.collection('bookings').insertMany([
+      { ...base, code: 'NT-CAN1', status: 'received', slot: '2031-02-03T08:00:00.000Z' },
+      { ...base, code: 'NT-CAN2', status: 'diagnosis', slot: '2031-02-04T08:00:00.000Z' },
+    ])
+    assert.equal((await call('/api/me/bookings/NT-CAN1/cancel', { method: 'POST', cookie: other, body: {} })).status, 404, 'not theirs')
+    assert.equal((await call('/api/me/bookings/NT-CAN2/cancel', { method: 'POST', cookie: me, body: {} })).status, 409, 'work started')
+    assert.equal((await call('/api/me/bookings/NT-CAN1/cancel', { method: 'POST', cookie: me, body: {} })).status, 200)
+    assert.equal((await db.collection('bookings').findOne({ code: 'NT-CAN1' }))?.status, 'cancelled')
+    await db.collection('bookings').deleteMany({ code: { $in: ['NT-CAN1', 'NT-CAN2'] } })
   })
 
   test('Google sign-in hands the website session to the app through a one-time code', async () => {
