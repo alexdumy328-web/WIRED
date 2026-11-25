@@ -399,6 +399,57 @@ export function createBookingAdmin(db: Db, counters?: Counters) {
       }))
     },
 
+    /**
+     * The driver's run for a shop-local day: pickups booked for that day, plus every finished repair waiting to go
+     * back to a customer who chose delivery (whatever day it was booked), plus deliveries already made that day.
+     * `leg` says what the driver does there; `completed` comes from the server, so it survives reinstalls and phones.
+     */
+    async run(date: string) {
+      const start = startOfLocalDay(date)
+      const end = startOfLocalDay(addDays(date, 1))
+      const docs = await col
+        .find({
+          pickup: { $exists: true },
+          status: { $ne: 'cancelled' },
+          $or: [
+            { slot: { $gte: start, $lt: end } },
+            { status: { $in: ['ready', 'unrepairable'] }, 'pickup.trips': { $in: ['both', 'dropoff'] } },
+            { status: 'done', deliveredAt: { $gte: start, $lt: end } },
+          ],
+        })
+        .sort({ slot: 1 })
+        .limit(100)
+        .toArray()
+      return docs.map((doc) => {
+        const returning = doc.pickup!.trips !== 'pickup' && (doc.status === 'ready' || doc.status === 'unrepairable' || (doc.status === 'done' && Boolean(doc.deliveredAt)))
+        const leg: 'collect' | 'deliver' = returning || doc.pickup!.trips === 'dropoff' ? 'deliver' : 'collect'
+        const completed = leg === 'deliver' ? doc.status === 'done' : Boolean(doc.collectedAt)
+        return {
+          code: doc.code,
+          status: doc.status,
+          slot: doc.slot,
+          window: { from: doc.slot, to: new Date(Date.parse(doc.slot) + 3600_000).toISOString() },
+          trips: doc.pickup!.trips,
+          urgent: doc.pickup!.urgent === true,
+          address: doc.pickup!.address,
+          lat: doc.pickup!.lat,
+          lon: doc.pickup!.lon,
+          mapLink: mapLink(doc.pickup!.lat, doc.pickup!.lon),
+          name: doc.contact.name,
+          phone: doc.contact.phone,
+          device: [doc.device.brand, doc.device.model].filter(Boolean).join(' '),
+          quoteLei: doc.pickup!.quote.totalLei,
+          leg,
+          completed,
+        }
+      })
+    },
+
+    /** The driver collected the device. Kept on the booking so every phone agrees. */
+    async markCollected(code: string) {
+      await col.updateOne({ code, pickup: { $exists: true } }, { $set: { collectedAt: new Date().toISOString() } })
+    },
+
     async stats(now = new Date()) {
       const today = localDate(now)
       const thisMonday = mondayOf(today)

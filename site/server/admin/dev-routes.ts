@@ -23,6 +23,8 @@ export const ENV_NAMES = [
   'MAIL_FROM',
   'OWNER_EMAILS',
   'DEV_EMAILS',
+  'DRIVER_EMAILS',
+  'DEMO_EMAILS',
   'ADMIN_TOKEN',
   'AI_API_KEY',
   'AI_BASE_URL',

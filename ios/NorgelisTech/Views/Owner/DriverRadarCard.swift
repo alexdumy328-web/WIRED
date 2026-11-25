@@ -9,9 +9,16 @@ final class DriverRadarModel: ObservableObject {
 
     init(api: APIClient) { self.api = api }
 
+    /// Set by the card from the scene phase: nothing is fetched while the app is in the background.
+    var active = true
+
     func run() async {
         var failures = 0
         while !Task.isCancelled {
+            if !active {
+                try? await Task.sleep(nanoseconds: 2_000_000_000)
+                continue
+            }
             do {
                 drivers = try await api.fetchLiveDrivers()
                 failed = false
@@ -32,6 +39,7 @@ struct DriverRadarCard: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var apiClient: APIClient
     @StateObject private var model = DriverRadarModel(api: APIClient.shared)
+    @Environment(\.scenePhase) private var scenePhase
 
     private var live: LiveDriver? { model.drivers.first }
     private var moving: Bool { apiClient.useMockData ? appState.isDriverEnRoute : live != nil }
@@ -70,6 +78,7 @@ struct DriverRadarCard: View {
         .background(Color(.secondarySystemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .task { if !apiClient.useMockData { await model.run() } }
+        .onChange(of: scenePhase) { _, phase in model.active = phase == .active }
     }
 
     @ViewBuilder
@@ -79,11 +88,16 @@ struct DriverRadarCard: View {
                 Text("radar.destination \(stop.address)").font(.headline).lineLimit(1)
                 Text("radar.client \(stop.customerName) \(stop.bookingCode)").font(.caption).foregroundColor(.secondary)
             }
-        } else if !apiClient.useMockData, let live {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(live.name).font(.headline).lineLimit(1)
-                if let code = live.bookingCode {
-                    Text("radar.heading_to \(code)").font(.caption).foregroundColor(.secondary)
+        } else if !apiClient.useMockData, !model.drivers.isEmpty {
+            // Everyone sharing, not just the first: the van must not hide behind a technician.
+            VStack(alignment: .leading, spacing: 6) {
+                ForEach(model.drivers) { d in
+                    HStack {
+                        Text(d.name).font(.headline).lineLimit(1)
+                        if let code = d.bookingCode { Text("radar.heading_to \(code)").font(.caption).foregroundColor(.secondary) }
+                        Spacer()
+                        if let eta = d.etaMinutes { Text("~\(eta) min").font(.caption.bold()).foregroundColor(Theme.pickup) }
+                    }
                 }
             }
         } else if model.failed && !apiClient.useMockData {

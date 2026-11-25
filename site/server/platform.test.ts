@@ -462,6 +462,7 @@ describe('bookings for owners and customers', () => {
     assert.equal((await call('/api/me', { cookie: demo })).body.user.demo, true)
     assert.equal((await call('/api/me', { cookie: other })).body.user.demo, undefined)
     assert.equal((await call('/api/me', { cookie: owner })).body.user.demo, undefined)
+    assert.equal((await call('/api/auth/delete-user', { method: 'POST', cookie: demo, body: {} })).status, 403, 'the shared demo account cannot be deleted')
     // A demo account holds no staff role, so it reaches nothing real.
     assert.equal((await call('/api/admin/bookings', { cookie: demo })).status, 403)
     assert.equal((await call('/api/driver/location', { method: 'POST', cookie: demo, body: { latitude: 47.16, longitude: 27.58 } })).status, 403)
@@ -496,9 +497,10 @@ describe('bookings for owners and customers', () => {
     const jobs = await call('/api/driver/jobs', { cookie: driver })
     assert.equal(jobs.status, 200)
     assert.ok(jobs.body.items.every((j: any) => j.pickup), 'only pickup jobs')
-    assert.equal(jobs.body.items.some((j: any) => j.code === pk.body.code), true)
-    const one = jobs.body.items.find((j: any) => j.code === pk.body.code)
+    // The list only covers 30 days around today (test slots are in 2031); one job is read on its own.
+    const one = (await call(`/api/driver/bookings/${pk.body.code}`, { cookie: driver })).body
     for (const hidden of ['finalLei', 'statusHistory', 'userId', 'customerId', 'photoIds', 'intake', 'repair']) assert.equal(one[hidden], undefined, hidden)
+    assert.equal(one.contact.email, undefined, 'the email stays with the workshop')
     assert.equal((await call(`/api/driver/bookings/${pk.body.code}`, { cookie: driver })).status, 200)
     assert.equal((await call('/api/driver/pickups', { cookie: driver })).status, 200)
     assert.equal((await call('/api/driver/busy?from=2026-11-20&to=2026-12-20', { cookie: driver })).status, 200)
@@ -514,14 +516,27 @@ describe('bookings for owners and customers', () => {
     const shop = await call('/api/bookings', { method: 'POST', body: bookingBody('shop-only@example.com', slot(12)) })
     assert.equal((await call(`/api/driver/bookings/${shop.body.code}`, { cookie: driver })).status, 404)
 
+    // Collecting is recorded on the server, so every phone agrees.
+    assert.equal((await call(`/api/driver/bookings/${pk.body.code}/status`, { method: 'PATCH', cookie: driver, body: { collected: true } })).status, 200)
+    const day = pk.body.slot.slice(0, 10)
+    const run = await call(`/api/driver/pickups?date=${day}`, { cookie: driver })
+    const stop = run.body.jobs.find((j: any) => j.code === pk.body.code)
+    assert.equal(stop?.leg, 'collect')
+    assert.equal(stop?.completed, true)
+
     // Notes are allowed, delivery only from a finished repair.
     assert.equal((await call(`/api/driver/bookings/${pk.body.code}/status`, { method: 'PATCH', cookie: driver, body: { note: 'Device collected' } })).status, 200)
     assert.equal((await call(`/api/driver/bookings/${pk.body.code}/status`, { method: 'PATCH', cookie: driver, body: { delivered: true } })).status, 409, 'not ready yet')
     assert.equal((await call(`/api/driver/bookings/${pk.body.code}/status`, { method: 'PATCH', cookie: driver, body: {} })).status, 400)
     await call(`/api/admin/bookings/${pk.body.code}/status`, { method: 'PATCH', cookie: owner, body: { status: 'ready', notify: false } })
+    // A finished repair going back shows on every day's run as a delivery, whatever day it was booked.
+    const later = await call('/api/driver/pickups?date=2030-01-07', { cookie: driver })
+    assert.equal(later.body.jobs.find((j: any) => j.code === pk.body.code)?.leg, 'deliver')
     const delivered = await call(`/api/driver/bookings/${pk.body.code}/status`, { method: 'PATCH', cookie: driver, body: { delivered: true } })
     assert.equal(delivered.status, 200)
     assert.equal(delivered.body.status, 'done')
+    const mailed = await store.getDb().collection('dev_outbox').countDocuments({ to: 'pk@example.com' })
+    assert.ok(mailed >= 1, 'the customer is told about the hand-back')
 
     // A driver shares the van's position like staff do.
     assert.equal((await call('/api/driver/location', { method: 'POST', cookie: driver, body: { latitude: 47.16, longitude: 27.58 } })).status, 204)

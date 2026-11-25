@@ -141,12 +141,23 @@ struct TrackView: View {
 
 /// One booking: status, the driver card when a pickup is on, price, date, issue and address.
 struct BookingSummaryCard: View {
+    /// Only bookings a driver can actually be heading to are polled: a pickup today, or a finished repair going back.
+    /// A guest lookup has no pickup details, so for it the booking day or a finished repair decides.
+    static func driverMayCome(_ b: Booking) -> Bool {
+        guard b.status != .done, b.status != .cancelled, b.mode != "mobile" else { return false }
+        if let trips = b.pickup?.trips, trips == .pickup, b.status != .received { return false }
+        if b.status == .ready || b.status == .unrepairable { return b.pickup == nil || b.pickup?.trips != .pickup }
+        let today = ShopCalendar.dateString()
+        guard let slot = b.slot, ShopCalendar.day(of: slot) == today else { return false }
+        return b.pickup != nil || b.isGuestLookup
+    }
+
     @EnvironmentObject var appState: AppState
     let booking: Booking
 
     var body: some View {
         VStack(spacing: 20) {
-            if booking.status != .done, booking.status != .cancelled {
+            if Self.driverMayCome(booking) {
                 DriverOnTheWay(code: booking.code, destination: booking.pickup.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) })
             }
             if booking.hasPickup, booking.status != .done, booking.status != .cancelled {

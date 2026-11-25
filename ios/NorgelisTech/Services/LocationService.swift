@@ -75,7 +75,6 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
         // The simulator's own location is a fixed city. The fake drive supplies the position instead.
         #else
         locationManager.startUpdatingLocation()
-        locationManager.startUpdatingHeading()
         #endif
         isUpdatingLocation = true
     }
@@ -85,7 +84,6 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
         // Nothing to stop, and nothing to ask the system about, when no trip ever started tracking.
         guard isUpdatingLocation || simulationTimer != nil else { return }
         locationManager.stopUpdatingLocation()
-        locationManager.stopUpdatingHeading()
         #if os(iOS)
         locationManager.allowsBackgroundLocationUpdates = false
         #endif

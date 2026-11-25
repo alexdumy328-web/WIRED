@@ -232,6 +232,9 @@ struct PickupJob: Codable, Hashable, Identifiable {
     var phone: String
     var device: String
     var quoteLei: Double
+    /// From the driver's run (`/api/driver/pickups`): what the driver does there, and whether it is done.
+    var leg: String?
+    var completed: Bool?
 
     var id: String { code }
 }

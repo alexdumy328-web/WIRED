@@ -21,8 +21,8 @@ final class DriverTrackingModel: ObservableObject {
             } catch {
                 failures += 1
             }
-            // 5 s when the driver is close, 10 s on the way, 20 s when nobody is sharing, and backing off on errors.
-            var seconds: UInt64 = status.isEnRoute ? ((status.etaMinutes ?? 99) <= 10 ? 5 : 10) : 20
+            // 5 s when the driver is close, 10 s on the way, 45 s when nobody is sharing, and backing off on errors.
+            var seconds: UInt64 = status.isEnRoute ? ((status.etaMinutes ?? 99) <= 10 ? 5 : 10) : 45
             if failures > 0 { seconds = min(60, seconds * UInt64(1 << min(failures, 3))) }
             try? await Task.sleep(nanoseconds: seconds * 1_000_000_000)
         }

@@ -127,10 +127,8 @@ final class AppState: ObservableObject {
                 URLQueryItem(name: "date", value: ShopCalendar.dateString()),
             ])
             guard !apiClient.useMockData else { return }
-            let done = Set(stops.filter(\.isCompleted).map(\.id)).union(Self.savedDone())
-            let fresh = reply.jobs.map { job in
-                PickupStop(job: job, isCompleted: done.contains(job.code))
-            }
+            // Done comes from the server, so it is the same on every phone and after a reinstall.
+            let fresh = reply.jobs.map { PickupStop(job: $0) }
             // A trip under way keeps its stop even if the list changed under it.
             stops = fresh.filter(\.isCompleted) + fresh.filter { !$0.isCompleted }
             replan()
@@ -141,21 +139,8 @@ final class AppState: ObservableObject {
         }
     }
 
-    // MARK: - Completed stops survive a restart (codes only, per day)
-
-    private static var doneKey: String { "norgelis_done_\(ShopCalendar.dateString())" }
-
-    private static func savedDone() -> Set<String> {
-        Set(UserDefaults.standard.stringArray(forKey: doneKey) ?? [])
-    }
-
-    private static func saveDone(_ id: String) {
-        UserDefaults.standard.set(Array(savedDone().union([id])), forKey: doneKey)
-    }
-
     /// Signed out or switched account: stop the trip and GPS and forget everything the last person saw.
-    /// `clearSavedDone` is false on the first launch (the saved done stops belong to the same driver) and true on sign-out.
-    func resetSession(clearSavedDone: Bool = true) {
+    func resetSession() {
         tripTask?.cancel()
         lookupTask?.cancel()
         sharing.stop()
@@ -171,7 +156,6 @@ final class AppState: ObservableObject {
         customerSearchQuery = ""
         customerLookupError = nil
         customerLookupBusy = false
-        if clearSavedDone { UserDefaults.standard.removeObject(forKey: Self.doneKey) }
         driverCoordinate = Shop.coordinate
         replan()
     }
@@ -244,7 +228,6 @@ final class AppState: ObservableObject {
         tripTask?.cancel()
         if let idx = stops.firstIndex(where: { $0.id == current.id }) {
             stops[idx].isCompleted = true
-            if !apiClient.useMockData { Self.saveDone(current.id) }
             // Completed stops stay at the top, in the order they were done.
             let done = stops.remove(at: idx)
             stops.insert(done, at: completedStops.count)
@@ -252,7 +235,7 @@ final class AppState: ObservableObject {
 
         if apiClient.useMockData {
             if let bookingIdx = bookings.firstIndex(where: { $0.code == current.bookingCode }) {
-                bookings[bookingIdx].status = current.type == .dropoff ? .done : .received
+                bookings[bookingIdx].status = current.isDelivery ? .done : .received
             }
         } else {
             syncCompleted(current)
@@ -266,18 +249,20 @@ final class AppState: ObservableObject {
         replan()
     }
 
-    /// Tells the server the stop is done: a delivery closes the booking, a pickup leaves a note in its history.
-    /// Nobody is emailed from here. The owner decides when the customer hears.
+    /// Tells the server the stop is done: a delivery closes the booking (and the customer gets the hand-back email),
+    /// a pickup is marked collected. If the server refuses or cannot be reached, the stop goes back to "to do".
     private func syncCompleted(_ stop: PickupStop) {
-        let delivered = stop.type == .dropoff
+        let delivered = stop.isDelivery
         let note = String(localized: delivered ? "driver.note.delivered" : "driver.note.collected")
+        let body: [String: Any] = delivered ? ["delivered": true, "note": note] : ["collected": true, "note": note]
         Task {
             do {
-                try await apiClient.requestVoid("PATCH", "api/driver/bookings/\(stop.bookingCode)/status",
-                                                body: ["delivered": delivered, "note": note])
+                try await apiClient.requestVoid("PATCH", "api/driver/bookings/\(stop.bookingCode)/status", body: body)
             } catch is CancellationError {
                 return
             } catch {
+                if let idx = stops.firstIndex(where: { $0.id == stop.id }) { stops[idx].isCompleted = false }
+                replan()
                 stopsError = String(localized: "driver.sync_failed")
             }
         }

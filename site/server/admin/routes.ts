@@ -8,7 +8,7 @@ import { isManager } from '../auth/roles.ts'
 import type { Viewer } from '../auth/session.ts'
 import { categoryOf } from '../documents/categories.ts'
 import type { PlatformDeps } from './deps.ts'
-import { localDate, isRealDate, DATE_ONLY } from './time.ts'
+import { localDate, isRealDate, DATE_ONLY, addDays } from './time.ts'
 import { mountWorkshop } from './workshop-routes.ts'
 import { ROMANIA_BBOX } from '../geo.ts'
 
@@ -67,8 +67,10 @@ function demoEmails(env: Record<string, string | undefined>): Set<string> {
 
 /** What a driver sees of a job: who to find, where, and the state. No notes, money, photos or workshop records. */
 export function driverView(b: Record<string, any>) {
-  const { code, status, mode, slot, device, issue, contact, pickup, mapLink, updatedAt, createdAt } = b
-  return { code, status, mode, slot, device, issue, contact, pickup, mapLink, updatedAt, createdAt }
+  const { code, status, mode, slot, device, issue, contact, pickup, mapLink, updatedAt, createdAt, collectedAt } = b
+  // A name and a phone are enough to find the customer; the email stays with the workshop.
+  const who = contact ? { name: contact.name, phone: contact.phone } : undefined
+  return { code, status, mode, slot, device, issue, contact: who, pickup, mapLink, updatedAt, createdAt, ...(collectedAt ? { collectedAt } : {}) }
 }
 
 /** Technicians work on devices but do not see what was charged. */
@@ -104,9 +106,17 @@ export function createAdminRouter(deps: PlatformDeps): Router {
   }
   const handle = (fn: Handler) => fn
 
+  /** Emails the customer about a new status. On hand-back, a valid warranty goes along as a PDF. */
+  async function tellCustomer(booking: Parameters<typeof deps.notifier.statusChanged>[0], status: string): Promise<'sent' | 'failed' | 'skipped'> {
+    const valid = status === 'done' ? (await deps.warranties.forBooking(booking.code)).find((w) => !w.voided) : undefined
+    const attachment = valid ? await deps.documents.warranty(valid, booking).catch(() => null) : null
+    return deps.notifier.statusChanged(booking, attachment ? [attachment] : undefined)
+  }
+
   // ---- the signed-in user ---------------------------------------------------------------
   router.get('/me', meLimit, handle(async (req, res) => {
-    const viewer = await sessions.viewer(req)
+    // Fresh from the database: a role change (driver, demo) must reach the app at once, not after the cookie cache.
+    const viewer = await sessions.viewer(req, true)
     res.set('Cache-Control', 'no-store')
     // Demo accounts see sample data in the app. They must hold no staff role, or they would be real.
     const demo = viewer ? viewer.role === 'customer' && viewer.emailVerified && demoEmails(deps.env).has(viewer.email.toLowerCase()) : false
@@ -116,7 +126,7 @@ export function createAdminRouter(deps: PlatformDeps): Router {
   // ---- driver tracking ------------------------------------------------------------------
   // The driver's phone posts its position during a trip and deletes it when the trip ends.
   const driverWrite = deps.limiters.create('driver-location', 60_000, 40)
-  const driverRead = deps.limiters.create('driver-track', 60_000, 90)
+  const driverRead = deps.limiters.create('driver-track', 60_000, 30)
 
   router.post('/driver/location', driverWrite, driverOrStaff, handle(async (req, res) => {
     const parsed = driverUpdateSchema.safeParse(req.body)
@@ -292,12 +302,7 @@ export function createAdminRouter(deps: PlatformDeps): Router {
     })
     // The customer hears about a new status, never about a note or a price edit on its own. On
     // hand-back, a warranty issued while the job was ready goes along as a PDF.
-    let notified: 'sent' | 'failed' | 'skipped' = 'skipped'
-    if (result.statusChanged && notify) {
-      const valid = status === 'done' ? (await deps.warranties.forBooking(result.booking.code)).find((w) => !w.voided) : undefined
-      const attachment = valid ? await deps.documents.warranty(valid, result.booking).catch(() => null) : null
-      notified = await deps.notifier.statusChanged(result.booking, attachment ? [attachment] : undefined)
-    }
+    const notified = result.statusChanged && notify ? await tellCustomer(result.booking, status) : 'skipped'
     res.json({ ...forViewer(viewer, result.booking), notified })
   }))
 
@@ -397,7 +402,7 @@ export function createAdminRouter(deps: PlatformDeps): Router {
       return
     }
     const date = parsed.data.date ?? localDate(new Date())
-    res.json({ date, jobs: await bookings.pickups(date) })
+    res.json({ date, jobs: await bookings.run(date) })
   }))
 
   drv.get('/jobs', handle(async (req, res) => {
@@ -406,8 +411,11 @@ export function createAdminRouter(deps: PlatformDeps): Router {
       res.status(400).json({ error: 'invalid', issues: issues(parsed.error) })
       return
     }
-    // Only jobs we collect or deliver, whatever the caller asks for.
-    const found = await bookings.search({ ...parsed.data, mode: 'pickup' })
+    // Only jobs we collect or deliver, whatever the caller asks for, and only around now: a driver has no reason
+    // to page through every customer ever. Repairs waiting to go back are listed whatever their date.
+    const today = localDate(new Date())
+    const window = parsed.data.status === 'handback' ? {} : { from: addDays(today, -30), to: addDays(today, 30) }
+    const found = await bookings.search({ ...parsed.data, ...window, mode: 'pickup' })
     res.json({ total: found.total, items: found.items.map(driverView) })
   }))
 
@@ -438,7 +446,10 @@ export function createAdminRouter(deps: PlatformDeps): Router {
   /** Mark a delivery done, or leave a note. The status moves only to `done`, only from a finished repair. */
   drv.patch('/bookings/:code/status', statusLimit, handle(async (req, res) => {
     const code = codeParam.safeParse(req.params.code)
-    const body = z.object({ delivered: z.boolean().default(false), note: z.string().trim().max(500).optional() }).strict().safeParse(req.body)
+    const body = z
+      .object({ delivered: z.boolean().default(false), collected: z.boolean().default(false), note: z.string().trim().max(500).optional() })
+      .strict()
+      .safeParse(req.body)
     if (!code.success || !body.success) {
       res.status(body.success ? 404 : 400).json(body.success ? { error: 'not_found' } : { error: 'invalid', issues: issues(body.error) })
       return
@@ -448,7 +459,8 @@ export function createAdminRouter(deps: PlatformDeps): Router {
       res.status(404).json({ error: 'not_found' })
       return
     }
-    const { delivered, note } = body.data
+    const { delivered, collected } = body.data
+    const note = body.data.note || (collected ? 'Ridicat de șofer' : undefined)
     if (!delivered && !note) {
       res.status(400).json({ error: 'invalid', issues: [{ path: ['note'], message: 'A note or delivered is needed' }] })
       return
@@ -458,11 +470,14 @@ export function createAdminRouter(deps: PlatformDeps): Router {
       return
     }
     const viewer = res.locals.viewer!
+    if (collected) await bookings.markCollected(code.data)
     const result = await bookings.update(code.data, { status: delivered ? 'done' : found.status, note }, { id: viewer.id, name: viewer.name || viewer.email })
     if (!result) {
       res.status(404).json({ error: 'not_found' })
       return
     }
+    // A delivery is the hand-back: the customer gets the same email (and warranty) as when the owner closes the job.
+    if (delivered && result.statusChanged) await tellCustomer(result.booking, 'done').catch(() => 'failed')
     if (result.changed) await audit.record({
       action: 'booking_status',
       actor: { id: viewer.id, email: viewer.email, role: viewer.role },
@@ -470,7 +485,7 @@ export function createAdminRouter(deps: PlatformDeps): Router {
       detail: { from: result.from, to: delivered ? 'done' : found.status, note: Boolean(note), by: 'driver' },
       ip: clientIp(req),
     })
-    res.json(driverView(result.booking))
+    res.json(driverView(collected ? { ...result.booking, collectedAt: new Date().toISOString() } : result.booking))
   }))
 
   router.use('/driver', drv)

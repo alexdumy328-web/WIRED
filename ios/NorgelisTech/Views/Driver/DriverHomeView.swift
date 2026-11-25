@@ -280,10 +280,15 @@ struct DriverScheduleView: View {
                 .padding(16)
             }
             .navigationTitle(LocalizedStringKey("console.tab.schedule"))
-            .refreshable { await load() }
+            .refreshable { await load(); await loadBusy() }
             .sheet(item: $open) { ref in DriverJobDetailView(code: ref.id) }
         }
         .task(id: day) { await load() }
+        .task { await loadBusy() }
+    }
+
+    private func loadBusy() async {
+        busy = (try? await api.busy(from: ShopCalendar.dateString(), to: ShopCalendar.addDays(ShopCalendar.dateString(), 14))) ?? [:]
     }
 
     private func card(_ job: PickupJob) -> some View {
@@ -308,7 +313,6 @@ struct DriverScheduleView: View {
         error = nil
         do {
             jobs = try await api.pickups(day: day)
-            busy = try await api.busy(from: ShopCalendar.dateString(), to: ShopCalendar.addDays(ShopCalendar.dateString(), 14))
         } catch is CancellationError {
             return
         } catch {

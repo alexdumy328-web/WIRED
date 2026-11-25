@@ -454,7 +454,7 @@ export function createApp(store: Store, options: CreateAppOptions = {}): Express
   if (platform) {
     platform.mountApi(app)
   } else {
-    app.use(['/api/me', '/api/admin', '/api/dev'], (_req, res) => {
+    app.use(['/api/me', '/api/admin', '/api/dev', '/api/driver'], (_req, res) => {
       res.status(503).json({ error: 'auth_unavailable' })
     })
   }

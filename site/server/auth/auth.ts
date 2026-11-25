@@ -103,6 +103,9 @@ export function createAuth(options: CreateAuthOptions) {
           const stored = (user as { role?: string }).role
           const role = effectiveRole(stored, bootstrapRole(env, user.email, user.emailVerified))
           if (role !== 'customer') throw new APIError('FORBIDDEN', { message: 'staff_account' })
+          // A demo account is shared with App Review; nobody may delete it from the app.
+          const demo = (env.DEMO_EMAILS ?? '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean)
+          if (demo.includes(user.email.toLowerCase())) throw new APIError('FORBIDDEN', { message: 'staff_account' })
         },
         // Repair records and invoices must be kept, so bookings stay but lose the link to the account.
         afterDelete: async (user) => {

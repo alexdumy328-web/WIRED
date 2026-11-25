@@ -290,7 +290,7 @@
 "console.more.preview_as" = "Previzualizează ca";
 "console.more.technician_note" = "Tehnicienii nu văd banii, statisticile și setările.";
 "console.more.data" = "Date";
-"console.more.dev_settings" = "Server și date de test";
+"console.more.dev_settings" = "Adresa serverului";
 "console.dev.title" = "Date de test";
 
 /* Account */

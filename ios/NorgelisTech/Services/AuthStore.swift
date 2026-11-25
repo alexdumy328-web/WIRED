@@ -146,6 +146,8 @@ final class AuthStore: ObservableObject {
     /// so the person knows it may still be valid elsewhere.
     @discardableResult
     func signOut() async -> Bool {
+        // A driver signing out mid-trip: remove the van from the map while the session still works.
+        if viewer?.isStaff == true { await api.stopDriverSharing() }
         var ended = true
         do {
             try await api.requestVoid("POST", "api/auth/sign-out", body: [:])
@@ -155,6 +157,7 @@ final class AuthStore: ObservableObject {
         api.clearSession()
         api.disableSample()
         api.resetServer()
+        needsRetry = false
         viewer = nil
         return ended
     }
@@ -171,6 +174,7 @@ final class AuthStore: ObservableObject {
         api.clearSession()
         api.disableSample()
         api.resetServer()
+        needsRetry = false
         viewer = nil
     }
 

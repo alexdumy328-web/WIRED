@@ -290,7 +290,7 @@
 "console.more.preview_as" = "Preview as";
 "console.more.technician_note" = "Technicians do not see money, stats or settings.";
 "console.more.data" = "Data";
-"console.more.dev_settings" = "Server and sample data";
+"console.more.dev_settings" = "Server address";
 "console.dev.title" = "Sample data";
 
 /* Account */
