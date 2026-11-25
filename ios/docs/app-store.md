@@ -19,7 +19,7 @@ All in for the first year: about 99 USD, plus your own time. Enrol as the compan
 
 These need a decision or a change outside the app.
 
-1. **Real production address.** Set `NORGELIS_API_BASE_URL` (the default `https://norgelis.ro` is a placeholder). It must be HTTPS and the server must trust the app (see the Origin note in the README).
+1. **Production address.** `NORGELIS_API_BASE_URL` defaults to `https://norgelis-tech.vercel.app`. Change it (and `NORGELIS_APP_LINK_DOMAIN`, and `BETTER_AUTH_URL` on Vercel) when a custom domain is added. It must be HTTPS and the server must trust the app (see the Origin note in the README).
 2. **Deploy the site changes that go with the app.** Account deletion (`user.deleteUser` in `site/server/auth/auth.ts`, guideline 5.1.1(v)) and the privacy and terms pages (`/confidentialitate`, `/termeni`) are in the repository. The production server must run them before submission, because the app links to those pages and calls that route.
 3. **Have a lawyer read the legal text** (`site/src/data/legal.ts`). The operator is "Norgelis Tech" for now; add the CUI and trade register number to `OPERATOR` once they exist. The support email comes from `SUPPORT_EMAIL` on Vercel. The text is a careful draft, not legal advice.
 4. **Contact details.** The shop and driver numbers are set in `project.yml`. Check them before launch. The app never dials them by itself.
