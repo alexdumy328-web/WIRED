@@ -59,9 +59,19 @@ export function Footer() {
     <footer className="relative z-10 border-t border-line bg-bg">
       <div className="mx-auto flex max-w-[1360px] flex-col gap-6 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-10">
         <Logo />
-        <p className="text-[14px] text-muted">
-          © {new Date().getFullYear()} {t.footer.rights} {t.footer.made}
-        </p>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-[14px] text-muted">
+          <a
+            href="https://github.com/alexdumy328-web/WIRED/releases/latest"
+            target="_blank"
+            rel="noreferrer"
+            className="font-medium text-ink underline decoration-line underline-offset-4 transition-colors hover:text-gold"
+          >
+            {t.footer.getApp}
+          </a>
+          <p>
+            © {new Date().getFullYear()} {t.footer.rights} {t.footer.made}
+          </p>
+        </div>
       </div>
     </footer>
   )

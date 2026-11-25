@@ -609,6 +609,7 @@ const en: Dict = {
   footer: {
     rights: 'Norgelis Tech. All rights reserved.',
     made: 'Made in Iași.',
+    getApp: 'Get iOS App (Sideloadly)',
   },
 }
 

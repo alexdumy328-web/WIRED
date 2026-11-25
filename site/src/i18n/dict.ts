@@ -427,5 +427,5 @@ export type Dict = {
     users: { search: string; email: string; name: string; role: string; verified: string; created: string; saved: string; self: string; error: string }
     limits: { name: string; window: string; max: string; allowed: string; blocked: string; tracked: string }
   }
-  footer: { rights: string; made: string }
+  footer: { rights: string; made: string; getApp: string }
 }
