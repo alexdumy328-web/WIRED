@@ -20,8 +20,9 @@ final class DriverRadarModel: ObservableObject {
                 continue
             }
             do {
-                drivers = try await api.fetchLiveDrivers()
-                failed = false
+                let next = try await api.fetchLiveDrivers()
+                if next != drivers { drivers = next }
+                if failed { failed = false }
                 failures = 0
             } catch is CancellationError {
                 return

@@ -4,20 +4,36 @@ import Foundation
 enum ShopCalendar {
     static let timeZone = TimeZone(identifier: "Europe/Bucharest") ?? .current
 
-    static var calendar: Calendar {
+    static let calendar: Calendar = {
         var c = Calendar(identifier: .gregorian)
         c.timeZone = timeZone
         c.firstWeekday = 2 // Monday
         return c
+    }()
+
+    /// Formatters are expensive to make, and list rows ask for dates on every frame while scrolling, so each
+    /// format is made once. Formatting from several threads is safe; the cache itself is behind a lock.
+    private static let cacheLock = NSLock()
+    nonisolated(unsafe) private static var cache: [String: DateFormatter] = [:]
+
+    private static func cached(_ key: String, _ make: () -> DateFormatter) -> DateFormatter {
+        cacheLock.lock()
+        defer { cacheLock.unlock() }
+        if let hit = cache[key] { return hit }
+        let made = make()
+        cache[key] = made
+        return made
     }
 
     private static func formatter(_ format: String) -> DateFormatter {
-        let f = DateFormatter()
-        f.calendar = calendar
-        f.timeZone = timeZone
-        f.locale = Locale(identifier: "en_US_POSIX")
-        f.dateFormat = format
-        return f
+        cached("fixed|" + format) {
+            let f = DateFormatter()
+            f.calendar = calendar
+            f.timeZone = timeZone
+            f.locale = Locale(identifier: "en_US_POSIX")
+            f.dateFormat = format
+            return f
+        }
     }
 
     /// Today (or any moment) as YYYY-MM-DD in shop time.
@@ -81,13 +97,19 @@ enum ShopCalendar {
     // MARK: - Display
 
     private static func display(_ date: Date, _ template: String) -> String {
-        let f = DateFormatter()
-        f.calendar = calendar
-        f.timeZone = timeZone
-        f.locale = Locale.current
-        f.setLocalizedDateFormatFromTemplate(template)
-        return f.string(from: date)
+        // Keyed by locale too: the phone's language can change while the app runs.
+        cached("display|\(Locale.current.identifier)|" + template) {
+            let f = DateFormatter()
+            f.calendar = calendar
+            f.timeZone = timeZone
+            f.locale = Locale.current
+            f.setLocalizedDateFormatFromTemplate(template)
+            return f
+        }.string(from: date)
     }
+
+    /// A localized clock time ("14:05", or "2:05 PM" where that is the custom) in shop time.
+    static func clock(_ date: Date) -> String { display(date, "HHmm") }
 
     /// "Mon, 23 Nov"
     static func short(_ day: String) -> String { display(date(day), "EEEdMMM") }

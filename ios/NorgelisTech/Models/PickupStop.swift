@@ -39,7 +39,8 @@ extension PickupStop {
             coordinate: CLLocationCoordinate2D(latitude: job.lat, longitude: job.lon),
             type: job.trips,
             isUrgent: job.urgent,
-            scheduledTime: ShopCalendar.time(job.slot),
+            // A delivery has no appointment: the booking's own time (often days ago) would read like a slot today.
+            scheduledTime: job.leg == "deliver" ? String(localized: "driver.stop.to_deliver") : ShopCalendar.time(job.slot),
             isCompleted: isCompleted || job.completed == true,
             bookingStatus: job.status,
             isDelivery: job.leg == "deliver" || (job.leg == nil && job.trips == .dropoff)

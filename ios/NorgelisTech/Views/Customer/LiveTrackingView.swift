@@ -18,7 +18,8 @@ final class DriverTrackingModel: ObservableObject {
                 // The lock screen follows what the app sees (the server's pushes take over in the background).
                 if next.isEnRoute { PushService.shared.showDriver(code: code, device: device, status: next) }
                 else if status.isEnRoute { PushService.shared.driverGone(code: code) }
-                status = next
+                // Same answer as last time (the van parked, nobody sharing): no redraw.
+                if next != status { status = next }
                 failures = 0
             } catch is CancellationError {
                 return

@@ -9,12 +9,17 @@ enum PanelDetent {
 }
 
 /// A floating bottom panel with three heights. Drag the top of it to change height.
+///
+/// The panel is laid out once at its full height and slides with `offset`, so a drag moves pixels instead of
+/// laying the stop list (and the glass) out again on every frame. The part below the screen is given back to the
+/// content as bottom padding, so the end of the list stays reachable at every height.
 struct DriverPanel<Header: View, Content: View>: View {
     @Binding var detent: PanelDetent
     let header: Header
     let content: Content
 
-    @GestureState private var drag: CGFloat = 0
+    /// Live finger travel. Plain state, not @GestureState, so letting go animates it back in the same spring as the snap.
+    @State private var drag: CGFloat = 0
     /// Height of the handle and header, measured, so large text sizes never push a button out of the peek.
     @State private var headerHeight: CGFloat = 170
     private var peekHeight: CGFloat { headerHeight }
@@ -33,11 +38,19 @@ struct DriverPanel<Header: View, Content: View>: View {
         }
     }
 
+    /// Past the shortest or tallest height the panel follows the finger less and less (rubber band).
+    private func rubberBand(_ value: CGFloat, min lo: CGFloat, max hi: CGFloat) -> CGFloat {
+        if value < lo { return lo - (lo - value) / (1 + (lo - value) / 120) * 0.6 }
+        if value > hi { return hi + (value - hi) / (1 + (value - hi) / 120) * 0.6 }
+        return value
+    }
+
     var body: some View {
         GeometryReader { geo in
             let total = geo.size.height
+            let full = height(.full, total)
             let current = height(detent, total)
-            let shown = min(max(current - drag, peekHeight), height(.full, total))
+            let shown = rubberBand(current - drag, min: peekHeight, max: full)
 
             VStack(spacing: 0) {
                 VStack(spacing: 0) {
@@ -51,26 +64,41 @@ struct DriverPanel<Header: View, Content: View>: View {
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
                 .contentShape(Rectangle())
                 .gesture(
-                    DragGesture(minimumDistance: 4)
-                        .updating($drag) { value, state, _ in state = value.translation.height }
+                    DragGesture(minimumDistance: 4, coordinateSpace: .global)
+                        .onChanged { value in
+                            var t = Transaction()
+                            t.disablesAnimations = true
+                            withTransaction(t) { drag = value.translation.height }
+                        }
                         .onEnded { value in
+                            // Where a flick would carry the panel, so a quick swipe goes to the next height.
                             let travelled = value.translation.height + 0.35 * (value.predictedEndTranslation.height - value.translation.height)
                             let target = current - travelled
                             let options: [PanelDetent] = [.peek, .mid, .full]
-                            detent = options.min { abs(height($0, total) - target) < abs(height($1, total) - target) } ?? detent
+                            let next = options.min { abs(height($0, total) - target) < abs(height($1, total) - target) } ?? detent
+                            withAnimation(.interpolatingSpring(mass: 1, stiffness: 260, damping: 30, initialVelocity: 0)) {
+                                detent = next
+                                drag = 0
+                            }
                         }
                 )
 
                 content
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    // At the middle height the bottom of the panel is below the screen: give that back to the list so
+                    // its last stop can scroll into view. At peek the list is hidden anyway, and keeping it laid out
+                    // means it is already there while the finger drags the panel up (no pop when it settles).
+                    .padding(.bottom, detent == .mid ? max(0, full - current) : 0)
                     .clipped()
             }
-            .frame(height: shown, alignment: .top)
+            .frame(height: full, alignment: .top)
             .glassCard(radius: 30)
             .padding(.horizontal, 8)
+            .offset(y: full - shown)
             .padding(.bottom, 6)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-            .animation(.spring(response: 0.38, dampingFraction: 0.86), value: detent)
+            // Height changes made elsewhere (opening a stop, starting a trip) glide too.
+            .animation(.interpolatingSpring(mass: 1, stiffness: 260, damping: 30), value: detent)
         }
     }
 }

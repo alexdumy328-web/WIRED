@@ -579,3 +579,4 @@
 "push.driver.body" = "%@ e pe drum. Vezi unde e mașina în aplicație.";
 "push.driver.arriving" = "Șoferul ajunge acum";
 "push.driver.arriving.body" = "%@ e la cel mult 2 minute.";
+"driver.stop.to_deliver" = "De predat";

@@ -65,7 +65,8 @@ struct DriverTodayView: View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 16) {
-                    DriverRunCard(planner: appState.planner, remaining: appState.remainingStops.count, done: appState.completedStops.count, total: appState.stops.count)
+                    DriverRunCard(planner: appState.planner, remaining: appState.remainingStops.count, done: appState.completedStops.count, total: appState.stops.count,
+                                  loading: appState.stopsLoading && appState.stops.isEmpty)
                     Button(action: openMap) {
                         Label(LocalizedStringKey(appState.isDriverEnRoute ? "driver.today.open_trip" : "driver.today.start"), systemImage: "car.fill")
                             .font(.headline).frame(maxWidth: .infinity, minHeight: 48)
@@ -81,9 +82,12 @@ struct DriverTodayView: View {
                     }
                     ForEach(appState.stops) { stop in
                         Button { open = JobRef(id: stop.bookingCode) } label: { stopRow(stop) }.buttonStyle(.plain)
+                            .transition(.opacity.combined(with: .move(edge: .bottom)))
                     }
                 }
                 .padding(16)
+                // Stops arriving, finishing or reordering glide instead of jumping.
+                .animation(.snappy, value: appState.stops.map { "\($0.id)\($0.isCompleted)" })
             }
             .navigationTitle(LocalizedStringKey("console.tab.today"))
             .refreshable { await appState.loadStops() }
@@ -120,6 +124,8 @@ struct DriverRunCard: View {
     let remaining: Int
     let done: Int
     let total: Int
+    /// The run has not arrived yet: placeholders, not a "0 km" that then jumps.
+    var loading = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -129,6 +135,8 @@ struct DriverRunCard: View {
                    remaining == 0 ? "0 min" : DriveFormat.duration(planner.totalSeconds), "driver.today.drive_time")
             widget("checkmark.circle.fill", Theme.ok, "\(done)/\(total)", "driver.today.done")
         }
+        .redacted(reason: loading ? .placeholder : [])
+        .animation(.snappy, value: loading)
         .overlay(alignment: .topTrailing) {
             if planner.isPlanning { ProgressView().controlSize(.mini).padding(8) }
         }
@@ -142,6 +150,9 @@ struct DriverRunCard: View {
                 .frame(width: 30, height: 30)
                 .background(tint.opacity(0.14), in: RoundedRectangle(cornerRadius: 9, style: .continuous))
             Text(value).font(.title3.bold().monospacedDigit()).minimumScaleFactor(0.7).lineLimit(1)
+                // Numbers roll to their new value when the route is planned or a stop is done.
+                .contentTransition(.numericText())
+                .animation(.snappy, value: value)
             Text(title).font(.caption).foregroundColor(.secondary).lineLimit(1)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -312,7 +323,8 @@ struct DriverScheduleView: View {
     private func load() async {
         error = nil
         do {
-            jobs = try await api.pickups(day: day)
+            let next = try await api.pickups(day: day)
+            withAnimation(.snappy) { jobs = next }
         } catch is CancellationError {
             return
         } catch {
