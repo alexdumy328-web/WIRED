@@ -117,8 +117,11 @@ struct DriverRadarCard: View {
             // Not on a trip: where the last one ended, measured, not assumed.
             let km = String(format: "%.1f", distanceFromShop(d) / 1000)
             let time = ShopCalendar.parse(d.lastSeen).map(ShopCalendar.clock) ?? ""
-            Text(LocalizedStringKey(atShop ? "radar.last_at_shop \(d.name) \(time)" : "radar.last_seen \(d.name) \(time) \(km)"))
-                .font(.subheadline).foregroundColor(.secondary)
+            // Two literal Texts: interpolating into a finished string would look up the sentence itself as the key.
+            Group {
+                if atShop { Text("radar.last_at_shop \(d.name) \(time)") } else { Text("radar.last_seen \(d.name) \(time) \(km)") }
+            }
+            .font(.subheadline).foregroundColor(.secondary)
         } else if apiClient.useMockData {
             Text("radar.waiting").font(.subheadline).foregroundColor(.secondary)
         } else {

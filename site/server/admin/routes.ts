@@ -30,6 +30,8 @@ const searchQuerySchema = z.object({
   intake: z.enum(['yes', 'no']).transform((v) => v === 'yes').optional(),
   limit: z.coerce.number().int().min(1).max(200).default(50),
   skip: z.coerce.number().int().min(0).max(100_000).default(0),
+  /** Booking date newest or oldest first, upcoming only (today on, soonest first), last changed, or last booked. */
+  sort: z.enum(['slot_desc', 'slot_asc', 'upcoming', 'updated', 'created']).optional(),
 })
 
 const statusBodySchema = z.object({

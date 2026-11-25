@@ -23,6 +23,9 @@ struct JobsTab: View {
 
     @State private var chip = "all"
     @State private var mode: AdminBookingMode?
+    /// Kept between launches: whoever works the list picks their order once.
+    @AppStorage("console.jobs.sort") private var sortRaw = JobSort.slotDesc.rawValue
+    private var sort: JobSort { JobSort(rawValue: sortRaw) ?? .slotDesc }
     @State private var text = ""
     @State private var items: [Booking] = []
     @State private var total = 0
@@ -70,6 +73,18 @@ struct JobsTab: View {
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
+                        Picker("console.sort.title", selection: $sortRaw) {
+                            ForEach(JobSort.allCases) { s in
+                                Label(loc(s.titleKey), systemImage: s.icon).tag(s.rawValue)
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "arrow.up.arrow.down.circle")
+                            .accessibilityLabel(Text("console.sort.title"))
+                    }
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Menu {
                         Picker("console.filter.kind", selection: $mode) {
                             Text("console.filter.all_kinds").tag(AdminBookingMode?.none)
                             Text(LocalizedStringKey(JobKind.shop.titleKey)).tag(AdminBookingMode?.some(.shop))
@@ -90,7 +105,7 @@ struct JobsTab: View {
             .sheet(item: $open) { ref in BookingDetailSheet(code: ref.id) }
             .sheet(isPresented: $showWalkIn) { WalkInSheet { code in open = JobRef(id: code) } }
         }
-        .task(id: "\(store.version)|\(chip)|\(mode?.rawValue ?? "")|\(text)") {
+        .task(id: "\(store.version)|\(chip)|\(mode?.rawValue ?? "")|\(text)|\(sortRaw)") {
             // One load per change. Wait for a pause in typing.
             if !text.isEmpty { try? await Task.sleep(nanoseconds: 300_000_000) }
             if !Task.isCancelled { await reload() }
@@ -133,7 +148,7 @@ struct JobsTab: View {
     }
 
     private var query: BookingQuery {
-        BookingQuery(status: Chip.all.first { $0.id == chip }?.status, mode: mode, text: text, limit: 30, skip: 0)
+        BookingQuery(status: Chip.all.first { $0.id == chip }?.status, mode: mode, text: text, sort: sort, limit: 30, skip: 0)
     }
 
     private func reload() async {

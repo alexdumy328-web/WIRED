@@ -477,6 +477,7 @@ const en: Dict = {
       loadMore: 'Show more',
       columns: { code: 'Code', when: 'Date', customer: 'Customer', device: 'Device', mode: 'Place', status: 'Status', price: 'Estimate' },
       modes: { shop: 'Workshop', pickup: 'Pickup', mobile: 'Mobile' },
+      sort: { label: 'Sort', slot_desc: 'Booking date, newest first', slot_asc: 'Booking date, oldest first', upcoming: 'Upcoming (from today)', updated: 'Recently changed', created: 'Recently booked' },
       dates: 'Dates',
       range: { label: 'Pick dates', any: 'Any time', pickEnd: 'Pick the last day', clear: 'Clear', presets: { today: 'Today', week: 'This week', next7: 'Next 7 days', month: 'This month' } },
       pickup: 'pickup',

@@ -312,6 +312,7 @@ export type Dict = {
       loadMore: string
       columns: { code: string; when: string; customer: string; device: string; mode: string; status: string; price: string }
       modes: Record<'shop' | 'pickup' | 'mobile', string>
+      sort: { label: string; slot_desc: string; slot_asc: string; upcoming: string; updated: string; created: string }
       dates: string
       range: { label: string; any: string; pickEnd: string; clear: string; presets: { today: string; week: string; month: string; next7: string } }
       pickup: string

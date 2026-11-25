@@ -83,6 +83,23 @@ function compact<T extends Record<string, unknown>>(value: T): T {
   return Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined && v !== '')) as T
 }
 
+/** Mongo sort for a search: the app's choice, else the driver's `order`, else newest booking date first. Code breaks ties. */
+function sortOf(query: SearchQuery): Record<string, 1 | -1> {
+  switch (query.sort) {
+    case 'slot_asc':
+    case 'upcoming':
+      return { slot: 1, code: 1 }
+    case 'updated':
+      return { updatedAt: -1, code: 1 }
+    case 'created':
+      return { createdAt: -1, code: 1 }
+    case 'slot_desc':
+      return { slot: -1, code: 1 }
+    default:
+      return { slot: query.order === 'asc' ? 1 : -1, code: 1 }
+  }
+}
+
 export type SearchQuery = {
   status?: BookingStatus | 'handback'
   mode?: 'shop' | 'pickup' | 'mobile'
@@ -96,6 +113,8 @@ export type SearchQuery = {
   skip: number
   /** Newest first (the dashboards) unless a driver's list asks for the next ones first. */
   order?: 'asc' | 'desc'
+  /** The list's sort, chosen in the app. Overrides `order`. */
+  sort?: 'slot_desc' | 'slot_asc' | 'upcoming' | 'updated' | 'created'
 }
 
 export type BookingAdmin = ReturnType<typeof createBookingAdmin>
@@ -126,6 +145,8 @@ export function createBookingAdmin(db: Db, counters?: Counters) {
     async search(query: SearchQuery) {
       await ensureIndexes()
       const filter: Filter<Doc> = {}
+      // Upcoming: from the start of today, whatever the date filter says about the past.
+      if (query.sort === 'upcoming' && !query.from) query = { ...query, from: localDate(new Date()) }
       if (query.status === 'handback') filter.status = { $in: ['ready', 'unrepairable'] }
       else if (query.status) filter.status = query.status
       if (query.mode === 'pickup') {
@@ -161,7 +182,7 @@ export function createBookingAdmin(db: Db, counters?: Counters) {
         ]
       }
       const [items, total] = await Promise.all([
-        col.find(filter).sort({ slot: query.order === 'asc' ? 1 : -1 }).skip(query.skip).limit(query.limit).toArray(),
+        col.find(filter).sort(sortOf(query)).skip(query.skip).limit(query.limit).toArray(),
         col.countDocuments(filter),
       ])
       return { total, items: items.map(ownerView) }

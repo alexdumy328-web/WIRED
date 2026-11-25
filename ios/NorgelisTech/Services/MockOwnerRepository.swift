@@ -79,7 +79,15 @@ actor MockOwnerRepository: OwnerRepository {
                     .contains { $0.contains(text) }
             }
         }
-        list.sort { ($0.slot ?? "") > ($1.slot ?? "") }
+        switch q.sort {
+        case .slotDesc: list.sort { ($0.slot ?? "") > ($1.slot ?? "") }
+        case .slotAsc: list.sort { ($0.slot ?? "") < ($1.slot ?? "") }
+        case .upcoming:
+            let today = ShopCalendar.dateString()
+            list = list.filter { ($0.slot.map { ShopCalendar.day(of: $0) } ?? "") >= today }.sorted { ($0.slot ?? "") < ($1.slot ?? "") }
+        case .updated: list.sort { ($0.updatedAt ?? "") > ($1.updatedAt ?? "") }
+        case .created: list.sort { ($0.createdAt ?? "") > ($1.createdAt ?? "") }
+        }
         let page = Array(list.dropFirst(q.skip).prefix(q.limit))
         return Page(total: list.count, items: page.map(view))
     }
