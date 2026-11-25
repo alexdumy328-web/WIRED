@@ -121,6 +121,20 @@ final class AuthStore: ObservableObject {
         await refresh()
     }
 
+    /// Where the app's browser starts Google's sign-in (the website does it, then hands the session back).
+    var googleStartURL: URL? { api.baseURL?.appendingPathComponent("api/app/google") }
+
+    /// Finishes Google sign-in: the browser came back to norgelis://auth with a one-time code or an error.
+    func finishGoogle(callback: URL) async throws {
+        let items = URLComponents(url: callback, resolvingAgainstBaseURL: false)?.queryItems ?? []
+        guard let code = items.first(where: { $0.name == "code" })?.value else {
+            throw items.contains { $0.name == "error" && $0.value == "unavailable" } ? AuthProblem.unavailable : AuthProblem.other
+        }
+        // The answer sets the session cookie on this request; the client keeps it like any sign-in.
+        try await call { try await self.api.requestVoid("POST", "api/app/google/exchange", body: ["code": code]) }
+        await refresh()
+    }
+
     func signUp(name: String, email: String, password: String) async throws {
         try await call { try await self.api.requestVoid("POST", "api/auth/sign-up/email", body: ["name": name, "email": email, "password": password]) }
     }

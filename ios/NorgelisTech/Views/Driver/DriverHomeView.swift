@@ -12,7 +12,7 @@ struct DriverHomeView: View {
                 .tabItem { Label("console.tab.today", systemImage: "sun.max.fill") }.tag(0)
             DriverJobsView()
                 .tabItem { Label("driver.tab.jobs", systemImage: "shippingbox.fill") }.tag(1)
-            DriverRootView()
+            DriverRootView(onClose: { tab = 0 })
                 .tabItem { Label("console.tab.driver", systemImage: "car.fill") }.tag(2)
             DriverScheduleView()
                 .tabItem { Label("console.tab.schedule", systemImage: "calendar") }.tag(3)
@@ -201,8 +201,16 @@ struct DriverJobsView: View {
                 } else if items.isEmpty && !loading {
                     Text("console.jobs.empty").foregroundColor(.secondary).frame(maxWidth: .infinity).listRowBackground(Color.clear)
                 }
-                ForEach(items) { b in
-                    Button { open = JobRef(id: b.code) } label: { row(b) }.buttonStyle(.plain)
+                // One section per day: the same customer on different days is not a duplicate, and now it reads so.
+                ForEach(days, id: \.day) { group in
+                    Section {
+                        ForEach(group.items) { b in
+                            Button { open = JobRef(id: b.code) } label: { row(b) }.buttonStyle(.plain)
+                                .task { if b.code == lastCode, items.count < total { await more() } }
+                        }
+                    } header: {
+                        Text(verbatim: dayTitle(group.day)).font(.subheadline.bold()).textCase(nil)
+                    }
                 }
             }
             .overlay { if loading && items.isEmpty { ProgressView() } }
@@ -213,17 +221,49 @@ struct DriverJobsView: View {
         .task(id: filter) { await load() }
     }
 
+    /// The row that asks for the next page when it shows.
+    private var lastCode: String? { days.last?.items.last?.code }
+
+    private func more() async {
+        guard let page = try? await api.jobs(status: filter.rawValue.isEmpty ? nil : filter.rawValue, skip: items.count) else { return }
+        let known = Set(items.map(\.code))
+        items += page.items.filter { !known.contains($0.code) }
+        total = page.total
+    }
+
+    /// The jobs by booking day, in day order (each day by time).
+    private var days: [(day: String, items: [Booking])] {
+        let sorted = items.sorted { ($0.slot ?? "") < ($1.slot ?? "") }
+        var out: [(day: String, items: [Booking])] = []
+        for b in sorted {
+            let day = b.slot.map { ShopCalendar.day(of: $0) } ?? ""
+            if out.last?.day == day { out[out.count - 1].items.append(b) } else { out.append((day, [b])) }
+        }
+        return out
+    }
+
+    /// "Today", "Tomorrow", "Yesterday" or "Thu, 27 Nov".
+    private func dayTitle(_ day: String) -> String {
+        let today = ShopCalendar.dateString()
+        if day == today { return String(localized: "driver.day.today") }
+        if day == ShopCalendar.addDays(today, 1) { return String(localized: "driver.day.tomorrow") }
+        if day == ShopCalendar.addDays(today, -1) { return String(localized: "driver.day.yesterday") }
+        return day.isEmpty ? "—" : ShopCalendar.short(day)
+    }
+
     private func row(_ b: Booking) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
-            HStack {
-                Text(b.code).font(.subheadline.bold()).monospaced()
-                Spacer()
-                StatusBadge(status: b.status)
+        HStack(alignment: .top, spacing: 12) {
+            Text(b.slot.map { ShopCalendar.time($0) } ?? "").font(.headline.monospacedDigit()).frame(width: 50, alignment: .leading)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(b.contact?.name ?? "").font(.headline)
+                Text(b.device?.displayName ?? String(localized: "console.job.no_device")).font(.subheadline).foregroundColor(.secondary)
+                if let address = b.pickup?.address { Label(address, systemImage: "mappin.circle.fill").font(.caption).foregroundColor(.secondary).lineLimit(1) }
             }
-            Text(b.device?.displayName ?? String(localized: "console.job.no_device")).font(.headline)
-            Text(b.contact?.name ?? "").font(.subheadline).foregroundColor(.secondary)
-            if let address = b.pickup?.address { Label(address, systemImage: "mappin.circle.fill").font(.caption).foregroundColor(.secondary).lineLimit(1) }
-            if let slot = b.slot { Text(ShopCalendar.dateTime(slot)).font(.caption).foregroundColor(.secondary) }
+            Spacer(minLength: 0)
+            VStack(alignment: .trailing, spacing: 6) {
+                StatusBadge(status: b.status)
+                Text(b.code).font(.caption2.monospaced()).foregroundColor(.secondary)
+            }
         }
         .padding(.vertical, 4)
     }

@@ -580,3 +580,9 @@
 "push.driver.arriving" = "Șoferul ajunge acum";
 "push.driver.arriving.body" = "%@ e la cel mult 2 minute.";
 "driver.stop.to_deliver" = "De predat";
+"auth.google" = "Continuă cu Google";
+"auth.or" = "sau";
+"auth.google_failed" = "Conectarea cu Google nu a mers. Încearcă din nou sau folosește emailul.";
+"driver.day.today" = "Azi";
+"driver.day.tomorrow" = "Mâine";
+"driver.day.yesterday" = "Ieri";

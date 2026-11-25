@@ -8,97 +8,35 @@ enum PanelDetent {
     case peek, mid, full
 }
 
-/// A floating bottom panel with three heights. Drag the top of it to change height.
+extension PanelDetent {
+    static let midFraction: CGFloat = 0.52
+}
+
+/// What the driver's sheet shows: a fixed header (handle area, next stop, trip controls) and scrolling content.
 ///
-/// The panel is laid out once at its full height and slides with `offset`, so a drag moves pixels instead of
-/// laying the stop list (and the glass) out again on every frame. The part below the screen is given back to the
-/// content as bottom padding, so the end of the list stays reachable at every height.
+/// It lives in a system sheet (`DriverMapView`), so dragging, flinging, ProMotion and the hand-off between
+/// scrolling the list and resizing the sheet are UIKit's, the same as Apple Maps. The header's height is reported
+/// so the smallest height shows exactly the header.
 struct DriverPanel<Header: View, Content: View>: View {
-    @Binding var detent: PanelDetent
+    @Binding var peekHeight: CGFloat
     let header: Header
     let content: Content
 
-    /// Live finger travel. Plain state, not @GestureState, so letting go animates it back in the same spring as the snap.
-    @State private var drag: CGFloat = 0
-    /// Height of the handle and header, measured, so large text sizes never push a button out of the peek.
-    @State private var headerHeight: CGFloat = 170
-    private var peekHeight: CGFloat { headerHeight }
-
-    init(detent: Binding<PanelDetent>, @ViewBuilder header: () -> Header, @ViewBuilder content: () -> Content) {
-        self._detent = detent
+    init(peekHeight: Binding<CGFloat>, @ViewBuilder header: () -> Header, @ViewBuilder content: () -> Content) {
+        self._peekHeight = peekHeight
         self.header = header()
         self.content = content()
     }
 
-    private func height(_ d: PanelDetent, _ total: CGFloat) -> CGFloat {
-        switch d {
-        case .peek: return peekHeight
-        case .mid: return max(peekHeight + 120, total * 0.52)
-        case .full: return max(peekHeight + 220, total * 0.86)
-        }
-    }
-
-    /// Past the shortest or tallest height the panel follows the finger less and less (rubber band).
-    private func rubberBand(_ value: CGFloat, min lo: CGFloat, max hi: CGFloat) -> CGFloat {
-        if value < lo { return lo - (lo - value) / (1 + (lo - value) / 120) * 0.6 }
-        if value > hi { return hi + (value - hi) / (1 + (value - hi) / 120) * 0.6 }
-        return value
-    }
-
     var body: some View {
-        GeometryReader { geo in
-            let total = geo.size.height
-            let full = height(.full, total)
-            let current = height(detent, total)
-            let shown = rubberBand(current - drag, min: peekHeight, max: full)
-
-            VStack(spacing: 0) {
-                VStack(spacing: 0) {
-                    Capsule()
-                        .fill(Color.primary.opacity(0.28))
-                        .frame(width: 38, height: 5)
-                        .padding(.top, 8)
-                        .padding(.bottom, 6)
-                    header
-                }
-                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { headerHeight = $0 }
-                .contentShape(Rectangle())
-                .gesture(
-                    DragGesture(minimumDistance: 4, coordinateSpace: .global)
-                        .onChanged { value in
-                            var t = Transaction()
-                            t.disablesAnimations = true
-                            withTransaction(t) { drag = value.translation.height }
-                        }
-                        .onEnded { value in
-                            // Where a flick would carry the panel, so a quick swipe goes to the next height.
-                            let travelled = value.translation.height + 0.35 * (value.predictedEndTranslation.height - value.translation.height)
-                            let target = current - travelled
-                            let options: [PanelDetent] = [.peek, .mid, .full]
-                            let next = options.min { abs(height($0, total) - target) < abs(height($1, total) - target) } ?? detent
-                            withAnimation(.interpolatingSpring(mass: 1, stiffness: 260, damping: 30, initialVelocity: 0)) {
-                                detent = next
-                                drag = 0
-                            }
-                        }
-                )
-
-                content
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                    // At the middle height the bottom of the panel is below the screen: give that back to the list so
-                    // its last stop can scroll into view. At peek the list is hidden anyway, and keeping it laid out
-                    // means it is already there while the finger drags the panel up (no pop when it settles).
-                    .padding(.bottom, detent == .mid ? max(0, full - current) : 0)
-                    .clipped()
-            }
-            .frame(height: full, alignment: .top)
-            .glassCard(radius: 30)
-            .padding(.horizontal, 8)
-            .offset(y: full - shown)
-            .padding(.bottom, 6)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-            // Height changes made elsewhere (opening a stop, starting a trip) glide too.
-            .animation(.interpolatingSpring(mass: 1, stiffness: 260, damping: 30), value: detent)
+        VStack(spacing: 0) {
+            header
+                .padding(.top, 14)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { peekHeight = ($0 - 6).rounded() }
+            content
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                // A list that fits does not bounce, so a downward drag on it resizes the sheet instead.
+                .scrollBounceBehavior(.basedOnSize)
         }
     }
 }

@@ -16,7 +16,7 @@ struct StaffHomeView: View {
             JobsTab()
                 .tabItem { Label("console.tab.jobs", systemImage: "wrench.and.screwdriver.fill") }
                 .tag(OwnerStore.Tab.jobs)
-            DriverRootView()
+            DriverRootView(onClose: { store.tab = .today })
                 .tabItem { Label("console.tab.driver", systemImage: "car.fill") }
                 .tag(OwnerStore.Tab.driver)
             ScheduleTab()

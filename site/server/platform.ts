@@ -17,6 +17,7 @@ import { createDocuments } from './documents/index.ts'
 import { createDevRouter } from './admin/dev-routes.ts'
 import type { PlatformDeps } from './admin/deps.ts'
 import { createAdminRouter } from './admin/routes.ts'
+import { createAppGoogleRouter } from './auth/app-google.ts'
 import { createSettingsService, type SettingsService } from './admin/settings.ts'
 import { createAuth, CLIENT_IP_HEADER, resolveAuthConfig, type Env } from './auth/auth.ts'
 import { createMailer, type Mailer } from './auth/outbox.ts'
@@ -120,6 +121,9 @@ export async function createPlatform(options: PlatformOptions): Promise<Platform
       })
     },
     mountApi(app) {
+      // Google sign-in for the iOS app (a browser sign-in handed to the app by a one-time code).
+      const appLimit = deps.limiters.create('app-google', 60_000, 20)
+      app.use('/api/app', appLimit, createAppGoogleRouter({ db, auth, production, googleEnabled: Boolean(env.GOOGLE_CLIENT_ID?.trim() && env.GOOGLE_CLIENT_SECRET?.trim()) }))
       app.use('/api/dev', createDevRouter(deps))
       app.use('/api', createAdminRouter(deps))
     },

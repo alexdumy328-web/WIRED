@@ -94,6 +94,8 @@ export type SearchQuery = {
   q?: string
   limit: number
   skip: number
+  /** Newest first (the dashboards) unless a driver's list asks for the next ones first. */
+  order?: 'asc' | 'desc'
 }
 
 export type BookingAdmin = ReturnType<typeof createBookingAdmin>
@@ -159,7 +161,7 @@ export function createBookingAdmin(db: Db, counters?: Counters) {
         ]
       }
       const [items, total] = await Promise.all([
-        col.find(filter).sort({ slot: -1 }).skip(query.skip).limit(query.limit).toArray(),
+        col.find(filter).sort({ slot: query.order === 'asc' ? 1 : -1 }).skip(query.skip).limit(query.limit).toArray(),
         col.countDocuments(filter),
       ])
       return { total, items: items.map(ownerView) }
