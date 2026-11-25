@@ -462,7 +462,9 @@ export function createAdminRouter(deps: PlatformDeps): Router {
     // Only jobs we collect or deliver, whatever the caller asks for, and only around now: a driver has no reason
     // to page through every customer ever. Repairs waiting to go back are listed whatever their date.
     const today = localDate(new Date())
-    const window = parsed.data.status === 'handback' ? {} : { from: addDays(today, -30), to: addDays(today, 30) }
+    // To collect: from today on, soonest first. To deliver: oldest repair first. All: a month either side, newest first.
+    const status = parsed.data.status
+    const window = status === 'handback' ? { order: 'asc' as const } : status === 'received' ? { from: today, to: addDays(today, 30), order: 'asc' as const } : { from: addDays(today, -30), to: addDays(today, 30) }
     const found = await bookings.search({ ...parsed.data, ...window, mode: 'pickup' })
     res.json({ total: found.total, items: found.items.map(driverView) })
   }))

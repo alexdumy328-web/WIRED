@@ -482,6 +482,33 @@ describe('bookings for owners and customers', () => {
     await store.getDb().collection('bookings').deleteOne({ code: 'NT-PUSH' })
   })
 
+  test('Google sign-in hands the website session to the app through a one-time code', async () => {
+    // No Google keys in tests: starting says so to the app instead of failing.
+    const start = await fetch(base + '/api/app/google', { redirect: 'manual' })
+    assert.equal(start.status, 302)
+    assert.equal(start.headers.get('location'), 'norgelis://auth?error=unavailable')
+
+    // Without a session in the browser there is nothing to hand over.
+    const none = await fetch(base + '/api/app/google/done', { redirect: 'manual' })
+    assert.equal(none.headers.get('location'), 'norgelis://auth?error=no_session')
+
+    // The browser is signed in (Google's callback set the cookie): the app gets a code, once.
+    const browser = await signIn('google-app@example.com')
+    const done = await fetch(base + '/api/app/google/done', { redirect: 'manual', headers: { cookie: browser } })
+    const location = done.headers.get('location') ?? ''
+    assert.match(location, /^norgelis:\/\/auth\?code=[A-Za-z0-9_-]{40,}$/)
+    const code = decodeURIComponent(location.split('code=')[1]!)
+
+    const exchange = await call('/api/app/google/exchange', { method: 'POST', body: { code } })
+    assert.equal(exchange.status, 200)
+    const appCookie = cookieOf(exchange)
+    assert.match(appCookie, /better-auth\.session_token=/)
+    assert.equal((await call('/api/me', { cookie: appCookie })).body.user.email, 'google-app@example.com')
+
+    assert.equal((await call('/api/app/google/exchange', { method: 'POST', body: { code } })).status, 401, 'single use')
+    assert.equal((await call('/api/app/google/exchange', { method: 'POST', body: { code: 'x' } })).status, 400)
+  })
+
   test('public config and the app site association come from the environment', async () => {
     const { publicConfig, appSiteAssociation } = await import('./app.ts')
     assert.deepEqual(publicConfig({}), { feedbackUrl: null, supportEmail: null })

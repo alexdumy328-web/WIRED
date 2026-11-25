@@ -580,3 +580,9 @@
 "push.driver.arriving" = "Your driver is arriving";
 "push.driver.arriving.body" = "%@ is 2 minutes away at most.";
 "driver.stop.to_deliver" = "To deliver";
+"auth.google" = "Continue with Google";
+"auth.or" = "or";
+"auth.google_failed" = "Google sign-in did not work. Try again, or use your email.";
+"driver.day.today" = "Today";
+"driver.day.tomorrow" = "Tomorrow";
+"driver.day.yesterday" = "Yesterday";

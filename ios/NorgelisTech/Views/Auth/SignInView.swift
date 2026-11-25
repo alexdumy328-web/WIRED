@@ -1,8 +1,10 @@
 import SwiftUI
+import AuthenticationServices
 
 /// Sign in, create an account, confirm an email or reset a password. Same steps as the website.
 struct SignInView: View {
     @EnvironmentObject var auth: AuthStore
+    @Environment(\.webAuthenticationSession) private var webAuthenticationSession
 
     private enum Method: Hashable { case code, password }
     private enum Step { case start, code, signUp, verify, reset }
@@ -52,11 +54,8 @@ struct SignInView: View {
                 .background(Color(.secondarySystemBackground))
                 .clipShape(RoundedRectangle(cornerRadius: 18))
 
-                if auth.googleAvailable {
-                    Text("auth.google_note")
-                        .font(.footnote)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
+                if auth.googleAvailable, step == .start || step == .signUp {
+                    googleButton
                 }
             }
             .padding(16)
@@ -65,6 +64,47 @@ struct SignInView: View {
     }
 
     // MARK: - Pieces
+
+    /// Google, through the system's sign-in browser (it can reuse a Google login from Safari).
+    private var googleButton: some View {
+        VStack(spacing: 10) {
+            HStack {
+                Rectangle().fill(Color.secondary.opacity(0.3)).frame(height: 1)
+                Text("auth.or").font(.footnote).foregroundColor(.secondary)
+                Rectangle().fill(Color.secondary.opacity(0.3)).frame(height: 1)
+            }
+            Button {
+                Task { await google() }
+            } label: {
+                HStack(spacing: 10) {
+                    Text(verbatim: "G").font(.system(size: 18, weight: .bold, design: .rounded))
+                        .foregroundStyle(LinearGradient(colors: [.blue, .red, .yellow, .green], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    Text("auth.google").font(.headline)
+                }
+                .frame(maxWidth: .infinity, minHeight: 50)
+            }
+            .buttonStyle(.bordered)
+            .tint(.primary)
+            .disabled(busy)
+        }
+    }
+
+    private func google() async {
+        guard let url = auth.googleStartURL else { return }
+        busy = true
+        error = nil
+        defer { busy = false }
+        do {
+            let callback = try await webAuthenticationSession.authenticate(using: url, callbackURLScheme: "norgelis", preferredBrowserSession: .shared)
+            try await auth.finishGoogle(callback: callback)
+        } catch let problem as AuthProblem {
+            error = problem == .other ? "auth.google_failed" : problem.key
+        } catch ASWebAuthenticationSessionError.canceledLogin {
+            // Closed the browser: nothing to say.
+        } catch {
+            self.error = "auth.google_failed"
+        }
+    }
 
     private var header: some View {
         VStack(spacing: 6) {
