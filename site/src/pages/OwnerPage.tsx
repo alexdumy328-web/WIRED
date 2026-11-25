@@ -98,7 +98,7 @@ function Dashboard({ user }: { user: Viewer }) {
             role="tablist"
             aria-label={t.owner.title}
             aria-orientation="vertical"
-            className="-mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6 lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:px-0"
+            className="no-scrollbar -mx-4 flex gap-1.5 overflow-x-auto px-4 pb-1 sm:-mx-6 sm:px-6 lg:mx-0 lg:flex-col lg:gap-0.5 lg:overflow-visible lg:px-0"
             data-lenis-prevent
           >
             {TABS.map((name, i) => {

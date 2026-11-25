@@ -14,8 +14,8 @@ export function Reviews() {
       id="recenzii"
       title={t.reviews.title}
       aside={
-        <div className="text-right">
-          <div className="flex items-center justify-end gap-2">
+        <div className="text-left sm:text-right">
+          <div className="flex items-center justify-start gap-2 sm:justify-end">
             <span className="display text-4xl">{rating}</span>
             <span className="flex text-gold" aria-hidden="true">
               {Array.from({ length: 5 }, (_, i) => (
@@ -30,7 +30,7 @@ export function Reviews() {
         </div>
       }
     >
-      <ul className="-mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6" data-lenis-prevent-horizontal tabIndex={0} aria-label={t.reviews.title}>
+      <ul className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 sm:-mx-6 sm:px-6" data-lenis-prevent-horizontal tabIndex={0} aria-label={t.reviews.title}>
         {reviews.map((r) => (
           <li key={r.name + r.date} className="flex w-[min(22rem,82vw)] shrink-0 snap-start flex-col rounded-[24px] border border-line bg-surface p-6">
             <div className="flex text-gold" aria-label={`${r.rating}/5`}>

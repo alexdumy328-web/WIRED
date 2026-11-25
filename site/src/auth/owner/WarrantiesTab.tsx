@@ -74,7 +74,7 @@ export function WarrantiesTab({ onOpen, version }: { onOpen: (code: string) => v
           <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" />
           <input className="field pl-10" type="search" maxLength={100} value={q} placeholder={c.warranties.search} onChange={(e) => setQ(e.target.value)} />
         </label>
-        <div role="group" aria-label={c.tabs.warranties} className="-mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0" data-lenis-prevent>
+        <div role="group" aria-label={c.tabs.warranties} className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 sm:mx-0 sm:flex-wrap sm:px-0" data-lenis-prevent>
           {FILTERS.map((f) => (
             <button
               key={f || 'all'}
@@ -100,7 +100,35 @@ export function WarrantiesTab({ onOpen, version }: { onOpen: (code: string) => v
         )}
         {items?.length === 0 && <p className="rounded-[20px] border border-dashed border-line py-14 text-center text-muted">{c.warranties.empty}</p>}
         {items && items.length > 0 && (
-          <div className="overflow-x-auto rounded-[20px] border border-line bg-surface" data-lenis-prevent>
+          <>
+            {/* Phones: one card per warranty so nothing needs sideways table scrolling. */}
+            <ul className="grid gap-2 sm:hidden">
+              {items.map((w) => (
+                <li key={w.id} className="rounded-[16px] border border-line bg-surface p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <span className="block font-mono text-[15px] font-bold">{w.label}</span>
+                      <button type="button" className="font-mono text-[12px] text-muted underline-offset-4 hover:text-gold hover:underline" onClick={() => onOpen(w.bookingCode)}>
+                        {w.bookingCode}
+                      </button>
+                    </div>
+                    <WarrantyStateBadge state={w.state} />
+                  </div>
+                  <p className="mt-2 truncate font-semibold">{w.customerName}</p>
+                  <p className="truncate text-[13px] text-muted">{w.device}</p>
+                  <div className="mt-3 flex items-center justify-between gap-2 border-t border-line/70 pt-2.5 text-[13px]">
+                    <span className="text-muted">
+                      {dayLabel(w.endsOn, lang)}
+                      {left(w) ? ` · ${left(w)}` : ''}
+                    </span>
+                    <a className="font-semibold text-gold underline-offset-4 hover:underline" href={pdfUrl.warranty(w.id)} target="_blank" rel="noreferrer">
+                      PDF
+                    </a>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            <div className="hidden overflow-x-auto rounded-[20px] border border-line bg-surface sm:block" data-lenis-prevent>
             <table className="w-full min-w-[46rem] border-collapse text-left text-[14px]">
               <thead>
                 <tr className="border-b border-line text-[12px] uppercase tracking-wider text-muted">
@@ -140,6 +168,7 @@ export function WarrantiesTab({ onOpen, version }: { onOpen: (code: string) => v
               </tbody>
             </table>
           </div>
+          </>
         )}
         {items && items.length < total && (
           <div className="mt-4 text-center">

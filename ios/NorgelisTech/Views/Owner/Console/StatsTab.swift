@@ -28,12 +28,49 @@ struct StatsView: View {
         return span == .weekly ? trend.weekly : trend.monthly
     }
 
-    private func label(_ start: String) -> String {
-        span == .weekly ? ShopCalendar.dayNumber(start) + " " + ShopCalendar.month(start) : ShopCalendar.month(start)
+    private func label(for date: Date) -> String {
+        let day = ShopCalendar.dateString(date)
+        return span == .weekly ? ShopCalendar.dayMonth(day) : ShopCalendar.month(day)
+    }
+
+    /// Evenly thinned indices so the X axis shows at most 4 readable labels without crowding.
+    static func tickIndices(count: Int, maxTicks: Int = 4) -> [Int] {
+        guard count > 0 else { return [] }
+        guard count > maxTicks else { return Array(0..<count) }
+        var out: [Int] = []
+        let step = Double(count - 1) / Double(maxTicks - 1)
+        for i in 0..<maxTicks {
+            let idx = Int((Double(i) * step).rounded())
+            if out.last != idx { out.append(idx) }
+        }
+        return out
+    }
+
+    /// Compact axis labels so large lei figures ("12.5k") do not squeeze the plot area.
+    static func compactAxisNumber(_ value: Double) -> String {
+        let absVal = abs(value)
+        if absVal >= 1_000_000 {
+            return String(format: "%.1fM", value / 1_000_000).replacingOccurrences(of: ".0M", with: "M")
+        }
+        if absVal >= 1_000 {
+            return String(format: "%.1fk", value / 1_000).replacingOccurrences(of: ".0k", with: "k")
+        }
+        return "\(Int(value.rounded()))"
+    }
+
+    private func tickDates(for series: [TrendPoint]) -> [Date] {
+        Self.tickIndices(count: series.count).map { ShopCalendar.date(series[$0].start) }
     }
 
     private func content(_ stats: Stats) -> some View {
         let series = points(stats)
+        let ticks = tickDates(for: series)
+        let unit: Calendar.Component = span == .weekly ? .weekOfYear : .month
+        let createdLabel = String(localized: "console.stats.created")
+        let doneLabel = String(localized: "console.stats.done")
+        let repairsLabel = String(localized: "console.stats.repairs")
+        let transportLabel = String(localized: "console.stats.transport")
+
         return ScrollView {
             VStack(alignment: .leading, spacing: 18) {
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
@@ -59,60 +96,104 @@ struct StatsView: View {
                     card("console.stats.jobs") {
                         Chart {
                             ForEach(series) { p in
-                                BarMark(x: .value("Period", label(p.start)), y: .value("Jobs", p.created))
-                                    .foregroundStyle(by: .value("Series", String(localized: "console.stats.created")))
-                                    .position(by: .value("Series", String(localized: "console.stats.created")))
-                                BarMark(x: .value("Period", label(p.start)), y: .value("Jobs", p.done))
-                                    .foregroundStyle(by: .value("Series", String(localized: "console.stats.done")))
-                                    .position(by: .value("Series", String(localized: "console.stats.done")))
+                                let date = ShopCalendar.date(p.start)
+                                BarMark(x: .value("Period", date, unit: unit), y: .value("Jobs", p.created))
+                                    .foregroundStyle(by: .value("Series", createdLabel))
+                                    .position(by: .value("Series", createdLabel), axis: .horizontal, span: .ratio(0.75))
+                                    .cornerRadius(3)
+                                BarMark(x: .value("Period", date, unit: unit), y: .value("Jobs", p.done))
+                                    .foregroundStyle(by: .value("Series", doneLabel))
+                                    .position(by: .value("Series", doneLabel), axis: .horizontal, span: .ratio(0.75))
+                                    .cornerRadius(3)
                             }
                         }
                         .chartForegroundStyleScale([
-                            String(localized: "console.stats.created"): Theme.shop,
-                            String(localized: "console.stats.done"): Theme.ok,
+                            createdLabel: Theme.shop,
+                            doneLabel: Theme.ok,
                         ])
-                        .chartXAxis { AxisMarks(values: .automatic(desiredCount: 4)) }
-                        .frame(height: 190)
+                        .chartXAxis {
+                            AxisMarks(values: ticks) { value in
+                                AxisGridLine()
+                                AxisTick()
+                                if let date = value.as(Date.self) {
+                                    AxisValueLabel {
+                                        Text(label(for: date))
+                                            .font(.caption2)
+                                            .fixedSize()
+                                    }
+                                }
+                            }
+                        }
+                        .chartYAxis {
+                            AxisMarks(position: .leading) { value in
+                                AxisGridLine()
+                                if let count = value.as(Int.self) {
+                                    AxisValueLabel {
+                                        Text("\(count)").font(.caption2)
+                                    }
+                                }
+                            }
+                        }
+                        .chartLegend(position: .bottom, alignment: .leading, spacing: 12)
+                        .frame(height: 210)
                     }
 
                     card("console.stats.income_chart") {
                         Chart {
                             ForEach(series) { p in
-                                BarMark(x: .value("Period", label(p.start)), y: .value("Lei", p.doneLei))
-                                    .foregroundStyle(by: .value("Series", String(localized: "console.stats.repairs")))
-                                BarMark(x: .value("Period", label(p.start)), y: .value("Lei", p.transportLei))
-                                    .foregroundStyle(by: .value("Series", String(localized: "console.stats.transport")))
+                                let date = ShopCalendar.date(p.start)
+                                BarMark(x: .value("Period", date, unit: unit), y: .value("Lei", p.doneLei))
+                                    .foregroundStyle(by: .value("Series", repairsLabel))
+                                    .cornerRadius(3)
+                                BarMark(x: .value("Period", date, unit: unit), y: .value("Lei", p.transportLei))
+                                    .foregroundStyle(by: .value("Series", transportLabel))
+                                    .cornerRadius(3)
                             }
                         }
                         .chartForegroundStyleScale([
-                            String(localized: "console.stats.repairs"): Theme.shop,
-                            String(localized: "console.stats.transport"): Theme.pickup,
+                            repairsLabel: Theme.shop,
+                            transportLabel: Theme.pickup,
                         ])
-                        .chartXAxis { AxisMarks(values: .automatic(desiredCount: 4)) }
-                        .frame(height: 190)
+                        .chartXAxis {
+                            AxisMarks(values: ticks) { value in
+                                AxisGridLine()
+                                AxisTick()
+                                if let date = value.as(Date.self) {
+                                    AxisValueLabel {
+                                        Text(label(for: date))
+                                            .font(.caption2)
+                                            .fixedSize()
+                                    }
+                                }
+                            }
+                        }
+                        .chartYAxis {
+                            AxisMarks(position: .leading) { value in
+                                AxisGridLine()
+                                if let amount = value.as(Double.self) {
+                                    AxisValueLabel {
+                                        Text(Self.compactAxisNumber(amount)).font(.caption2)
+                                    }
+                                }
+                            }
+                        }
+                        .chartLegend(position: .bottom, alignment: .leading, spacing: 12)
+                        .frame(height: 210)
                     }
                 }
 
                 card("console.stats.by_status") {
-                    let rows = BookingStatus.allCases.map { ($0, stats.byStatus[$0.rawValue] ?? 0) }.filter { $0.1 > 0 }
-                    Chart(rows, id: \.0) { row in
-                        BarMark(x: .value("Jobs", row.1), y: .value("Status", String(localized: String.LocalizationValue(row.0.titleKey))))
-                            .foregroundStyle(row.0.color)
-                            .annotation(position: .trailing) { Text("\(row.1)").font(.caption).foregroundColor(.secondary) }
-                    }
-                    .chartYAxis { AxisMarks { _ in AxisValueLabel() } }
-                    .frame(height: CGFloat(max(rows.count, 1)) * 34 + 10)
+                    let rows = BookingStatus.allCases
+                        .map { StatsBarRow(id: $0.rawValue, label: String(localized: String.LocalizationValue($0.titleKey)), value: stats.byStatus[$0.rawValue] ?? 0, color: $0.color) }
+                        .filter { $0.value > 0 }
+                    StatsBarList(rows: rows)
                 }
 
                 card("console.stats.by_category") {
-                    let rows = stats.byCategory.sorted { $0.value > $1.value }
-                    Chart(rows, id: \.key) { row in
-                        BarMark(x: .value("Jobs", row.value), y: .value("Category", categoryName(row.key)))
-                            .foregroundStyle(Theme.shop)
-                            .annotation(position: .trailing) { Text("\(row.value)").font(.caption).foregroundColor(.secondary) }
-                    }
-                    .chartYAxis { AxisMarks { _ in AxisValueLabel() } }
-                    .frame(height: CGFloat(max(rows.count, 1)) * 34 + 10)
+                    let rows = stats.byCategory
+                        .sorted { $0.value > $1.value }
+                        .map { StatsBarRow(id: $0.key, label: categoryName($0.key), value: $0.value, color: Theme.shop) }
+                    StatsBarList(rows: rows)
                 }
             }
             .padding(16)
@@ -126,7 +207,7 @@ struct StatsView: View {
     }
 
     private func card<Content: View>(_ title: LocalizedStringKey, @ViewBuilder _ content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .leading, spacing: 12) {
             Text(title).font(.headline)
             content()
         }
@@ -138,5 +219,50 @@ struct StatsView: View {
     private func load() async {
         do { state = .loaded(try await store.repo.stats()) }
         catch { state = .failed(error.localizedDescription) }
+    }
+}
+
+private struct StatsBarRow: Identifiable {
+    let id: String
+    let label: String
+    let value: Int
+    let color: Color
+}
+
+/// Horizontal bar breakdown matching the website's RowChart, keeping labels and counts clear at any width.
+private struct StatsBarList: View {
+    let rows: [StatsBarRow]
+
+    private var maxValue: Int { max(1, rows.map(\.value).max() ?? 1) }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            ForEach(rows) { row in
+                VStack(alignment: .leading, spacing: 5) {
+                    HStack(alignment: .firstTextBaseline, spacing: 8) {
+                        Text(row.label)
+                            .font(.subheadline)
+                            .foregroundColor(.primary)
+                            .lineLimit(2)
+                        Spacer(minLength: 8)
+                        Text("\(row.value)")
+                            .font(.subheadline.bold().monospacedDigit())
+                            .foregroundColor(.secondary)
+                    }
+                    GeometryReader { geo in
+                        let fraction = CGFloat(row.value) / CGFloat(maxValue)
+                        ZStack(alignment: .leading) {
+                            Capsule()
+                                .fill(Color.primary.opacity(0.08))
+                            Capsule()
+                                .fill(row.color)
+                                .frame(width: row.value > 0 ? max(6, geo.size.width * fraction) : 0)
+                        }
+                    }
+                    .frame(height: 8)
+                }
+                .accessibilityElement(children: .combine)
+            }
+        }
     }
 }

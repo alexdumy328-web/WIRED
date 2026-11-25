@@ -117,7 +117,7 @@ export function BookingsTab({ version = 0, onOpen }: { version?: number; onOpen:
   return (
     <div>
       {/* Status chips: the first filter most owners reach for. */}
-      <div role="group" aria-label={b.status} className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0" data-lenis-prevent>
+      <div role="group" aria-label={b.status} className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0" data-lenis-prevent>
         {chip('', b.all, all)}
         {BOOKING_STATUSES.map((s) => chip(s, t.track.statuses[s], counts ? (counts[s] ?? 0) : null, STATUS_DOT[s]))}
       </div>
@@ -128,7 +128,7 @@ export function BookingsTab({ version = 0, onOpen }: { version?: number; onOpen:
           <SearchIcon className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted" />
           <input className="field w-full pl-10 font-normal" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={b.searchPlaceholder} maxLength={100} />
         </label>
-        <div role="group" aria-label={b.mode} className="grid grid-cols-4 rounded-full border border-line bg-surface p-0.5 text-[14px] sm:inline-grid">
+        <div role="group" aria-label={b.mode} className="grid grid-cols-4 rounded-full border border-line bg-surface p-0.5 text-[13px] sm:inline-grid sm:text-[14px]">
           {(
             [
               ['', b.all],
@@ -142,7 +142,7 @@ export function BookingsTab({ version = 0, onOpen }: { version?: number; onOpen:
               type="button"
               aria-pressed={mode === v}
               onClick={() => setMode(v)}
-              className={`whitespace-nowrap rounded-full px-2.5 py-1.5 font-semibold transition-colors sm:px-3.5 ${mode === v ? 'bg-ink text-bg' : 'text-muted hover:text-ink'}`}
+              className={`whitespace-nowrap rounded-full px-1.5 py-1.5 font-semibold transition-colors sm:px-3.5 ${mode === v ? 'bg-ink text-bg' : 'text-muted hover:text-ink'}`}
             >
               {label}
             </button>
