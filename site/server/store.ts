@@ -158,7 +158,15 @@ export class MongoStore implements Store {
   private collection: Collection<Booking> | null = null
 
   constructor(uri: string, dbName: string = DEFAULT_DB_NAME) {
-    this.client = new MongoClient(uri)
+    // Serverless: every warm instance keeps its own pool, so keep it small and let idle sockets go.
+    // Atlas' free tier allows 500 connections; 10 instances x 10 stays well under it.
+    this.client = new MongoClient(uri, {
+      maxPoolSize: 10,
+      minPoolSize: 0,
+      maxIdleTimeMS: 60_000,
+      serverSelectionTimeoutMS: 8_000,
+      appName: 'norgelis-api',
+    })
     this.dbName = dbName
   }
 

@@ -4,14 +4,20 @@ options:
   deploymentTarget:
     iOS: "18.0"
   xcodeVersion: "16.0"
-  defaultConfig: Debug
+  defaultConfig: Release
+
+configs:
+  Debug: debug
+  Release: release
 
 settings:
   base:
     IPHONEOS_DEPLOYMENT_TARGET: "18.0"
     SWIFT_VERSION: "5.0"
     ENABLE_USER_SCRIPT_SANDBOXING: "YES"
-    TARGETED_DEVICE_FAMILY: "1,2"
+    TARGETED_DEVICE_FAMILY: "1"
+    MARKETING_VERSION: "1.0.0"
+    CURRENT_PROJECT_VERSION: "1"
 
 targets:
   NorgelisTech:
@@ -20,18 +26,109 @@ targets:
     deploymentTarget: "18.0"
     sources:
       - path: NorgelisTech
+      - path: Shared
+    dependencies:
+      - target: NorgelisTechWidgets
+        embed: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ro.norgelis.app
         PRODUCT_NAME: NorgelisTech
+        TARGETED_DEVICE_FAMILY: "1"
         INFOPLIST_FILE: NorgelisTech/Resources/Info.plist
+        INFOPLIST_PREPROCESS: "YES"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
         DEVELOPMENT_TEAM: ""
         CODE_SIGN_STYLE: Automatic
-        CODE_SIGN_IDENTITY: "-"
-        GENERATE_INFOPLIST_KEY_UIBackgroundModes: "location"
-        # Override on the command line, for example NORGELIS_API_BASE_URL=http://192.168.1.20:8790
-        NORGELIS_API_BASE_URL: ""
+        # The server the app talks to. Release builds default to the production site; a command line
+        # override (NORGELIS_API_BASE_URL=http://192.168.1.20:8790) points a Debug build at a local server.
+        NORGELIS_API_BASE_URL: "https://norgelis.ro"
         # The website origin Better Auth trusts (BETTER_AUTH_URL or APP_ORIGINS), for example http://localhost:5173 in dev.
         NORGELIS_SITE_ORIGIN: ""
+        # Shown in the app when set. Empty hides the matching row.
+        NORGELIS_SUPPORT_EMAIL: ""
+        NORGELIS_PHONE: "+40 (771) 332 210"
+        NORGELIS_DRIVER_PHONE: "(0758) 561 001"
+        # The legal pages default to <server>/confidentialitate and <server>/termeni. Set these to override.
+        NORGELIS_PRIVACY_URL: ""
+        NORGELIS_TERMS_URL: ""
+        # A Google Form link. The server's FEEDBACK_URL (Vercel) wins; this is the fallback. Empty and no server value hides it.
+        NORGELIS_FEEDBACK_URL: ""
+        # The website's domain, for Universal Links (booking links in emails open the app) and shared passwords.
+        # The server must serve /.well-known/apple-app-site-association (APPLE_TEAM_ID set on Vercel).
+        NORGELIS_APP_LINK_DOMAIN: "norgelis.ro"
+      configs:
+        Debug:
+          CODE_SIGN_IDENTITY: "-"
+          INFOPLIST_PREPROCESSOR_DEFINITIONS: "DEBUG_BUILD=1"
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG"
+        Release:
+          SWIFT_COMPILATION_MODE: wholemodule
+          SWIFT_OPTIMIZATION_LEVEL: "-O"
+          VALIDATE_PRODUCT: "YES"
+          STRIP_INSTALLED_PRODUCT: "YES"
+          DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+          # Push and associated domains need the paid Apple Developer team, so only Release (TestFlight,
+          # App Store) carries them. Debug stays buildable on a free team with a cable.
+          CODE_SIGN_ENTITLEMENTS: NorgelisTech/Resources/NorgelisTech.entitlements
+  NorgelisTechWidgets:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: NorgelisTechWidgets
+      - path: Shared
+    info:
+      path: NorgelisTechWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: Norgelis Tech
+        CFBundleDevelopmentRegion: ro
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ro.norgelis.app.widgets
+        PRODUCT_NAME: NorgelisTechWidgets
+        TARGETED_DEVICE_FAMILY: "1"
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_STYLE: Automatic
+        SKIP_INSTALL: "YES"
+        APPLICATION_EXTENSION_API_ONLY: "YES"
+      configs:
+        Debug:
+          CODE_SIGN_IDENTITY: "-"
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG"
+        Release:
+          SWIFT_COMPILATION_MODE: wholemodule
+  NorgelisTechTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: NorgelisTechTests
+    dependencies:
+      - target: NorgelisTech
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ro.norgelis.app.tests
+        GENERATE_INFOPLIST_FILE: "YES"
+        CODE_SIGN_STYLE: Automatic
+        CODE_SIGN_IDENTITY: "-"
+
+schemes:
+  NorgelisTech:
+    build:
+      targets:
+        NorgelisTech: all
+        NorgelisTechTests: [test]
+    run:
+      config: Debug
+    test:
+      config: Debug
+      targets:
+        - NorgelisTechTests
+    archive:
+      config: Release

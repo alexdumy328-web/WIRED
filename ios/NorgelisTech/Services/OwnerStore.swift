@@ -5,7 +5,7 @@ import SwiftUI
 @MainActor
 final class OwnerStore: ObservableObject {
     enum Tab: Hashable {
-        case today, jobs, customers, schedule, more
+        case today, jobs, driver, schedule, more
     }
 
     /// Starts as the least access. Sample data raises it to dev, and a live sign-in sets what the server says.
@@ -55,6 +55,17 @@ final class OwnerStore: ObservableObject {
         lastWasSample = api.useMockData
         await refreshCounts()
         // Everything on screen came from the other source. Load it again.
+        version += 1
+    }
+
+    /// Signed out or switched account: nothing of the last person's access or position stays.
+    func reset() {
+        role = api.useMockData ? .dev : .technician
+        tab = .today
+        counts = nil
+        jobsFilter = nil
+        lastError = nil
+        lastWasSample = nil
         version += 1
     }
 

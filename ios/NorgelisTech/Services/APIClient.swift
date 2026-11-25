@@ -78,9 +78,34 @@ final class APIClient: ObservableObject {
         }
     }
 
-    /// Owner console and driver run on built-in sample data until this is off.
-    @Published var useMockData: Bool {
-        didSet { UserDefaults.standard.set(useMockData, forKey: "norgelis_use_mock") }
+    /// Owners and devs can switch the console and driver map to built-in sample data. Off at every launch, and cleared at sign-out.
+    @Published var useMockData = false
+
+    /// The signed-in account is a demo account (the server says so): show sample data. Otherwise never.
+    /// Nothing else switches sample data on, so a real account can never see it.
+    func setDemo(_ on: Bool) {
+        if useMockData != on { useMockData = on }
+    }
+
+    func disableSample() { setDemo(false) }
+
+    /// Release builds talk to HTTPS servers only. Debug builds also take plain HTTP for a local server.
+    static func isAllowedServer(_ address: String, allowHTTP: Bool = APIClient.isDebugBuild) -> Bool {
+        guard let url = URL(string: address), let scheme = url.scheme?.lowercased(), url.host != nil else { return false }
+        return scheme == "https" || (allowHTTP && scheme == "http")
+    }
+
+    static var isDebugBuild: Bool {
+        #if DEBUG
+        return true
+        #else
+        return false
+        #endif
+    }
+
+    /// Back to the address this build was made for. Used at sign-out, so a staging address never outlives its owner.
+    func resetServer() {
+        if baseURLString != Self.buildDefaultURL { baseURLString = Self.buildDefaultURL }
     }
 
     private let session: URLSession
@@ -155,17 +180,17 @@ final class APIClient: ObservableObject {
 
     init(session: URLSession = .shared) {
         self.session = session
-        let savedURL = UserDefaults.standard.string(forKey: "norgelis_api_base_url")
+        // A saved address from another build (plain HTTP from a Debug build, say) must not break this one.
+        let savedURL = UserDefaults.standard.string(forKey: "norgelis_api_base_url").flatMap { Self.isAllowedServer($0) ? $0 : nil }
         self.baseURLString = savedURL ?? Self.buildDefaultURL
 
         self.cookies = Self.loadCookies()
-        self.useMockData = UserDefaults.standard.object(forKey: "norgelis_use_mock") as? Bool ?? true
     }
 
-    /// The build's default address (`NorgelisAPIBaseURL` in Info.plist), else localhost.
+    /// The build's default address (`NorgelisAPIBaseURL` in Info.plist), else the production site.
     private static var buildDefaultURL: String {
         let configured = Bundle.main.object(forInfoDictionaryKey: "NorgelisAPIBaseURL") as? String
-        return configured.flatMap { $0.isEmpty ? nil : $0 } ?? "http://localhost:8787"
+        return configured.flatMap { $0.isEmpty ? nil : $0 } ?? "https://norgelis.ro"
     }
 
     var baseURL: URL? {
@@ -185,13 +210,9 @@ final class APIClient: ObservableObject {
 
     func fetchBooking(code: String) async throws -> Booking {
         let trimmed = code.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard let url = baseURL?.appendingPathComponent("api/bookings/\(trimmed)") else {
-            throw APIError.invalidURL
-        }
-
-        let (data, response) = try await session.data(from: url)
-        try validateResponse(response, data: data)
-        return try JSONDecoder().decode(Booking.self, from: data)
+        // Codes look like NT-4K7Q. Anything else cannot exist, and must not reach the URL path.
+        guard trimmed.range(of: "^[A-Za-z0-9-]{3,20}$", options: .regularExpression) != nil else { throw APIError.notFound }
+        return try await request("GET", "api/bookings/\(trimmed)")
     }
 
     // MARK: - Authenticated requests (owner console)
@@ -288,34 +309,29 @@ final class APIClient: ObservableObject {
         return decoded.days
     }
 
-    // MARK: - Planned Phase 2 Endpoints (Plumbing Prepared)
+    // MARK: - Driver tracking
 
-    func sendDriverLocation(_ payload: DriverLocationPayload) async throws {
-        guard let url = baseURL?.appendingPathComponent("api/driver/location") else {
-            throw APIError.invalidURL
-        }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        let encoder = JSONEncoder()
-        encoder.dateEncodingStrategy = .iso8601
-        request.httpBody = try encoder.encode(payload)
-
-        let (data, response) = try await session.data(for: request)
-        try validateResponse(response, data: data)
+    /// The driver's phone shares where it is. Sent during a trip only.
+    func sendDriverPosition(_ body: [String: Any]) async throws {
+        try await requestVoid("POST", "api/driver/location", body: body)
     }
 
-    func fetchDriverTracking(bookingCode: String) async throws -> DriverTrackingStatus {
-        guard let url = baseURL?.appendingPathComponent("api/bookings/\(bookingCode)/driver") else {
-            throw APIError.invalidURL
-        }
-        let (data, response) = try await session.data(from: url)
-        try validateResponse(response, data: data)
+    /// The trip is over: the server forgets the position.
+    func stopDriverSharing() async {
+        try? await requestVoid("DELETE", "api/driver/location")
+    }
 
-        let decoder = JSONDecoder()
-        decoder.dateDecodingStrategy = .iso8601
-        return try decoder.decode(DriverTrackingStatus.self, from: data)
+    /// A customer asks whether a driver is on the way to this booking.
+    func fetchDriver(code: String) async throws -> DriverTrackingStatus {
+        guard code.range(of: "^[A-Za-z0-9-]{3,20}$", options: .regularExpression) != nil else { return .idle }
+        return try await request("GET", "api/bookings/\(code)/driver")
+    }
+
+    /// Staff see every driver who is sharing right now.
+    func fetchLiveDrivers() async throws -> [LiveDriver] {
+        struct Reply: Decodable { var drivers: [LiveDriver] }
+        let reply: Reply = try await request("GET", "api/admin/driver/live")
+        return reply.drivers
     }
 
     // MARK: - Helper

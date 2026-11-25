@@ -20,25 +20,26 @@
     <key>CFBundlePackageType</key>
     <string>APPL</string>
     <key>CFBundleShortVersionString</key>
-    <string>1.0</string>
+    <string>$(MARKETING_VERSION)</string>
     <key>CFBundleVersion</key>
-    <string>1</string>
+    <string>$(CURRENT_PROJECT_VERSION)</string>
     <key>LSRequiresIPhoneOS</key>
     <true/>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.business</string>
+
+    <!-- The app talks to the shop server over HTTPS and uses no encryption of its own. -->
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
+
     <key>UILaunchScreen</key>
-    <dict/>
-    <key>UISupportedInterfaceOrientations~ipad</key>
-    <array>
-        <string>UIInterfaceOrientationPortrait</string>
-        <string>UIInterfaceOrientationPortraitUpsideDown</string>
-        <string>UIInterfaceOrientationLandscapeLeft</string>
-        <string>UIInterfaceOrientationLandscapeRight</string>
-    </array>
+    <dict>
+        <key>UIColorName</key>
+        <string>LaunchBackground</string>
+    </dict>
     <key>UISupportedInterfaceOrientations</key>
     <array>
         <string>UIInterfaceOrientationPortrait</string>
-        <string>UIInterfaceOrientationLandscapeLeft</string>
-        <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
 
     <!-- Lets the app ask whether Waze is installed -->
@@ -47,32 +48,59 @@
         <string>waze</string>
     </array>
 
-    <!-- Location Permission Descriptions (Romanian primary) -->
+    <!-- Location: the driver map and route, and sharing the van position during a trip, also in the background. -->
     <key>NSLocationWhenInUseUsageDescription</key>
-    <string>Norgelis Tech folosește locația pentru navigație și pentru a indica poziția pe hartă în timpul preluărilor și livrărilor.</string>
-    <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-    <string>Norgelis Tech folosește locația ca să calculeze traseul și ora de sosire în timpul unei curse, chiar dacă ecranul se stinge.</string>
-
-    <!-- Background Location Capability -->
+    <string>Norgelis Tech folosește locația ca să arate poziția ta pe hartă, să calculeze traseul și, în timpul unei curse, să le arate clienților și atelierului unde ești. Funcționează și când treci în Waze.</string>
+    <!-- Keeps the position coming while the driver is in Waze. Only during a trip, with the blue status bar indicator. -->
     <key>UIBackgroundModes</key>
     <array>
         <string>location</string>
     </array>
 
-    <!-- Default API address for this build. Empty means http://localhost:8787. -->
+    <!-- The driver on the way, on the lock screen and in the Dynamic Island. -->
+    <key>NSSupportsLiveActivities</key>
+    <true/>
+
+    <!-- The norgelis URL scheme (norgelis:booking/NT-4K7Q) opens a booking from the Live Activity. Booking links from emails use Universal Links. Never write two slashes in a comment here: the plist is run through the C preprocessor. -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>ro.norgelis.app</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>norgelis</string>
+            </array>
+        </dict>
+    </array>
+
+    <!-- Build settings, set in project.yml or on the command line. -->
     <key>NorgelisAPIBaseURL</key>
     <string>$(NORGELIS_API_BASE_URL)</string>
-    <!-- The website's own origin, for the Origin header Better Auth checks. Empty falls back to the API address. -->
     <key>NorgelisSiteOrigin</key>
     <string>$(NORGELIS_SITE_ORIGIN)</string>
-    <key>NSLocalNetworkUsageDescription</key>
-    <string>Norgelis Tech se conectează la serverul atelierului din rețeaua locală în timpul dezvoltării.</string>
+    <key>NorgelisSupportEmail</key>
+    <string>$(NORGELIS_SUPPORT_EMAIL)</string>
+    <key>NorgelisPhone</key>
+    <string>$(NORGELIS_PHONE)</string>
+    <key>NorgelisDriverPhone</key>
+    <string>$(NORGELIS_DRIVER_PHONE)</string>
+    <key>NorgelisPrivacyURL</key>
+    <string>$(NORGELIS_PRIVACY_URL)</string>
+    <key>NorgelisTermsURL</key>
+    <string>$(NORGELIS_TERMS_URL)</string>
+    <key>NorgelisFeedbackURL</key>
+    <string>$(NORGELIS_FEEDBACK_URL)</string>
 
-    <!-- Local network & HTTP for dev server localhost:8787 -->
+#ifdef DEBUG_BUILD
+    <!-- Debug builds may reach a server on this Mac or the local network. Release builds are HTTPS only. -->
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>Norgelis Tech se conectează la serverul de dezvoltare din rețeaua locală.</string>
     <key>NSAppTransportSecurity</key>
     <dict>
         <key>NSAllowsLocalNetworking</key>
         <true/>
     </dict>
+#endif
 </dict>
 </plist>

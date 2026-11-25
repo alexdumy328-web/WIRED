@@ -1,7 +1,7 @@
 import { useEffect, useSyncExternalStore } from 'react'
 import { api } from './api'
 
-export type Role = 'customer' | 'technician' | 'owner' | 'dev'
+export type Role = 'customer' | 'driver' | 'technician' | 'owner' | 'dev'
 export type Viewer = { id: string; email: string; name: string; emailVerified: boolean; role: Role }
 type State = { status: 'loading' | 'ready' | 'unavailable'; user: Viewer | null; google: boolean }
 

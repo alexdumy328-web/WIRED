@@ -330,7 +330,7 @@ const en: Dict = {
     title: 'Contact',
     address: 'Bd. Alexandru cel Bun 49, bl. Y1, parter, Iași 700634',
     hours: ['Mon–Fri 09:00–18:00', 'Sat 10:00–14:00', 'Sunday closed'],
-    call: 'Call us on +40 700 000 000',
+    call: 'Call us on +40 771 332 210',
     whatsapp: 'Message us on WhatsApp',
     directions: 'Open in Google Maps',
   },
@@ -376,8 +376,13 @@ const en: Dict = {
       generic: 'Something went wrong. Try again.',
     },
     profile: { title: 'Profile', name: 'Name', email: 'Email', role: 'Role', verified: 'Confirmed', notVerified: 'Not confirmed' },
-    roles: { customer: 'Customer', technician: 'Technician', owner: 'Owner', dev: 'Developer' },
+    roles: { customer: 'Customer', driver: 'Driver', technician: 'Technician', owner: 'Owner', dev: 'Developer' },
     dashboards: { title: 'Dashboards', owner: 'Owner dashboard', dev: 'Developer dashboard' },
+    iosApp: {
+      title: 'iPhone app',
+      download: 'Download the app (Sideloadly)',
+      hint: 'Until it is on the App Store, install it with Sideloadly from a PC or Mac and a free Apple ID. The steps are on the download page. The install expires after 7 days and is refreshed from Sideloadly.',
+    },
     adminBar: { nav: 'Dashboards', owner: 'Owner', dev: 'Developer', site: 'View the site' },
     bookings: {
       title: 'My bookings',
@@ -586,7 +591,10 @@ const en: Dict = {
   footer: {
     rights: 'Norgelis Tech. All rights reserved.',
     made: 'Made in Iași.',
+    privacy: 'Privacy',
+    terms: 'Terms',
   },
+  legal: { updated: 'Last updated', contact: 'Contact details', operator: 'Operator', address: 'Address', phone: 'Phone', home: 'Back to the site' },
 }
 
 export default en

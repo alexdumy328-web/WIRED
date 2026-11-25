@@ -234,7 +234,7 @@ struct DriverListHeader: View {
                     Text("driver.done.title").font(.headline)
                     Text("driver.done.subtitle").font(.subheadline).foregroundColor(.secondary)
                     Button {
-                        Navigator.openWaze(to: MockData.shopCoordinate)
+                        Navigator.openWaze(to: Shop.coordinate)
                     } label: {
                         Label("driver.done.navigate", systemImage: "arrow.triangle.turn.up.right.diamond.fill")
                             .font(.subheadline.bold())

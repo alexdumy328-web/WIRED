@@ -85,6 +85,8 @@ struct Booking: Codable, Identifiable, Hashable {
     var id: String { code }
 
     var isWalkIn: Bool { source == "walk-in" }
+    /// The public lookup by code leaves contact, device and pickup out, so the card cannot tell whether a driver comes.
+    var isGuestLookup: Bool { contact == nil && device == nil }
 
     var hasPickup: Bool {
         pickup != nil

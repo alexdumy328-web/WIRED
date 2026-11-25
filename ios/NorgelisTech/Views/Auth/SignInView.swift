@@ -7,8 +7,13 @@ struct SignInView: View {
     private enum Method: Hashable { case code, password }
     private enum Step { case start, code, signUp, verify, reset }
 
-    @State private var method: Method = .code
-    @State private var step: Step = .start
+    @State private var method: Method
+    @State private var step: Step
+
+    init(startAtSignUp: Bool = false) {
+        _method = State(initialValue: startAtSignUp ? .password : .code)
+        _step = State(initialValue: startAtSignUp ? .signUp : .start)
+    }
     @State private var email = ""
     @State private var password = ""
     @State private var name = ""
@@ -28,7 +33,7 @@ struct SignInView: View {
                 header
 
                 if step == .start || step == .code {
-                    Picker("", selection: $method) {
+                    Picker("auth.method.title", selection: $method) {
                         Text("auth.method.code").tag(Method.code)
                         Text("auth.method.password").tag(Method.password)
                     }
@@ -288,83 +293,175 @@ struct SignInView: View {
     }
 }
 
-/// Account sheet: who is signed in, or the sign-in form.
+/// The account: who is signed in, how to reach the shop, legal links, sign out and account deletion.
+/// Shown inside a navigation stack (a tab, or pushed from More).
 struct AccountView: View {
+    /// Re-draws when the server's feedback link and support email arrive.
+    @ObservedObject private var remote = RemoteConfig.shared
     @EnvironmentObject var auth: AuthStore
     @EnvironmentObject var ownerStore: OwnerStore
-    @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject var apiClient: APIClient
+    @Environment(\.openURL) private var openURL
     @State private var signOutWarning = false
+    @State private var confirmDelete = false
+    @State private var deleting = false
+    @State private var deleteUnavailable = false
+    @State private var deleteFailed = false
+    @State private var deleteReauth = false
+    @State private var deletePassword = ""
+    @State private var staffAccount = false
+    @State private var wrongPassword = false
 
     var body: some View {
-        NavigationStack {
-            Group {
-                if let viewer = auth.viewer {
-                    List {
-                        Section {
-                            HStack(spacing: 14) {
-                                Image(systemName: "person.crop.circle.fill").font(.system(size: 44)).foregroundColor(.accentColor)
-                                VStack(alignment: .leading, spacing: 2) {
-                                    Text(viewer.name.isEmpty ? viewer.email : viewer.name).font(.headline)
-                                    Text(viewer.email).font(.subheadline).foregroundColor(.secondary)
-                                }
-                            }
-                            LabeledContent("auth.account.role") {
-                                Text(LocalizedStringKey(roleKey(viewer.role)))
-                            }
-                            LabeledContent("auth.account.email_status") {
-                                Text(LocalizedStringKey(viewer.emailVerified ? "auth.account.confirmed" : "auth.account.not_confirmed"))
-                                    .foregroundColor(viewer.emailVerified ? Theme.ok : Theme.danger)
-                            }
-                        }
-                        Section {
-                            Button(role: .destructive) {
-                                Task {
-                                    let ended = await auth.signOut()
-                                    ownerStore.changed()
-                                    if !ended { signOutWarning = true }
-                                }
-                            } label: {
-                                Label("auth.account.sign_out", systemImage: "rectangle.portrait.and.arrow.right")
-                            }
+        List {
+            if let viewer = auth.viewer {
+                Section {
+                    HStack(spacing: 14) {
+                        Image(systemName: "person.crop.circle.fill").font(.system(size: 44)).foregroundColor(.accentColor)
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text(viewer.name.isEmpty ? viewer.email : viewer.name).font(.headline)
+                            Text(viewer.email).font(.subheadline).foregroundColor(.secondary)
                         }
                     }
-                } else {
-                    SignInView()
+                    LabeledContent("auth.account.role") { Text(LocalizedStringKey(roleKey(viewer.role))) }
+                    LabeledContent("auth.account.email_status") {
+                        Text(LocalizedStringKey(viewer.emailVerified ? "auth.account.confirmed" : "auth.account.not_confirmed"))
+                            .foregroundColor(viewer.emailVerified ? Theme.ok : Theme.danger)
+                    }
                 }
             }
-            .alert("auth.account.sign_out_warning_title", isPresented: $signOutWarning) {
-                Button("common.ok", role: .cancel) {}
-            } message: {
-                Text("auth.account.sign_out_warning")
+
+            Section("account.section.shop") {
+                if let phone = Shop.phone, let url = Shop.telURL(phone) {
+                    Button { openURL(url) } label: { Label("contact.call", systemImage: "phone.fill") }
+                }
+                if let mail = Shop.supportEmail, let url = Shop.mailURL(to: mail, subject: "", body: "") {
+                    Button { openURL(url) } label: { Label(mail, systemImage: "envelope.fill") }
+                }
+                if let url = Shop.feedbackURL {
+                    Link(destination: url) { Label("account.feedback", systemImage: "text.bubble.fill") }
+                }
+                Label(Shop.address, systemImage: "mappin.and.ellipse").font(.subheadline).foregroundColor(.secondary)
             }
-            .navigationTitle(LocalizedStringKey("auth.account.title"))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) { Button(LocalizedStringKey("common.close")) { dismiss() } }
+
+            if Shop.privacyURL != nil || Shop.termsURL != nil {
+                Section("account.section.legal") {
+                    if let url = Shop.privacyURL { Link(destination: url) { Label("account.privacy", systemImage: "hand.raised.fill") } }
+                    if let url = Shop.termsURL { Link(destination: url) { Label("account.terms", systemImage: "doc.text.fill") } }
+                }
+            }
+
+            Section {
+                LabeledContent("account.version") { Text(Self.versionText).foregroundColor(.secondary) }
+            }
+
+            if auth.isSignedIn {
+                Section {
+                    Button(role: .destructive) {
+                        Task {
+                            let ended = await auth.signOut()
+                            if !ended { signOutWarning = true }
+                        }
+                    } label: {
+                        Label("auth.account.sign_out", systemImage: "rectangle.portrait.and.arrow.right")
+                    }
+                }
+                // Staff accounts are removed by the owner, and a demo account is shared, so neither deletes itself here.
+                if auth.viewer?.isStaff == true || auth.viewer?.isDemo == true {
+                    Section { Text("account.delete.staff_note").font(.footnote).foregroundColor(.secondary) }
+                } else {
+                    Section {
+                        Button(role: .destructive) { confirmDelete = true } label: {
+                            HStack {
+                                Label("account.delete", systemImage: "trash")
+                                if deleting { Spacer(); ProgressView() }
+                            }
+                        }
+                        .disabled(deleting)
+                    } footer: {
+                        Text("account.delete.footer")
+                    }
+                }
             }
         }
+        .navigationTitle(LocalizedStringKey("auth.account.title"))
+        .navigationBarTitleDisplayMode(.inline)
+        .alert("auth.account.sign_out_warning_title", isPresented: $signOutWarning) {
+            Button("common.ok", role: .cancel) {}
+        } message: {
+            Text("auth.account.sign_out_warning")
+        }
+        .confirmationDialog("account.delete.title", isPresented: $confirmDelete, titleVisibility: .visible) {
+            Button("account.delete.confirm", role: .destructive) { Task { await delete() } }
+            Button("common.cancel", role: .cancel) {}
+        } message: {
+            Text("account.delete.message")
+        }
+        .alert("account.delete.unavailable_title", isPresented: $deleteUnavailable) {
+            if let mail = Shop.supportEmail,
+               let url = Shop.mailURL(to: mail, subject: String(localized: "account.delete.email_subject"),
+                                      body: String(format: String(localized: "account.delete.email_body %@"), auth.viewer?.email ?? "")) {
+                Button("account.delete.email") { openURL(url) }
+            }
+            Button("common.close", role: .cancel) {}
+        } message: {
+            Text("account.delete.unavailable")
+        }
+        .alert("account.delete.failed", isPresented: $deleteFailed) {
+            Button("common.ok", role: .cancel) {}
+        }
+        .alert("account.delete.wrong_password", isPresented: $wrongPassword) {
+            Button("common.ok", role: .cancel) {}
+        }
+        .alert("account.delete.staff", isPresented: $staffAccount) {
+            Button("common.ok", role: .cancel) {}
+        } message: {
+            Text("auth.error.staff_account")
+        }
+        // The server wants the password, or a sign-in from the last day. A code-only account has no password.
+        .alert("account.delete.reauth_title", isPresented: $deleteReauth) {
+            SecureField("auth.field.password", text: $deletePassword)
+            Button("account.delete.confirm", role: .destructive) {
+                let password = deletePassword
+                deletePassword = ""
+                Task { await delete(password: password) }
+            }
+            Button("account.delete.signin_again") {
+                deletePassword = ""
+                Task { _ = await auth.signOut() }
+            }
+            Button("common.cancel", role: .cancel) { deletePassword = "" }
+        } message: {
+            Text("account.delete.reauth")
+        }
+    }
+
+    private func delete(password: String? = nil) async {
+        deleting = true
+        defer { deleting = false }
+        do {
+            try await auth.deleteAccount(password: password)
+        } catch AuthProblem.unavailable {
+            deleteUnavailable = true
+        } catch AuthProblem.reauth {
+            deleteReauth = true
+        } catch AuthProblem.staffAccount {
+            staffAccount = true
+        } catch AuthProblem.invalidLogin {
+            wrongPassword = true
+        } catch {
+            deleteFailed = true
+        }
+    }
+
+    private static var versionText: String {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? "1.0"
+        let build = info?["CFBundleVersion"] as? String ?? "1"
+        return "\(version) (\(build))"
     }
 
     private func roleKey(_ role: String) -> String {
         StaffRole(rawValue: role)?.titleKey ?? "auth.account.customer"
-    }
-}
-
-/// Shown where a staff login is needed and there is none.
-struct StaffLoginRequired: View {
-    @EnvironmentObject var auth: AuthStore
-
-    var body: some View {
-        if auth.isSignedIn {
-            VStack(spacing: 12) {
-                Image(systemName: "lock.fill").font(.system(size: 36)).foregroundColor(.secondary)
-                Text("auth.staff.no_access_title").font(.headline)
-                Text("auth.staff.no_access").font(.subheadline).foregroundColor(.secondary).multilineTextAlignment(.center)
-                Button("auth.account.sign_out") { Task { await auth.signOut() } }.buttonStyle(.bordered)
-            }
-            .padding(24)
-        } else {
-            SignInView()
-        }
     }
 }

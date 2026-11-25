@@ -330,7 +330,7 @@ const ro: Dict = {
     title: 'Contact',
     address: 'Bd. Alexandru cel Bun 49, bl. Y1, parter, Iași 700634',
     hours: ['Luni–Vineri 09:00–18:00', 'Sâmbătă 10:00–14:00', 'Duminică închis'],
-    call: 'Sună-ne la +40 700 000 000',
+    call: 'Sună-ne la +40 771 332 210',
     whatsapp: 'Scrie-ne pe WhatsApp',
     directions: 'Deschide în Google Maps',
   },
@@ -376,8 +376,13 @@ const ro: Dict = {
       generic: 'Ceva nu a mers. Încearcă din nou.',
     },
     profile: { title: 'Profil', name: 'Nume', email: 'Email', role: 'Rol', verified: 'Confirmat', notVerified: 'Neconfirmat' },
-    roles: { customer: 'Client', technician: 'Tehnician', owner: 'Proprietar', dev: 'Dezvoltator' },
+    roles: { customer: 'Client', driver: 'Șofer', technician: 'Tehnician', owner: 'Proprietar', dev: 'Dezvoltator' },
     dashboards: { title: 'Panouri de lucru', owner: 'Panoul proprietarului', dev: 'Panoul dezvoltatorului' },
+    iosApp: {
+      title: 'Aplicația iPhone',
+      download: 'Descarcă aplicația (Sideloadly)',
+      hint: 'Până apare în App Store, se instalează cu Sideloadly de pe un PC sau Mac, cu un Apple ID gratuit. Pașii sunt pe pagina de descărcare. Instalarea expiră după 7 zile și se reîmprospătează din Sideloadly.',
+    },
     adminBar: { nav: 'Panouri de lucru', owner: 'Proprietar', dev: 'Dezvoltator', site: 'Vezi site-ul' },
     bookings: {
       title: 'Programările mele',
@@ -586,7 +591,10 @@ const ro: Dict = {
   footer: {
     rights: 'Norgelis Tech. Toate drepturile rezervate.',
     made: 'Făcut în Iași.',
+    privacy: 'Confidențialitate',
+    terms: 'Termeni',
   },
+  legal: { updated: 'Actualizat la', contact: 'Date de contact', operator: 'Operator', address: 'Adresă', phone: 'Telefon', home: 'Înapoi la site' },
 }
 
 export default ro

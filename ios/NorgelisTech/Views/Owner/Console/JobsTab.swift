@@ -78,6 +78,7 @@ struct JobsTab: View {
                         }
                     } label: {
                         Image(systemName: mode == nil ? "line.3.horizontal.decrease.circle" : "line.3.horizontal.decrease.circle.fill")
+                            .accessibilityLabel(Text("console.filter.kind"))
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {

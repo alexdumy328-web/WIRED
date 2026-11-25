@@ -11,8 +11,18 @@ struct CustomersTab: View {
     @State private var error: String?
     @State private var showNew = false
 
+    /// True when another screen already provides the navigation stack (the More tab).
+    var embedded = false
+
     var body: some View {
-        NavigationStack {
+        if embedded {
+            content
+        } else {
+            NavigationStack { content }
+        }
+    }
+
+    private var content: some View {
             List {
                 if let error {
                     ErrorBanner(message: error) { Task { await reload() } }.listRowBackground(Color.clear)
@@ -36,7 +46,7 @@ struct CustomersTab: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     Menu {
                         Toggle("console.customers.archived", isOn: $archived)
-                    } label: { Image(systemName: archived ? "archivebox.fill" : "archivebox") }
+                    } label: { Image(systemName: archived ? "archivebox.fill" : "archivebox").accessibilityLabel(Text("console.customers.archived")) }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button { showNew = true } label: { Image(systemName: "person.badge.plus") }
@@ -47,7 +57,6 @@ struct CustomersTab: View {
             .sheet(isPresented: $showNew) {
                 CustomerFormSheet(customer: nil) { _ in store.changed() }
             }
-        }
         .task(id: "\(store.version)|\(archived)|\(text)") {
             if !text.isEmpty { try? await Task.sleep(nanoseconds: 300_000_000) }
             if !Task.isCancelled { await reload() }

@@ -222,8 +222,10 @@ export type Dict = {
       generic: string
     }
     profile: { title: string; name: string; email: string; role: string; verified: string; notVerified: string }
-    roles: Record<'customer' | 'technician' | 'owner' | 'dev', string>
+    roles: Record<'customer' | 'driver' | 'technician' | 'owner' | 'dev', string>
     dashboards: { title: string; owner: string; dev: string }
+    /** Staff and drivers: where the iOS app comes from until it is on the App Store. */
+    iosApp: { title: string; download: string; hint: string }
     /** Slim top bar on the owner and dev dashboards (no customer nav there). */
     adminBar: { nav: string; owner: string; dev: string; site: string }
     bookings: {
@@ -407,5 +409,6 @@ export type Dict = {
     users: { search: string; email: string; name: string; role: string; verified: string; created: string; saved: string; self: string; error: string }
     limits: { name: string; window: string; max: string; allowed: string; blocked: string; tracked: string }
   }
-  footer: { rights: string; made: string }
+  footer: { rights: string; made: string; privacy: string; terms: string }
+  legal: { updated: string; contact: string; operator: string; address: string; phone: string; home: string }
 }

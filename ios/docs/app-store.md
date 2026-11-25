@@ -1,0 +1,69 @@
+# Shipping to the App Store
+
+## What it costs
+
+| Item | Cost |
+| --- | --- |
+| Apple Developer Program | 99 USD a year (billed in local currency, VAT may apply). Confirm the current price at developer.apple.com/programs when you enrol. This is the only required cost. |
+| D-U-N-S number (needed to enrol as a company, such as an SRL) | Free. Apple's lookup tool requests it and it takes days to a few weeks. |
+| TestFlight (up to 10,000 testers, 90-day builds) | Free, included. |
+| Commission | None. The app sells no digital goods. Repairs are physical services paid outside the app. |
+| Mac and Xcode | Already owned. |
+| Screenshots, listing, review | Free. |
+| Privacy policy and terms pages | Hosted on the existing website. A lawyer's review is optional. |
+| Google Play later | 25 USD once. |
+
+All in for the first year: about 99 USD, plus your own time. Enrol as the company if you want "Norgelis Tech" shown as the seller. An individual enrolment shows a personal name.
+
+## Before the first submission
+
+These need a decision or a change outside the app.
+
+1. **Real production address.** Set `NORGELIS_API_BASE_URL` (the default `https://norgelis.ro` is a placeholder). It must be HTTPS and the server must trust the app (see the Origin note in the README).
+2. **Deploy the site changes that go with the app.** Account deletion (`user.deleteUser` in `site/server/auth/auth.ts`, guideline 5.1.1(v)) and the privacy and terms pages (`/confidentialitate`, `/termeni`) are in the repository. The production server must run them before submission, because the app links to those pages and calls that route.
+3. **Have a lawyer read the legal text** (`site/src/data/legal.ts`). The operator is "Norgelis Tech" for now; add the CUI and trade register number to `OPERATOR` once they exist. The support email comes from `SUPPORT_EMAIL` on Vercel. The text is a careful draft, not legal advice.
+4. **Contact details.** The shop and driver numbers are set in `project.yml`. Check them before launch. The app never dials them by itself.
+5. **Roles.** Give the van driver the `driver` role: list the email in `DRIVER_EMAILS` on the server, or set it in the website's dev dashboard (Users), so the app opens the driver app and the server shows only pickups and deliveries.
+6. **Demo accounts for App Review.** Review cannot receive your email codes. Create two verified accounts with passwords and list both in App Store Connect → App Review Information. (a) A normal customer account, so review can book and track. (b) A demo account: add its email to the server's `DEMO_EMAILS`. The app opens the staff console on sample data with a simulated drive, so review sees the driver map and tracking without any real access. A demo account must not be in `OWNER_EMAILS` or `DEV_EMAILS`.
+7. **Apple Developer team.** Put the team id in `DEVELOPMENT_TEAM` for both targets (or pick it in Xcode), keep automatic signing, and raise `CURRENT_PROJECT_VERSION` for each upload. Xcode adds Push Notifications and Associated Domains to the App ID from `NorgelisTech.entitlements`.
+9. **Push key.** developer.apple.com → Keys → new key with Apple Push Notifications service. On Vercel set `APNS_KEY_ID`, `APNS_KEY` (the .p8 file's text) and `APPLE_TEAM_ID`. Set `NORGELIS_APP_LINK_DOMAIN` to the real domain.
+8. **Google sign-in.** Not in the app. If you add it, Apple also requires Sign in with Apple (guideline 4.8).
+
+## App Store Connect answers
+
+- **Name:** Norgelis Tech. **Category:** Business (or Utilities). **Price:** free. **Age rating:** 4+.
+- **Privacy nutrition labels** (match `PrivacyInfo.xcprivacy`): data collected and linked to the user, used for app functionality only, no tracking: email address, name, phone number, physical address (pickup address), user ID, device ID (the push token), other user content (the problem you describe), and precise location (the driver's van position, sent during a trip, only the latest kept, deleted when the trip ends).
+- **Encryption:** the app uses only HTTPS, so `ITSAppUsesNonExemptEncryption` is false and no export paperwork is needed.
+- **Required reason APIs:** UserDefaults (reason `CA92.1`) is declared.
+- **Location and the background mode.** The app declares `UIBackgroundModes: location` and uses it only while a driver trip runs, so customers and the workshop see the van while the driver is in Waze. A demo account only simulates the drive in the foreground, so give review a real **driver** account (in `DRIVER_EMAILS`, with a password) and book one pickup for the review day. Put this in the App Review notes: "Background location is used only by staff drivers during an active delivery trip, with the system's blue indicator, so customers can see the van arriving. Sign in as the driver account, open Driver, tap I'm on my way, then switch to another app. Customers never share their location." Attaching a short screen recording of a real trip helps.
+- **Support URL:** the website or a contact page.
+- **Privacy policy URL:** `<production site>/confidentialitate`.
+- **Feedback:** create a Google Form and set `FEEDBACK_URL` on Vercel. The row stays hidden until then and appears at the next launch, with no new build.
+- **Notifications:** the app asks once, when the customer has a repair to hear about. Nothing is sent for marketing.
+- **Screenshots:** iPhone 6.9 inch (and 6.5 inch if asked). The app is iPhone only. The `docs/screenshots/prod-*.png` files are simulator captures to start from.
+
+## Release steps
+
+1. Set the build settings above and bump the build number.
+2. Xcode → Product → Archive (Release configuration), then Distribute → App Store Connect.
+3. Add the build to TestFlight and test with the owners' phones (internal testing needs no review).
+4. Submit for review from App Store Connect.
+
+## What review looks at, and where the app stands
+
+- Crashes and broken flows: the booking, sign-in and tracking flows were run in the simulator against a local server.
+- Login: needs the demo account above.
+- Permissions: one location prompt with a plain reason, asked when the Driver tab opens.
+- Placeholder content: the sample-data mode is hidden from customers and technicians and off by default. The shop phone and the support email stay hidden until set.
+- iPad: not supported. Add iPad layouts before turning iPad on.
+- Holidays: the app ships the site's public holiday list, which ends on 2027-12-26. Run `node ios/scripts/export-catalog.mjs` and release a new build when the site's list grows.
+
+## Deploy checklist (Vercel, then the app)
+
+1. Fork or import the repository, set the Vercel **Root Directory** to `site`, framework "Other".
+2. Environment variables (Production): `MONGODB_URI`, `BETTER_AUTH_SECRET` (32+ characters), `BETTER_AUTH_URL` (the production https origin, for example `https://your-domain`), `RESEND_API_KEY` and `MAIL_FROM` (a verified domain, or Resend only mails the account owner), `OWNER_EMAILS`, `DEV_EMAILS`, `DRIVER_EMAILS`, `DEMO_EMAILS`, `ADMIN_TOKEN`, optionally `GOOGLE_CLIENT_ID`/`GOOGLE_CLIENT_SECRET`, `AI_API_KEY`, `TRUST_PROXY=1`. For the app: `SUPPORT_EMAIL`, `FEEDBACK_URL` (when the form exists), `APPLE_TEAM_ID`, `APNS_KEY_ID`, `APNS_KEY`.
+3. Deploy, then check: `GET /api/health` answers `store: mongo`, `GET /api/config` shows the feedback link and email, `/.well-known/apple-app-site-association` answers JSON (with `APPLE_TEAM_ID`), `/confidentialitate` and `/termeni` load, and `POST /api/auth/delete-user` answers 401 (not 404) without a session.
+4. Build the app against it: `NORGELIS_API_BASE_URL=https://your-domain` (the same origin as `BETTER_AUTH_URL`). Set `NORGELIS_SUPPORT_EMAIL` and `NORGELIS_FEEDBACK_URL` when they exist, `DEVELOPMENT_TEAM`, and raise `CURRENT_PROJECT_VERSION`.
+5. Add the CUI and trade register to `OPERATOR` in `site/src/data/legal.ts` when they exist, and have the text read by a lawyer.
+6. Monitoring and backups: add a free uptime check (UptimeRobot or Better Stack) on `https://your-domain/api/health` every 5 minutes, alerting the owner by email, with a keyword check for `"store":"mongo"` (the route answers `ok` even on the throwaway store). In Atlas, check the tier's backup options and take a manual export before real customers arrive. Production refuses to start without `MONGODB_URI` (`VERCEL_ENV=production`), so a missing variable shows up as errors, not as lost bookings.
+7. Archive, upload to TestFlight, test on the owners' phones (sign in, book, run a delivery with two phones), then submit.

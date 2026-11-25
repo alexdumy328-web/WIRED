@@ -1,4 +1,2 @@
 "CFBundleDisplayName" = "Norgelis Tech";
-"NSLocationWhenInUseUsageDescription" = "Norgelis Tech uses your location for navigation and to show your position on the map during pickups and deliveries.";
-"NSLocationAlwaysAndWhenInUseUsageDescription" = "Norgelis Tech uses your location to work out the route and arrival time during a trip, even when the screen is off.";
-"NSLocalNetworkUsageDescription" = "Norgelis Tech connects to the workshop server on your local network during development.";
+"NSLocationWhenInUseUsageDescription" = "Norgelis Tech uses your location to show your position on the map, work out the route and, during a trip, show customers and the workshop where you are. It keeps working when you switch to Waze.";

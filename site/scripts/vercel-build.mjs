@@ -67,6 +67,8 @@ writeFileSync(
         { src: '^/assets/(.*)$', headers: { 'cache-control': 'public, max-age=31536000, immutable' }, continue: true },
         { src: '^/api/(.*)$', dest: '/api?__path=$1' },
         { src: '^/api/?$', dest: '/api?__path=' },
+        // Universal Links for the iOS app (needs APPLE_TEAM_ID on the server).
+        { src: '^/\\.well-known/apple-app-site-association$', dest: '/api?__path=apple-app-site-association' },
         // The 3D workshop page is gone; send old links home.
         { src: '^/atelier/?$', status: 308, headers: { Location: '/' } },
         { handle: 'filesystem' },

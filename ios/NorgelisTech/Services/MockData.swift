@@ -2,11 +2,6 @@ import Foundation
 import CoreLocation
 
 enum MockData {
-    // Official shop coordinates in Iași
-    static let shopCoordinate = CLLocationCoordinate2D(latitude: 47.166015, longitude: 27.558417)
-    static let shopName = "Norgelis Tech (Atelier)"
-    static let shopAddress = "Str. Atelierului 1, Iași"
-
     // Mock driver stops for today
     static let driverStops: [PickupStop] = [
         PickupStop(

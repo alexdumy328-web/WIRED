@@ -4,10 +4,11 @@ import Foundation
 
 /// Who is signed in to the console. Technicians work on devices; owners also see money, stats and settings.
 enum StaffRole: String, CaseIterable, Identifiable, Codable {
-    case technician, owner, dev
+    case driver, technician, owner, dev
 
     var id: String { rawValue }
-    var isManager: Bool { self != .technician }
+    var isManager: Bool { self == .owner || self == .dev }
+    var isDriver: Bool { self == .driver }
     var titleKey: String { "console.role.\(rawValue)" }
 }
 
@@ -33,7 +34,8 @@ struct Intake: Codable, Hashable {
     var serial: String?
     var accessories: String?
     var appearance: String?
-    var by: String
+    /// Who took the device in. The customer view of a booking leaves it out.
+    var by: String?
 
     /// "12/2026"
     var label: String { "\(number)/\(year)" }
@@ -230,6 +232,9 @@ struct PickupJob: Codable, Hashable, Identifiable {
     var phone: String
     var device: String
     var quoteLei: Double
+    /// From the driver's run (`/api/driver/pickups`): what the driver does there, and whether it is done.
+    var leg: String?
+    var completed: Bool?
 
     var id: String { code }
 }

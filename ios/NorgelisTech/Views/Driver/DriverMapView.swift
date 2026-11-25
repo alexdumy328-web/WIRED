@@ -72,7 +72,7 @@ struct DriverMapView: View {
 
     private var map: some View {
         Map(position: $cameraPosition) {
-            Marker(MockData.shopName, systemImage: "wrench.and.screwdriver.fill", coordinate: MockData.shopCoordinate)
+            Marker(Shop.name, systemImage: "wrench.and.screwdriver.fill", coordinate: Shop.coordinate)
                 .tint(.blue)
 
             // The first leg is the road ahead; later legs are faint and dashed.
@@ -199,7 +199,7 @@ struct DriverMapView: View {
         VStack(spacing: 0) {
             recenterButton(icon: "arrow.up.left.and.arrow.down.right", label: "driver.map.fit_route") {
                 following = false
-                if planner.legs.isEmpty { center(on: MockData.shopCoordinate) } else { fitRoute() }
+                if planner.legs.isEmpty { center(on: Shop.coordinate) } else { fitRoute() }
             }
             Divider().frame(width: 28)
             recenterButton(icon: "location.fill", label: "driver.map.center_driver") {
@@ -209,7 +209,7 @@ struct DriverMapView: View {
             Divider().frame(width: 28)
             recenterButton(icon: "wrench.and.screwdriver.fill", label: "driver.map.center_shop") {
                 following = false
-                center(on: MockData.shopCoordinate)
+                center(on: Shop.coordinate)
             }
         }
         .glassCard(radius: 14)

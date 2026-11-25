@@ -42,18 +42,14 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
 
     /// A trip asked to track before permission was answered. Starts once it is granted.
     private var wantsTracking = false
-    private var wantsBackground = true
+    private var wantsBackground = false
     private var isAuthorized: Bool {
         locationManager.authorizationStatus == .authorizedWhenInUse || locationManager.authorizationStatus == .authorizedAlways
     }
 
-    func requestAlwaysPermission() {
-        locationManager.requestAlwaysAuthorization()
-    }
-
     // MARK: - Tracking Management
 
-    func startTracking(allowBackground: Bool = true) {
+    func startTracking(allowBackground: Bool = false) {
         wantsTracking = true
         wantsBackground = allowBackground
         guard isAuthorized else {
@@ -64,10 +60,13 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
     }
 
     private func beginUpdates() {
+        // During a trip every fix counts: a van parked at a door still reports, so it never drops off the customer's
+        // map. DriverSharing decides what is worth sending (a new spot, or every 20 s when standing still).
+        locationManager.distanceFilter = kCLDistanceFilterNone
         #if os(iOS)
-        if wantsBackground {
-            // Background location updates capability
-            // Note: requires "location" in UIBackgroundModes in Info.plist
+        // Background updates crash the app unless the build declares the "location" background mode.
+        let modes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String] ?? []
+        if wantsBackground, modes.contains("location") {
             locationManager.allowsBackgroundLocationUpdates = true
             locationManager.showsBackgroundLocationIndicator = true
             locationManager.pausesLocationUpdatesAutomatically = false
@@ -79,15 +78,16 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
         // The simulator's own location is a fixed city. The fake drive supplies the position instead.
         #else
         locationManager.startUpdatingLocation()
-        locationManager.startUpdatingHeading()
         #endif
         isUpdatingLocation = true
     }
 
     func stopTracking() {
         wantsTracking = false
+        locationManager.distanceFilter = 5.0
+        // Nothing to stop, and nothing to ask the system about, when no trip ever started tracking.
+        guard isUpdatingLocation || simulationTimer != nil else { return }
         locationManager.stopUpdatingLocation()
-        locationManager.stopUpdatingHeading()
         #if os(iOS)
         locationManager.allowsBackgroundLocationUpdates = false
         #endif
@@ -202,6 +202,7 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("[LocationService] Error: \(error.localizedDescription)")
+        // A failed fix is not fatal. The next update or a new permission answer tries again.
+        _ = error
     }
 }

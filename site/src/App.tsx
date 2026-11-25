@@ -10,6 +10,7 @@ import { useHeroSnap } from './lib/hero-snap'
 import { SectionRail } from './components/SectionRail'
 import { ActionBar } from './components/ActionBar'
 import { pageOf, usePath } from './lib/router'
+import { LegalPage } from './pages/LegalPage'
 import { Hero } from './sections/Hero'
 import { Services } from './sections/Services'
 import { Mobile } from './sections/Mobile'
@@ -82,6 +83,8 @@ function Page() {
   const page = pageOf(usePath())
   useHeroSnap(page === null ? lenis : null)
   if (page === null) return <Home />
+  if (page === '/confidentialitate') return <LegalPage kind="privacy" />
+  if (page === '/termeni') return <LegalPage kind="terms" />
   return (
     <Suspense fallback={null}>
       {page === '/cont' ? <AccountPage /> : page === '/admin' ? <OwnerPage /> : <DevPage />}

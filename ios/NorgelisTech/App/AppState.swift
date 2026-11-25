@@ -4,23 +4,22 @@ import Combine
 
 @MainActor
 final class AppState: ObservableObject {
-    @Published var selectedRole: UserRole = .driver
-    @Published var isDevRolePickerVisible: Bool = true
-    @Published var isSettingsPresented: Bool = false
-    @Published var isAccountPresented: Bool = false
-
     // Driver tracking state
     /// Today's stops. Completed ones first, then the remaining ones in the order the driver will go.
-    @Published var stops: [PickupStop] = MockData.driverStops
+    @Published var stops: [PickupStop] = APIClient.shared.useMockData ? MockData.driverStops : []
+    /// True while today's stops load from the server.
+    @Published var stopsLoading = false
+    /// Set when the stops could not load.
+    @Published var stopsError: String?
     @Published var currentEnRouteStop: PickupStop?
     @Published var isDriverEnRoute: Bool = false
-    @Published var driverCoordinate: CLLocationCoordinate2D = MockData.shopCoordinate
+    @Published var driverCoordinate: CLLocationCoordinate2D = Shop.coordinate
     @Published var etaMinutes: Int = 12
     /// The stop whose details are open in the driver panel.
     @Published var focusedStopID: String?
 
     // Bookings state for Owner and Customer
-    @Published var bookings: [Booking] = MockData.bookings
+    @Published var bookings: [Booking] = APIClient.shared.useMockData ? MockData.bookings : []
     @Published var currentCustomerBooking: Booking?
     @Published var customerSearchQuery: String = APIClient.shared.useMockData ? "NT-4K7Q" : ""
     /// What the last lookup said, in words, when it found nothing.
@@ -34,29 +33,35 @@ final class AppState: ObservableObject {
     private var cancellables = Set<AnyCancellable>()
     private var tripTask: Task<Void, Never>?
     private var lookupTask: Task<Void, Never>?
+    /// Shares the driver's position with the server during a live trip.
+    private lazy var sharing = DriverSharing(api: apiClient)
     /// Where the current plan starts, so a real position fix far from it replans.
-    private var lastPlanOrigin = MockData.shopCoordinate
+    private var lastPlanOrigin = Shop.coordinate
 
     init() {
-        // Default to first booking for customer view convenience
         // Sample data shows a demo booking. Live data starts empty, so nobody sees someone else's job.
         self.currentCustomerBooking = APIClient.shared.useMockData ? MockData.bookings.first : nil
 
         // Follow the driver: position, progress on the route and ETA.
         locationService.$currentLocation
-            .compactMap { $0?.coordinate }
+            .compactMap { $0 }
             .receive(on: DispatchQueue.main)
-            .sink { [weak self] coord in
+            .sink { [weak self] fix in
                 MainActor.assumeIsolated {
                     guard let self else { return }
+                    let coord = fix.coordinate
                     let here = CLLocation(latitude: coord.latitude, longitude: coord.longitude)
                     // A position far from Iasi is a simulator's default city or garbage. Never follow it.
-                    let shop = CLLocation(latitude: MockData.shopCoordinate.latitude, longitude: MockData.shopCoordinate.longitude)
+                    let shop = CLLocation(latitude: Shop.coordinate.latitude, longitude: Shop.coordinate.longitude)
                     guard here.distance(from: shop) < 150_000 else { return }
                     if self.isDriverEnRoute {
                         self.driverCoordinate = coord
                         self.planner.update(driver: coord)
                         if self.planner.hasRoute(to: self.currentEnRouteStop?.id ?? "") { self.etaMinutes = self.planner.etaMinutes }
+                        // Live trips tell the server where the van is. Demo accounts and sample data stay on the phone.
+                        if !self.apiClient.useMockData {
+                            self.sharing.offer(fix, bookingCode: self.currentEnRouteStop?.bookingCode, etaMinutes: self.etaMinutes)
+                        }
                     } else {
                         // Idle fix: replan only when the driver really moved.
                         let origin = CLLocation(latitude: self.lastPlanOrigin.latitude, longitude: self.lastPlanOrigin.longitude)
@@ -79,6 +84,10 @@ final class AppState: ObservableObject {
                     self.customerLookupBusy = false
                     self.customerLookupError = nil
                     self.currentCustomerBooking = sample ? MockData.bookings.first : nil
+                    self.bookings = sample ? MockData.bookings : []
+                    self.stops = sample ? MockData.driverStops : []
+                    self.replan()
+                    // The staff home reloads the live stops when the data source changes.
                 }
             }
             .store(in: &cancellables)
@@ -102,6 +111,53 @@ final class AppState: ObservableObject {
     func replan() {
         lastPlanOrigin = driverCoordinate
         planner.plan(origin: driverCoordinate, stops: remainingStops)
+    }
+
+    /// Today's pickups and drop-offs. Sample data uses the built-in list. A live sign-in asks the server.
+    func loadStops() async {
+        if apiClient.useMockData {
+            stopsError = nil
+            return
+        }
+        stopsLoading = true
+        stopsError = nil
+        defer { stopsLoading = false }
+        do {
+            let reply: PickupsResponse = try await apiClient.request("GET", "api/driver/pickups", query: [
+                URLQueryItem(name: "date", value: ShopCalendar.dateString()),
+            ])
+            guard !apiClient.useMockData else { return }
+            // Done comes from the server, so it is the same on every phone and after a reinstall.
+            let fresh = reply.jobs.map { PickupStop(job: $0) }
+            // A trip under way keeps its stop even if the list changed under it.
+            stops = fresh.filter(\.isCompleted) + fresh.filter { !$0.isCompleted }
+            replan()
+        } catch is CancellationError {
+            return
+        } catch {
+            stopsError = error.localizedDescription
+        }
+    }
+
+    /// Signed out or switched account: stop the trip and GPS and forget everything the last person saw.
+    func resetSession() {
+        tripTask?.cancel()
+        lookupTask?.cancel()
+        sharing.stop()
+        locationService.stopTracking()
+        isDriverEnRoute = false
+        currentEnRouteStop = nil
+        focusedStopID = nil
+        stops = apiClient.useMockData ? MockData.driverStops : []
+        stopsError = nil
+        stopsLoading = false
+        bookings = apiClient.useMockData ? MockData.bookings : []
+        currentCustomerBooking = apiClient.useMockData ? MockData.bookings.first : nil
+        customerSearchQuery = ""
+        customerLookupError = nil
+        customerLookupBusy = false
+        driverCoordinate = Shop.coordinate
+        replan()
     }
 
     func moveRemaining(from offsets: IndexSet, to destination: Int) {
@@ -130,7 +186,8 @@ final class AppState: ObservableObject {
         focusedStopID = nil
 
         // Real location service with background mode enabled.
-        locationService.startTracking(allowBackground: true)
+        // A live trip keeps sharing when the driver switches to Waze (the location background mode). A demo never does.
+        locationService.startTracking(allowBackground: !apiClient.useMockData)
 
         tripTask?.cancel()
         tripTask = Task { [weak self] in
@@ -141,24 +198,25 @@ final class AppState: ObservableObject {
                 waited += 0.1
             }
             guard !Task.isCancelled, self.isDriverEnRoute, self.currentEnRouteStop?.id == target.id else { return }
-            #if targetEnvironment(simulator)
-            // A simulator has no GPS movement, so drive the car along the planned route. A real phone uses its own position.
-            let path = self.planner.firstLegCoordinates
-            if path.count > 1 {
-                let seconds = min(45, max(20, self.planner.firstLegSeconds / 10))
-                self.locationService.startSimulation(along: path, durationSeconds: seconds)
-            } else {
-                self.locationService.startSimulation(from: self.driverCoordinate, to: target.coordinate, durationSeconds: 25)
+            // A simulator has no GPS movement, and a demo account has no real trip, so drive the car along the planned route.
+            // A real phone on a live account uses its own position.
+            if self.apiClient.useMockData || Self.runsOnSimulator {
+                let path = self.planner.firstLegCoordinates
+                if path.count > 1 {
+                    let seconds = min(45, max(20, self.planner.firstLegSeconds / 10))
+                    self.locationService.startSimulation(along: path, durationSeconds: seconds)
+                } else {
+                    self.locationService.startSimulation(from: self.driverCoordinate, to: target.coordinate, durationSeconds: 25)
+                }
             }
-            #endif
             if self.planner.hasRoute(to: target.id) { self.etaMinutes = self.planner.etaMinutes }
-            // Sharing the position with the server waits for POST /api/driver/location to exist (see README).
         }
     }
 
     /// The driver changes their mind before arriving. The stop stays on the list.
     func cancelTrip() {
         tripTask?.cancel()
+        sharing.stop()
         isDriverEnRoute = false
         currentEnRouteStop = nil
         locationService.stopTracking()
@@ -175,16 +233,47 @@ final class AppState: ObservableObject {
             stops.insert(done, at: completedStops.count)
         }
 
-        // If this corresponds to an active booking, update status to done/received
-        if let bookingIdx = bookings.firstIndex(where: { $0.code == current.bookingCode }) {
-            bookings[bookingIdx].status = current.type == .pickup ? .received : .done
+        if apiClient.useMockData {
+            if let bookingIdx = bookings.firstIndex(where: { $0.code == current.bookingCode }) {
+                bookings[bookingIdx].status = current.isDelivery ? .done : .received
+            }
+        } else {
+            syncCompleted(current)
         }
 
+        sharing.stop()
         isDriverEnRoute = false
         currentEnRouteStop = nil
         locationService.stopTracking()
         driverCoordinate = current.coordinate
         replan()
+    }
+
+    /// Tells the server the stop is done: a delivery closes the booking (and the customer gets the hand-back email),
+    /// a pickup is marked collected. If the server refuses or cannot be reached, the stop goes back to "to do".
+    private func syncCompleted(_ stop: PickupStop) {
+        let delivered = stop.isDelivery
+        let note = String(localized: delivered ? "driver.note.delivered" : "driver.note.collected")
+        let body: [String: Any] = delivered ? ["delivered": true, "note": note] : ["collected": true, "note": note]
+        Task {
+            do {
+                try await apiClient.requestVoid("PATCH", "api/driver/bookings/\(stop.bookingCode)/status", body: body)
+            } catch is CancellationError {
+                return
+            } catch {
+                if let idx = stops.firstIndex(where: { $0.id == stop.id }) { stops[idx].isCompleted = false }
+                replan()
+                stopsError = String(localized: "driver.sync_failed")
+            }
+        }
+    }
+
+    private static var runsOnSimulator: Bool {
+        #if targetEnvironment(simulator)
+        return true
+        #else
+        return false
+        #endif
     }
 
     // MARK: - Customer Actions
@@ -227,16 +316,16 @@ final class AppState: ObservableObject {
         }
     }
 
-    /// Puts the driver demo back to the start.
+    /// Puts the driver demo back to the start (sample data only).
     func resetDriverDemo() {
         tripTask?.cancel()
-        stops = MockData.driverStops
-        bookings = MockData.bookings
+        stops = apiClient.useMockData ? MockData.driverStops : []
+        bookings = apiClient.useMockData ? MockData.bookings : []
         currentCustomerBooking = apiClient.useMockData ? MockData.bookings.first : nil
         isDriverEnRoute = false
         currentEnRouteStop = nil
         focusedStopID = nil
-        driverCoordinate = MockData.shopCoordinate
+        driverCoordinate = Shop.coordinate
         locationService.stopTracking()
         replan()
     }

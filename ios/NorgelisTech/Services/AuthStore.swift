@@ -8,8 +8,12 @@ struct Viewer: Codable, Equatable {
     var emailVerified: Bool
     var role: String
 
+    /// Set by the server for the demo accounts listed in DEMO_EMAILS (customer accounts with no real access).
+    var demo: Bool?
+
     var staffRole: StaffRole? { StaffRole(rawValue: role) }
     var isStaff: Bool { staffRole != nil }
+    var isDemo: Bool { demo == true }
 }
 
 /// What went wrong in a sign-in step, in words the person can act on.
@@ -22,6 +26,10 @@ enum AuthProblem: Error, Equatable {
     case weakPassword
     case mailUnavailable
     case offline
+    case unavailable
+    /// The session is too old to delete the account. Sign in again, or give the password.
+    case reauth
+    case staffAccount
     case other
 
     var key: String {
@@ -34,6 +42,9 @@ enum AuthProblem: Error, Equatable {
         case .weakPassword: return "auth.error.weak_password"
         case .mailUnavailable: return "auth.error.mail_unavailable"
         case .offline: return "auth.error.offline"
+        case .unavailable: return "auth.error.unavailable"
+        case .reauth: return "auth.error.reauth"
+        case .staffAccount: return "auth.error.staff_account"
         case .other: return "auth.error.generic"
         }
     }
@@ -45,6 +56,8 @@ final class AuthStore: ObservableObject {
     @Published private(set) var viewer: Viewer?
     @Published private(set) var googleAvailable = false
     @Published private(set) var loaded = false
+    /// There is a saved session but the server could not be reached, so who is signed in is not known yet.
+    @Published private(set) var needsRetry = false
 
     private let api: APIClient
 
@@ -73,15 +86,21 @@ final class AuthStore: ObservableObject {
             viewer = me.user
             googleAvailable = me.providers?.google ?? false
             if me.user == nil { api.clearSession() }
-        } catch APIError.networkError {
-            // Offline: keep what we had.
+            // Sample data belongs to demo accounts only, and follows the server's answer.
+            api.setDemo(me.user?.isDemo == true)
+            needsRetry = false
         } catch APIError.unauthorized {
+            // Only the server saying "no session" signs anybody out.
             viewer = nil
+            needsRetry = false
+            api.setDemo(false)
             api.clearSession()
         } catch is CancellationError {
             // A newer refresh is running.
         } catch {
-            viewer = nil
+            // No network, a 5xx during a deploy, a 429, an odd answer: keep who we had. With a saved session
+            // and nobody known yet, ask to try again instead of showing the sign-in screen to someone signed in.
+            needsRetry = viewer == nil && api.hasSession
         }
         loaded = true
     }
@@ -127,6 +146,10 @@ final class AuthStore: ObservableObject {
     /// so the person knows it may still be valid elsewhere.
     @discardableResult
     func signOut() async -> Bool {
+        // A driver signing out mid-trip: remove the van from the map while the session still works.
+        if viewer?.isStaff == true { await api.stopDriverSharing() }
+        // While the session still works: this phone stops getting the account's alerts.
+        await PushService.shared.signingOut()
         var ended = true
         do {
             try await api.requestVoid("POST", "api/auth/sign-out", body: [:])
@@ -134,15 +157,40 @@ final class AuthStore: ObservableObject {
             ended = false
         }
         api.clearSession()
+        api.disableSample()
+        api.resetServer()
+        needsRetry = false
         viewer = nil
         return ended
+    }
+
+    /// Deletes the signed-in account on the server, then signs out here. Needs the server to allow it
+    /// (Better Auth `user.deleteUser`); without that the route is missing and this throws `.unavailable`.
+    func deleteAccount(password: String? = nil) async throws {
+        struct Reply: Decodable { var success: Bool?; var message: String? }
+        var body: [String: Any] = [:]
+        if let password, !password.isEmpty { body["password"] = password }
+        let reply: Reply = try await callValue { try await self.api.request("POST", "api/auth/delete-user", body: body) }
+        // The server may answer 200 with "Verification email sent" and delete nothing. Only "User deleted" counts.
+        guard reply.success == true, reply.message == "User deleted" else { throw AuthProblem.unavailable }
+        // The server already forgot this account's phones; this ends any Live Activity here.
+        await PushService.shared.signingOut()
+        api.clearSession()
+        api.disableSample()
+        api.resetServer()
+        needsRetry = false
+        viewer = nil
     }
 
     // MARK: - Errors
 
     private func call(_ work: @escaping () async throws -> Void) async throws {
+        _ = try await callValue { try await work() }
+    }
+
+    private func callValue<T>(_ work: @escaping () async throws -> T) async throws -> T {
         do {
-            try await work()
+            return try await work()
         } catch let APIError.auth(status, code) {
             throw Self.problem(status: status, code: code)
         } catch APIError.networkError {
@@ -152,10 +200,13 @@ final class AuthStore: ObservableObject {
         }
     }
 
-    private static func problem(status: Int, code: String?) -> AuthProblem {
+    nonisolated static func problem(status: Int, code: String?) -> AuthProblem {
         let c = (code ?? "").uppercased()
         // Match the code first: Better Auth also answers 403 for too many attempts and for a refused Origin.
         if c.contains("ORIGIN") { return .other }
+        if status == 404 { return .unavailable }
+        if c.contains("STAFF_ACCOUNT") { return .staffAccount }
+        if c.contains("SESSION_EXPIRED") || c.contains("SESSION_NOT_FRESH") { return .reauth }
         if status == 429 || c.contains("TOO_MANY") { return .tooMany }
         if c.contains("NOT_VERIFIED") { return .unverified }
         if c.contains("OTP") || c.contains("INVALID_CODE") || c.contains("EXPIRED") { return .wrongCode }
