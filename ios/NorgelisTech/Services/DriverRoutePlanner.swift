@@ -109,7 +109,9 @@ final class DriverRoutePlanner: ObservableObject {
             if d < bestDistance { bestDistance = d; best = i }
         }
         let along = leg.cumulative[best]
-        metersLeft = max(0, leg.distance - along)
+        // Shown rounded anyway: publishing a change of a few metres would redraw the trip panel on every fix.
+        let left = max(0, leg.distance - along)
+        if abs(left - metersLeft) >= 10 || left == 0 { metersLeft = left }
 
         let steps = leg.route.steps
         var next: Maneuver?
@@ -121,7 +123,10 @@ final class DriverRoutePlanner: ObservableObject {
             }
             break
         }
-        maneuver = next ?? Maneuver(text: "", meters: metersLeft, isArrival: true)
+        let upcoming = next ?? Maneuver(text: "", meters: metersLeft, isArrival: true)
+        if upcoming.text != maneuver?.text || upcoming.isArrival != maneuver?.isArrival || abs(upcoming.meters - (maneuver?.meters ?? 0)) >= 10 {
+            maneuver = upcoming
+        }
     }
 
     // MARK: - Numbers
@@ -188,11 +193,5 @@ enum DriveFormat {
         return minutes < 60 ? "\(minutes) min" : "\(minutes / 60) h \(minutes % 60) min"
     }
 
-    static func clock(_ date: Date) -> String {
-        let f = DateFormatter()
-        f.timeZone = ShopCalendar.timeZone
-        f.locale = Locale.current
-        f.setLocalizedDateFormatFromTemplate("HHmm")
-        return f.string(from: date)
-    }
+    static func clock(_ date: Date) -> String { ShopCalendar.clock(date) }
 }

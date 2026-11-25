@@ -34,9 +34,15 @@ struct NorgelisTechApp: App {
                     if phase == .active, authStore.loaded { Task { await authStore.refresh() } }
                 }
                 // Another person signed in, or nobody: forget the last one's trip, stops, lookups and access.
-                .onChange(of: authStore.viewer?.id) { _, _ in
-                    appState.resetSession()
-                    ownerStore.reset()
+                .onChange(of: authStore.viewer?.id) { old, _ in
+                    // Only when somebody leaves (sign-out, another account). At launch or a first sign-in there is
+                    // nothing to forget, and a reset here would wipe the stops the driver screen just loaded.
+                    if old != nil {
+                        appState.resetSession()
+                        ownerStore.reset()
+                        // Straight from one account to another: load the new one's run after the reset.
+                        if authStore.viewer?.isStaff == true || authStore.viewer?.isDemo == true { Task { await appState.loadStops() } }
+                    }
                     // Customers get status alerts and the driver Live Activity. Staff and demo accounts do not.
                     if let viewer = authStore.viewer, !viewer.isStaff, !viewer.isDemo { push.signedIn(userId: viewer.id) }
                 }

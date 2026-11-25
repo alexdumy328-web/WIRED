@@ -579,3 +579,4 @@
 "push.driver.body" = "%@ is on the way. See the van in the app.";
 "push.driver.arriving" = "Your driver is arriving";
 "push.driver.arriving.body" = "%@ is 2 minutes away at most.";
+"driver.stop.to_deliver" = "To deliver";

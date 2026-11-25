@@ -55,9 +55,14 @@ final class AppState: ObservableObject {
                     let shop = CLLocation(latitude: Shop.coordinate.latitude, longitude: Shop.coordinate.longitude)
                     guard here.distance(from: shop) < 150_000 else { return }
                     if self.isDriverEnRoute {
-                        self.driverCoordinate = coord
+                        // Every published change redraws the map, the panel and its list. A fix that moved the van
+                        // less than a few metres, or left the ETA as it was, changes nothing on screen: skip it.
+                        let shown = CLLocation(latitude: self.driverCoordinate.latitude, longitude: self.driverCoordinate.longitude)
+                        if here.distance(from: shown) >= 4 { self.driverCoordinate = coord }
                         self.planner.update(driver: coord)
-                        if self.planner.hasRoute(to: self.currentEnRouteStop?.id ?? "") { self.etaMinutes = self.planner.etaMinutes }
+                        if self.planner.hasRoute(to: self.currentEnRouteStop?.id ?? ""), self.etaMinutes != self.planner.etaMinutes {
+                            self.etaMinutes = self.planner.etaMinutes
+                        }
                         // Live trips tell the server where the van is. Demo accounts and sample data stay on the phone.
                         if !self.apiClient.useMockData {
                             self.sharing.offer(fix, bookingCode: self.currentEnRouteStop?.bookingCode, etaMinutes: self.etaMinutes)
@@ -116,6 +121,8 @@ final class AppState: ObservableObject {
     /// Today's pickups and drop-offs. Sample data uses the built-in list. A live sign-in asks the server.
     func loadStops() async {
         if apiClient.useMockData {
+            // Demo account: the sample run, once (a trip in progress keeps its stops).
+            if stops.isEmpty { stops = MockData.driverStops; replan() }
             stopsError = nil
             return
         }
