@@ -342,12 +342,40 @@ struct ShopSettings: Codable, Hashable {
 // MARK: - Requests
 
 /// Filters for the jobs list.
+/// How the jobs list is ordered. The raw values are the server's `sort` parameter.
+enum JobSort: String, CaseIterable, Identifiable, Hashable {
+    case slotDesc = "slot_desc", slotAsc = "slot_asc", upcoming, updated, created
+
+    var id: String { rawValue }
+
+    var titleKey: String {
+        switch self {
+        case .slotDesc: return "console.sort.slot_desc"
+        case .slotAsc: return "console.sort.slot_asc"
+        case .upcoming: return "console.sort.upcoming"
+        case .updated: return "console.sort.updated"
+        case .created: return "console.sort.created"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .slotDesc: return "arrow.down"
+        case .slotAsc: return "arrow.up"
+        case .upcoming: return "calendar.badge.clock"
+        case .updated: return "clock.arrow.circlepath"
+        case .created: return "plus.circle"
+        }
+    }
+}
+
 struct BookingQuery: Hashable {
     /// A status, or "handback" for ready and unrepairable together.
     var status: String?
     var mode: AdminBookingMode?
     var text = ""
     var intake: Bool?
+    var sort: JobSort = .slotDesc
     var limit = 50
     var skip = 0
 }

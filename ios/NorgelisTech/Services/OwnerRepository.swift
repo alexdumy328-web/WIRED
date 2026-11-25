@@ -70,6 +70,7 @@ final class LiveOwnerRepository: OwnerRepository {
         let text = q.text.trimmingCharacters(in: .whitespaces)
         if !text.isEmpty { items.append(URLQueryItem(name: "q", value: text)) }
         if let intake = q.intake { items.append(URLQueryItem(name: "intake", value: intake ? "yes" : "no")) }
+        if q.sort != .slotDesc { items.append(URLQueryItem(name: "sort", value: q.sort.rawValue)) }
         return try await api.request("GET", "api/admin/bookings", query: items)
     }
 

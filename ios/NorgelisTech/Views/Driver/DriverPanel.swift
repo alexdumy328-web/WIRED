@@ -527,7 +527,7 @@ struct DriverTripHeader: View {
     private var arrivedControls: some View {
         VStack(alignment: .leading, spacing: 10) {
             Label {
-                Text(LocalizedStringKey(stop.isDelivery ? "driver.arrive.hand_over \(stop.device)" : "driver.arrive.collect \(stop.device)"))
+                Group { if stop.isDelivery { Text("driver.arrive.hand_over \(stop.device)") } else { Text("driver.arrive.collect \(stop.device)") } }
                     .font(.subheadline.bold())
             } icon: {
                 Image(systemName: stop.isDelivery ? "shippingbox.and.arrow.backward.fill" : "shippingbox.fill").foregroundColor(Theme.pickup)

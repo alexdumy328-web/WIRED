@@ -477,6 +477,7 @@ const ro: Dict = {
       loadMore: 'Arată mai multe',
       columns: { code: 'Cod', when: 'Data', customer: 'Client', device: 'Aparat', mode: 'Loc', status: 'Stare', price: 'Estimare' },
       modes: { shop: 'Atelier', pickup: 'Ridicare', mobile: 'Mobil' },
+      sort: { label: 'Sortare', slot_desc: 'Data programării, cele mai noi', slot_asc: 'Data programării, cele mai vechi', upcoming: 'Următoarele (de azi încolo)', updated: 'Modificate recent', created: 'Programate recent' },
       dates: 'Perioadă',
       range: { label: 'Alege perioada', any: 'Oricând', pickEnd: 'Alege ultima zi', clear: 'Șterge', presets: { today: 'Azi', week: 'Săptămâna asta', next7: 'Următoarele 7 zile', month: 'Luna asta' } },
       pickup: 'ridicare',

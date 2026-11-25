@@ -330,14 +330,18 @@ struct TrackView: View {
                             .font(.headline)
                             .foregroundColor(Theme.pickup)
 
+                        // Each booking is its own outlined block with a numbered header, so two of them never blend.
                         ForEach(Array(today.enumerated()), id: \.element.id) { index, booking in
-                            if index > 0 {
-                                Divider().padding(.vertical, 6)
-                            }
                             VStack(alignment: .leading, spacing: 12) {
-                                todayHeader(booking)
+                                todayHeader(booking, index: index, count: today.count)
                                 BookingSummaryCard(booking: booking) { await store?.load() }
                             }
+                            .padding(12)
+                            .background(
+                                RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                    .strokeBorder(Theme.pickup.opacity(0.45), lineWidth: 1.5)
+                            )
+                            .padding(.bottom, index < today.count - 1 ? 8 : 0)
                         }
                     }
 
@@ -387,17 +391,28 @@ struct TrackView: View {
         }
     }
 
-    private func todayHeader(_ booking: Booking) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
-            Text(booking.title).font(.headline).lineLimit(1)
+    private func todayHeader(_ booking: Booking, index: Int, count: Int) -> some View {
+        HStack(alignment: .center, spacing: 10) {
+            // "1/2": which of today's bookings this block is.
+            Text(verbatim: count > 1 ? "\(index + 1)/\(count)" : "\(index + 1)")
+                .font(.caption.bold().monospacedDigit())
+                .foregroundColor(.white)
+                .padding(.horizontal, 8)
+                .frame(minWidth: 28, minHeight: 24)
+                .background(Capsule().fill(Theme.pickup))
+            VStack(alignment: .leading, spacing: 1) {
+                Text(booking.title).font(.headline).lineLimit(1)
+                Text(booking.code).font(.caption.monospaced()).foregroundColor(.secondary)
+            }
             Spacer(minLength: 4)
-            Text(booking.code).font(.caption.monospaced()).foregroundColor(.secondary)
             if let slot = booking.slot, ShopCalendar.day(of: slot) == ShopCalendar.dateString() {
                 Label(ShopCalendar.time(slot), systemImage: "clock")
-                    .font(.caption.bold())
+                    .font(.subheadline.bold())
                     .foregroundColor(Theme.pickup)
             }
         }
+        .padding(.horizontal, 4)
+        .accessibilityElement(children: .combine)
     }
 
     private var lookupBox: some View {

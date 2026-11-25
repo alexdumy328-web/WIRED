@@ -728,3 +728,9 @@
 "account.notifications" = "Notifications";
 "account.notifications.on" = "On";
 "account.notifications.open_settings" = "Enable in Settings";
+"console.sort.title" = "Sort";
+"console.sort.slot_desc" = "Booking date, newest first";
+"console.sort.slot_asc" = "Booking date, oldest first";
+"console.sort.upcoming" = "Upcoming (from today)";
+"console.sort.updated" = "Recently changed";
+"console.sort.created" = "Recently booked";

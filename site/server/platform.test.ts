@@ -513,6 +513,25 @@ describe('bookings for owners and customers', () => {
     await db.collection('bookings').deleteOne({ code: 'NT-ARRV' })
   })
 
+  test('the jobs list sorts by booking date either way, upcoming, last changed and last booked', async () => {
+    const owner = await signIn(OWNER)
+    const db = store.getDb()
+    const base = { mode: 'shop', lang: 'ro', status: 'received', contact: { name: 'S', phone: '0700000000' }, q: 'sorttest' }
+    await db.collection('bookings').insertMany([
+      { ...base, code: 'NT-SRT1', issue: 'sorttest', slot: '2031-03-01T08:00:00.000Z', createdAt: '2026-01-03T00:00:00.000Z', updatedAt: '2026-01-01T00:00:00.000Z' },
+      { ...base, code: 'NT-SRT2', issue: 'sorttest', slot: '2031-03-03T08:00:00.000Z', createdAt: '2026-01-01T00:00:00.000Z', updatedAt: '2026-01-03T00:00:00.000Z' },
+      { ...base, code: 'NT-SRT3', issue: 'sorttest', slot: '2031-03-02T08:00:00.000Z', createdAt: '2026-01-02T00:00:00.000Z', updatedAt: '2026-01-02T00:00:00.000Z' },
+    ])
+    const order = async (sort: string) => (await call(`/api/admin/bookings?q=sorttest&sort=${sort}`, { cookie: owner })).body.items.map((b: any) => b.code).join(',')
+    assert.equal(await order('slot_desc'), 'NT-SRT2,NT-SRT3,NT-SRT1')
+    assert.equal(await order('slot_asc'), 'NT-SRT1,NT-SRT3,NT-SRT2')
+    assert.equal(await order('upcoming'), 'NT-SRT1,NT-SRT3,NT-SRT2')
+    assert.equal(await order('updated'), 'NT-SRT2,NT-SRT3,NT-SRT1')
+    assert.equal(await order('created'), 'NT-SRT1,NT-SRT3,NT-SRT2')
+    assert.equal((await call('/api/admin/bookings?sort=nope', { cookie: owner })).status, 400)
+    await db.collection('bookings').deleteMany({ code: { $in: ['NT-SRT1', 'NT-SRT2', 'NT-SRT3'] } })
+  })
+
   test('a customer can cancel their own booking before it starts, and nobody else can', async () => {
     const me = await signIn('cancel-me@example.com')
     const other = await signIn('cancel-other@example.com')

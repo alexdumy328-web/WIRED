@@ -728,3 +728,9 @@
 "account.notifications" = "Notificări";
 "account.notifications.on" = "Active";
 "account.notifications.open_settings" = "Activează din Setări";
+"console.sort.title" = "Sortare";
+"console.sort.slot_desc" = "Data programării, cele mai noi";
+"console.sort.slot_asc" = "Data programării, cele mai vechi";
+"console.sort.upcoming" = "Următoarele (de azi încolo)";
+"console.sort.updated" = "Modificate recent";
+"console.sort.created" = "Programate recent";
