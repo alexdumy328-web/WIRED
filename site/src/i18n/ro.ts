@@ -593,6 +593,7 @@ const ro: Dict = {
     made: 'Făcut în Iași.',
     privacy: 'Confidențialitate',
     terms: 'Termeni',
+    getApp: 'Aplicația iPhone',
   },
   legal: { updated: 'Actualizat la', contact: 'Date de contact', operator: 'Operator', address: 'Adresă', phone: 'Telefon', home: 'Înapoi la site' },
 }

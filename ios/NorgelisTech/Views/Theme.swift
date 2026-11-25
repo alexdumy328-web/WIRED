@@ -156,13 +156,22 @@ struct GlassCard: ViewModifier {
     var radius: CGFloat = 24
 
     func body(content: Content) -> some View {
+        // The iOS 26 SDK (Swift 6.2) has Liquid Glass. An older Xcode, such as a CI runner, still builds with the material.
+        #if compiler(>=6.2)
         if #available(iOS 26.0, *) {
             content.glassEffect(.regular, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
         } else {
-            content
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
-                .shadow(color: .black.opacity(0.12), radius: 10, y: 5)
+            material(content)
         }
+        #else
+        material(content)
+        #endif
+    }
+
+    private func material(_ content: Content) -> some View {
+        content
+            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: radius, style: .continuous))
+            .shadow(color: .black.opacity(0.12), radius: 10, y: 5)
     }
 }
 

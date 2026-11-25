@@ -1,3 +1,4 @@
+import { IOS_APP_RELEASES } from '../data/app'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useI18n } from '../i18n'
 import { Section } from '../components/Section'
@@ -83,6 +84,9 @@ export function Footer() {
             </a>
             <a href="/termeni" onClick={linkTo('/termeni')} className="underline decoration-gold underline-offset-4 hover:text-ink">
               {t.footer.terms}
+            </a>
+            <a href={IOS_APP_RELEASES} target="_blank" rel="noreferrer" className="font-medium text-ink underline decoration-gold underline-offset-4 hover:text-gold">
+              {t.footer.getApp}
             </a>
           </nav>
           <p>
