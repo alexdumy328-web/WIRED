@@ -312,7 +312,7 @@ struct DriverScheduleView: View {
                                     }
                                     .frame(width: 52, height: 62)
                                     .background(day == d ? Color.accentColor : Color(.tertiarySystemFill), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-                                    .foregroundColor(day == d ? .white : .primary)
+                                    .foregroundColor(day == d ? Theme.onAccent : .primary)
                                 }
                                 .buttonStyle(.plain)
                                 .accessibilityLabel(Text(ShopCalendar.medium(d)))

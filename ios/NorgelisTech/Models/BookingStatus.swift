@@ -12,6 +12,9 @@ enum BookingStatus: String, Codable, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// Nothing more will happen to the booking.
+    var isFinal: Bool { self == .done || self == .cancelled }
+
     var titleKey: String {
         "status.\(rawValue)"
     }

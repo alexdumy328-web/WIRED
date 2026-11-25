@@ -15,6 +15,19 @@ struct PickupQuoteInfo: Decodable, Equatable {
     var tooFar: Bool
 }
 
+/// Snapshot kept after a successful booking so the confirmation screen can show a recap and add to Calendar.
+struct BookedSummary: Equatable {
+    var code: String
+    var slotStart: Date
+    var slotDurationHours: Int
+    var slotText: String
+    var kind: BookingModel.Kind
+    var locationText: String
+    var estimateText: String
+    var transportText: String?
+    var hasEmail: Bool
+}
+
 /// State of the booking form. It posts to the same `POST /api/bookings` the website uses, so the server
 /// checks the jobs, the slot and the prices again and these numbers are only for showing.
 @MainActor
@@ -36,6 +49,7 @@ final class BookingModel: ObservableObject {
         didSet {
             guard kind != oldValue else { return }
             if kind.jobMode != oldValue.jobMode { jobIDs = [] }
+            if kind != .pickup { urgent = false }
             slot = nil
             Task { await loadTaken() }
         }
@@ -52,10 +66,23 @@ final class BookingModel: ObservableObject {
     @Published var addressQuery = ""
     @Published var places: [GeoPlace] = []
     @Published var searching = false
+    @Published var searchFailed = false
+    @Published var searchDone = false
     @Published var place: GeoPlace?
     @Published var trips: Trips = .both
     @Published var urgent = false {
-        didSet { if urgent != oldValue { slot = nil } }
+        didSet {
+            guard urgent != oldValue else { return }
+            slot = nil
+            if urgent {
+                if urgentAvailableToday {
+                    day = todayString
+                    dayMovedNote = false
+                } else {
+                    urgent = false
+                }
+            }
+        }
     }
     @Published var quote: PickupQuoteInfo?
     @Published var quoting = false
@@ -68,6 +95,7 @@ final class BookingModel: ObservableObject {
     @Published var dayMovedNote = false
     @Published var slot: SlotPlanner.Slot?
     @Published private(set) var taken: Set<String> = []
+    @Published var slotsLoading = false
     @Published var slotsFailed = false
 
     // Contact
@@ -79,11 +107,14 @@ final class BookingModel: ObservableObject {
     @Published var submitting = false
     @Published var problem: String?
     @Published var bookedCode: String?
+    @Published var bookedSummary: BookedSummary?
 
     /// The server's limits (site/server/schema.ts). The form stops at them instead of failing with a 400.
     enum Limit {
         static let jobs = 10, custom = 500, issue = 1500, device = 60, location = 200, name = 80, email = 160, address = 200
     }
+
+    private static let savedPhoneKey = "norgelis_last_phone"
 
     private let api: APIClient
     let planner: SlotPlanner
@@ -95,32 +126,48 @@ final class BookingModel: ObservableObject {
         self.catalog = catalog
         self.now = now
         self.planner = SlotPlanner(holidays: Set(catalog.holidays), now: now)
-        day = firstOpenDay ?? ShopCalendar.dateString()
+        day = firstOpenDay ?? ShopCalendar.dateString(now())
     }
 
     // MARK: - Derived
 
+    var todayString: String { ShopCalendar.dateString(now()) }
     private var mobileSlots: Bool { kind == .mobile }
     private var urgentPickup: Bool { kind == .pickup && urgent }
+
+    /// Same-day urgent pickup is only offered when today is open and still has at least one 1h-lead slot free.
+    var urgentAvailableToday: Bool {
+        planner.isOpen(todayString) && !planner.slots(on: todayString, mobile: false, urgent: true, taken: taken).isEmpty
+    }
+
     /// First day that still has a window to book.
     var firstOpenDay: String? { planner.daysAhead(count: 1, mobile: mobileSlots, urgent: urgentPickup).first }
     /// What the calendar offers: from the first open day for four weeks, never past 30 days from today
     /// (`GET /api/slots` answers at most 31 days at a time).
     var dateRange: ClosedRange<Date> {
-        let today = ShopCalendar.dateString(now())
+        let today = todayString
         let first = firstOpenDay ?? today
         let end = min(ShopCalendar.addDays(first, 28), ShopCalendar.addDays(today, 30))
         return ShopCalendar.date(first)...ShopCalendar.date(max(end, first))
     }
 
     /// The calendar picked a date. A closed day (Sunday, holiday, nothing left) moves to the next open one.
+    /// Picking a future day automatically clears the same-day urgent surcharge.
     func pick(date: Date) {
         let picked = ShopCalendar.dateString(date)
         guard picked != day else { return }
         slot = nil
         dayMovedNote = false
+        let clearUrgentIfNeeded = { [weak self] (chosen: String) in
+            guard let self else { return }
+            if self.urgent && chosen != self.todayString {
+                self.urgent = false
+                Task { await self.loadQuote() }
+            }
+        }
         if !planner.slots(on: picked, mobile: mobileSlots, urgent: urgentPickup, taken: taken).isEmpty || planner.isOpen(picked) {
             day = picked
+            clearUrgentIfNeeded(picked)
             return
         }
         var next = picked
@@ -129,9 +176,15 @@ final class BookingModel: ObservableObject {
             next = ShopCalendar.addDays(next, 1)
             // Never past the window the slots were loaded for.
             if next > upper { return }
-            if planner.isOpen(next) { day = next; dayMovedNote = true; return }
+            if planner.isOpen(next) {
+                day = next
+                dayMovedNote = true
+                clearUrgentIfNeeded(next)
+                return
+            }
         }
     }
+
     var availableJobs: [CatalogJob] { catalog.jobs(for: kind.jobMode) }
     var selectedJobs: [CatalogJob] { availableJobs.filter { jobIDs.contains($0.id) } }
     var hasCustom: Bool { !custom.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
@@ -168,31 +221,84 @@ final class BookingModel: ObservableObject {
     var canSubmit: Bool { isComplete && !submitting }
     var canAddJob: Bool { jobIDs.count < Limit.jobs }
 
+    /// True once the customer typed or picked anything, so an accidental swipe-down asks before discarding.
+    var hasEdits: Bool {
+        bookedCode == nil && (
+            !jobIDs.isEmpty || !custom.trimmed.isEmpty || !issue.trimmed.isEmpty
+                || !brand.trimmed.isEmpty || !model.trimmed.isEmpty
+                || !addressQuery.trimmed.isEmpty || !location.trimmed.isEmpty
+        )
+    }
+
+    /// Ordered list of what is still missing before the booking can be sent, with the section id to scroll to.
+    var missingItems: [(section: String, label: String)] {
+        var list: [(String, String)] = []
+        if !jobsOK { list.append(("what", String(localized: "booking.missing.service"))) }
+        if !issueOK { list.append(("what", String(localized: "booking.missing.issue"))) }
+        if !whereOK {
+            if kind == .pickup {
+                let key = place == nil ? "booking.missing.pickup_address" : "booking.missing.quote"
+                list.append(("where", String(localized: String.LocalizationValue(key))))
+            } else if kind == .mobile {
+                list.append(("where", String(localized: "booking.missing.location")))
+            }
+        }
+        if slot == nil { list.append(("when", String(localized: "booking.missing.slot"))) }
+        if !nameOK { list.append(("you", String(localized: "booking.missing.name"))) }
+        if !phoneOK { list.append(("you", String(localized: "booking.missing.phone"))) }
+        if !emailOK { list.append(("you", String(localized: "booking.missing.email"))) }
+        return list
+    }
+
     // MARK: - Loading
 
     private static var lang: String { Locale.current.language.languageCode?.identifier == "en" ? "en" : "ro" }
 
-    func prefill(from viewer: Viewer?) {
-        guard let viewer else { return }
-        if name.isEmpty { name = viewer.name }
-        if email.isEmpty { email = viewer.email }
+    func prefill(from viewer: Viewer?, knownPhone: String? = nil) {
+        if let viewer {
+            if name.isEmpty { name = viewer.name }
+            if email.isEmpty { email = viewer.email }
+        }
+        if phone.isEmpty {
+            let fallback = knownPhone?.trimmed
+            if let fallback, !fallback.isEmpty {
+                phone = fallback
+            } else if let saved = UserDefaults.standard.string(forKey: Self.savedPhoneKey), !saved.isEmpty {
+                phone = saved
+            }
+        }
     }
 
     func search() async {
         let q = addressQuery.trimmingCharacters(in: .whitespaces)
-        guard q.count >= 3, q != place?.label else { places = []; return }
+        searchFailed = false
+        guard q.count >= 3, q != place?.label else {
+            places = []
+            searchDone = false
+            return
+        }
         try? await Task.sleep(nanoseconds: 350_000_000)
         guard !Task.isCancelled else { return }
         searching = true
+        searchDone = false
         defer { searching = false }
         struct Reply: Decodable { var results: [GeoPlace] }
         do {
             let reply: Reply = try await api.request("GET", "api/geo/search", query: [
                 URLQueryItem(name: "q", value: q), URLQueryItem(name: "lang", value: Self.lang),
             ])
-            if !Task.isCancelled { places = reply.results }
+            if !Task.isCancelled {
+                places = reply.results
+                searchDone = true
+            }
+        } catch is CancellationError {
+            return
         } catch {
-            if !Task.isCancelled { places = [] }
+            if !Task.isCancelled {
+                places = []
+                searchFailed = true
+                searchDone = true
+            }
         }
     }
 
@@ -200,6 +306,8 @@ final class BookingModel: ObservableObject {
         place = p
         addressQuery = p.label
         places = []
+        searchFailed = false
+        searchDone = false
         Task { await loadQuote() }
     }
 
@@ -222,8 +330,10 @@ final class BookingModel: ObservableObject {
     }
 
     func loadTaken() async {
+        slotsLoading = true
         slotsFailed = false
-        let first = ShopCalendar.dateString(now())
+        defer { slotsLoading = false }
+        let first = todayString
         let last = ShopCalendar.addDays(first, 30)
         do {
             struct Reply: Decodable { var taken: [String] }
@@ -237,7 +347,13 @@ final class BookingModel: ObservableObject {
         } catch {
             slotsFailed = true
         }
+        if urgent && !urgentAvailableToday {
+            urgent = false
+            await loadQuote()
+        }
         if let open = firstOpenDay, day < open { day = open }
+        // Invalidate an early slot tap if the loaded taken set excludes it.
+        if let chosen = slot, !slots.contains(chosen) { slot = nil }
     }
 
     // MARK: - Submit
@@ -275,7 +391,7 @@ final class BookingModel: ObservableObject {
     }
 
     func submit() async {
-        guard canSubmit, let body = requestBody() else { return }
+        guard canSubmit, let slot, let body = requestBody() else { return }
         submitting = true
         problem = nil
         defer { submitting = false }
@@ -283,6 +399,27 @@ final class BookingModel: ObservableObject {
         struct Reply: Decodable { var code: String }
         do {
             let reply: Reply = try await api.request("POST", "api/bookings", body: body)
+            // Remember the phone locally so the next booking doesn't ask for it again.
+            UserDefaults.standard.set(phone.trimmed, forKey: Self.savedPhoneKey)
+            let est = estimate
+            let estimateText = est.to > 0 ? Money.range(est.from, est.to) : String(localized: "booking.price.after_diagnosis")
+            let placeText: String
+            switch kind {
+            case .shop: placeText = Shop.address
+            case .pickup: placeText = place?.label ?? Shop.address
+            case .mobile: placeText = location.trimmed
+            }
+            bookedSummary = BookedSummary(
+                code: reply.code,
+                slotStart: slot.start,
+                slotDurationHours: kind == .mobile ? 2 : 1,
+                slotText: ShopCalendar.dateTime(slot.iso),
+                kind: kind,
+                locationText: placeText,
+                estimateText: estimateText,
+                transportText: transportLei.map { Money.lei($0) },
+                hasEmail: !email.trimmed.isEmpty
+            )
             bookedCode = reply.code
         } catch APIError.conflict {
             problem = "booking.error.slot_taken"

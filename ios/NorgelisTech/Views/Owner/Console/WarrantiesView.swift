@@ -28,7 +28,7 @@ struct WarrantiesView: View {
                                 Text(s.1).font(.subheadline.weight(.semibold))
                                     .padding(.horizontal, 12).padding(.vertical, 7)
                                     .background(state == s.0 ? Color.accentColor : Color(.secondarySystemBackground))
-                                    .foregroundColor(state == s.0 ? .white : .primary)
+                                    .foregroundColor(state == s.0 ? Theme.onAccent : .primary)
                                     .clipShape(Capsule())
                             }.buttonStyle(.plain)
                         }

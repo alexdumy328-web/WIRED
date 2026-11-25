@@ -37,10 +37,14 @@ enum Shop {
     }
 
     /// WhatsApp wants the number with its country code and no plus, so a Romanian 07xx number gets 40.
-    static func whatsappURL(_ number: String) -> URL? {
+    static func whatsappURL(_ number: String, text: String? = nil) -> URL? {
         var digits = number.filter { $0.isNumber || $0 == "+" }
         if digits.hasPrefix("+") { digits.removeFirst() } else if digits.hasPrefix("0") { digits = "40" + digits.dropFirst() }
-        return digits.isEmpty ? nil : URL(string: "https://wa.me/\(digits)")
+        guard !digits.isEmpty else { return nil }
+        guard let text, !text.isEmpty else { return URL(string: "https://wa.me/\(digits)") }
+        var parts = URLComponents(string: "https://wa.me/\(digits)")
+        parts?.queryItems = [URLQueryItem(name: "text", value: text)]
+        return parts?.url
     }
 
     static func mailURL(to address: String, subject: String, body: String) -> URL? {

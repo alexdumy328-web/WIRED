@@ -89,6 +89,7 @@ final class ConfigTests: XCTestCase {
         XCTAssertEqual(Shop.telURL("(0758) 561 001")?.absoluteString, "tel:0758561001")
         XCTAssertEqual(Shop.whatsappURL("+40 (771) 332 210")?.absoluteString, "https://wa.me/40771332210")
         XCTAssertEqual(Shop.whatsappURL("(0758) 561 001")?.absoluteString, "https://wa.me/40758561001", "a national number gets the country code")
+        XCTAssertEqual(Shop.whatsappURL("+40 771 332 210", text: "Hi NT-4K7Q")?.absoluteString, "https://wa.me/40771332210?text=Hi%20NT-4K7Q")
         XCTAssertNil(Shop.telURL("   "))
     }
 
@@ -464,5 +465,50 @@ final class PushAndLinksTests: XCTestCase {
         let booking = try JSONDecoder().decode(Booking.self, from: Data(json.utf8))
         XCTAssertTrue(booking.isGuestLookup)
         XCTAssertTrue(BookingSummaryCard.driverMayCome(booking))
+    }
+
+    func testBookingCodeNormalizationAndDriverPollingRules() throws {
+        XCTAssertEqual(AppState.normalizeBookingCode("4k7q"), "NT-4K7Q")
+        XCTAssertEqual(AppState.normalizeBookingCode("  nt-4k7q "), "NT-4K7Q")
+        XCTAssertEqual(AppState.normalizeBookingCode("   "), "")
+
+        let yesterday = ShopCalendar.addDays(ShopCalendar.dateString(), -1)
+        let yesterdaySlot = ShopCalendar.isoFor(day: yesterday, hour: 10)
+        let pickup = PickupDetails(address: "Str. Palas 7A", lat: 47.1585, lon: 27.6014, trips: .both, urgent: false, quote: nil)
+
+        // Past-slot uncollected pickup: driver may still come today to retry.
+        let missed = Booking(code: "NT-MISS", status: .received, mode: "shop", slot: yesterdaySlot, pickup: pickup)
+        XCTAssertTrue(BookingSummaryCard.driverMayCome(missed))
+
+        // Already collected: driver does not come again until ready.
+        var collected = missed
+        collected.collectedAt = yesterdaySlot
+        XCTAssertFalse(BookingSummaryCard.driverMayCome(collected))
+
+        // Delivery-only while received: customer drops it off at the shop.
+        let dropoffOnly = Booking(code: "NT-DROP", status: .received, mode: "shop", slot: ShopCalendar.isoFor(day: ShopCalendar.dateString(), hour: 10),
+                                  pickup: PickupDetails(address: "Str. Palas 7A", lat: 47.1585, lon: 27.6014, trips: .dropoff, urgent: false, quote: nil))
+        XCTAssertFalse(BookingSummaryCard.driverMayCome(dropoffOnly))
+
+        // Driver arrived flag decodes.
+        let arrived = try JSONDecoder().decode(DriverTrackingStatus.self, from: Data(#"{"isEnRoute":true,"arrived":true,"driverName":"Ion","latitude":47.16,"longitude":27.58}"#.utf8))
+        XCTAssertEqual(arrived.arrived, true)
+
+        // Money range collapses identical bounds and formats hours.
+        XCTAssertEqual(Money.range(200, 200), "200 lei")
+        XCTAssertEqual(Money.eta([2, 4]), "2–4 h")
+        XCTAssertNil(Money.eta([0, 0]))
+    }
+
+    func testUrgentPickupClearsWhenPickingFutureDay() {
+        let clock = ISO8601DateFormatter().date(from: "2026-12-07T06:00:00Z")! // Monday 08:00 Bucharest
+        let m = BookingModel(api: APIClient(), now: { clock })
+        m.kind = .pickup
+        XCTAssertTrue(m.urgentAvailableToday)
+        m.urgent = true
+        XCTAssertEqual(m.day, "2026-12-07")
+        m.pick(date: ShopCalendar.date("2026-12-09"))
+        XCTAssertEqual(m.day, "2026-12-09")
+        XCTAssertFalse(m.urgent, "future day must not carry same-day urgent surcharge")
     }
 }

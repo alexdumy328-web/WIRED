@@ -245,8 +245,13 @@ export function createAdminRouter(deps: PlatformDeps): Router {
       res.json({ isEnRoute: false })
       return
     }
+    // The driver said they are at the door (in the last half hour): the customer's card says so.
+    const notice = await deps.db.collection('bookings').findOne({ code: code.data.toUpperCase() }, { projection: { driverNotice: 1 } })
+    const arrivedAt = (notice?.driverNotice as { arrivedAt?: Date } | undefined)?.arrivedAt
+    const arrived = arrivedAt ? Date.now() - arrivedAt.getTime() < 30 * 60_000 : false
     res.json({
       isEnRoute: true,
+      ...(arrived ? { arrived: true } : {}),
       driverName: d.name,
       latitude: d.lat,
       longitude: d.lon,
@@ -264,6 +269,27 @@ export function createAdminRouter(deps: PlatformDeps): Router {
     const warranties = await deps.warranties.forBookings(mine.map((b) => b.code))
     const byCode = new Map(warranties.map((w) => [w.bookingCode, { id: w.id, label: w.label, startsOn: w.startsOn, endsOn: w.endsOn, months: w.months, state: w.state }]))
     res.json({ bookings: mine.map((b) => ({ ...b, ...(byCode.has(b.code) ? { warranty: byCode.get(b.code) } : {}) })) })
+  }))
+
+  /** A customer cancels their own booking before anything happened to it, at least two hours before the slot. */
+  router.post('/me/bookings/:code/cancel', meLimit, sessions.requireAuth, handle(async (req, res) => {
+    const viewer = res.locals.viewer!
+    const code = codeParam.safeParse(req.params.code)
+    const mine = code.success ? await bookings.ownedBy(code.data, viewer) : null
+    if (!mine) {
+      res.status(404).json({ error: 'not_found' })
+      return
+    }
+    if (mine.status !== 'received' || Date.parse(mine.slot) - Date.now() < 2 * 3600_000) {
+      res.status(409).json({ error: 'too_late' })
+      return
+    }
+    const result = await bookings.update(mine.code, { status: 'cancelled', note: 'Anulată de client din aplicație' }, { id: viewer.id, name: 'customer' })
+    if (result?.statusChanged) {
+      await tellCustomer(result.booking, 'cancelled').catch(() => 'failed')
+      await audit.record({ action: 'booking_status', actor: { id: viewer.id, email: viewer.email, role: viewer.role }, target: mine.code, detail: { from: 'received', to: 'cancelled', by: 'customer' }, ip: clientIp(req) })
+    }
+    res.json({ status: 'cancelled' })
   }))
 
   router.get('/me/bookings/:code/intake.pdf', meLimit, sessions.requireAuth, handle(async (req, res) => {

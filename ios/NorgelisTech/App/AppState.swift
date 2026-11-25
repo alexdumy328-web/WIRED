@@ -326,8 +326,29 @@ final class AppState: ObservableObject {
 
     // MARK: - Customer Actions
 
+    /// Normalises a booking code: trims, uppercases, and prepends "NT-" for bare 4-character codes like "4K7Q".
+    nonisolated static func normalizeBookingCode(_ raw: String) -> String {
+        let trimmed = raw.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        if trimmed.range(of: "^[A-Z0-9]{4}$", options: .regularExpression) != nil {
+            return "NT-\(trimmed)"
+        }
+        return trimmed
+    }
+
+    func clearCustomerLookup() {
+        lookupTask?.cancel()
+        customerSearchQuery = ""
+        currentCustomerBooking = nil
+        customerLookupError = nil
+        customerLookupBusy = false
+    }
+
     func searchBooking(code: String) {
-        let trimmed = code.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
+        let trimmed = Self.normalizeBookingCode(code)
+        guard !trimmed.isEmpty else {
+            clearCustomerLookup()
+            return
+        }
         customerSearchQuery = trimmed
         customerLookupError = nil
         lookupTask?.cancel()
@@ -358,7 +379,7 @@ final class AppState: ObservableObject {
                 self.customerLookupError = String(localized: "customer.lookup.not_found")
             } catch {
                 guard !Task.isCancelled, self.customerSearchQuery == trimmed else { return }
-                self.customerLookupError = error.localizedDescription
+                self.customerLookupError = customerErrorMessage(error)
             }
             if self.customerSearchQuery == trimmed { self.customerLookupBusy = false }
         }

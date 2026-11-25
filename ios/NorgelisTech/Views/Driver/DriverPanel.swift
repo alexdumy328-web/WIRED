@@ -191,7 +191,7 @@ struct DriverListHeader: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
                         .background(Color.accentColor)
-                        .foregroundColor(.white)
+                        .foregroundColor(Theme.onAccent)
                         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
             } else {
@@ -366,7 +366,7 @@ struct StopDetailHeader: View {
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
                         .background(Color.accentColor)
-                        .foregroundColor(.white)
+                        .foregroundColor(Theme.onAccent)
                         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
             }

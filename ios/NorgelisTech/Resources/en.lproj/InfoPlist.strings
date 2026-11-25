@@ -1,2 +1,3 @@
 "CFBundleDisplayName" = "Norgelis Tech";
 "NSLocationWhenInUseUsageDescription" = "Norgelis Tech uses your location to show your position on the map, work out the route and, during a trip, show customers and the workshop where you are. It keeps working when you switch to Waze.";
+"NSCalendarsWriteOnlyAccessUsageDescription" = "Norgelis Tech adds your repair appointment to Calendar only when you tap Add to Calendar.";

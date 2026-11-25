@@ -35,7 +35,7 @@ struct TodayTab: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 12)
                             .background(Color.accentColor)
-                            .foregroundColor(.white)
+                            .foregroundColor(Theme.onAccent)
                             .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
 

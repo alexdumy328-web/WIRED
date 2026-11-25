@@ -37,6 +37,20 @@ enum APIError: LocalizedError {
             return String(format: String(localized: "error.conflict"), code)
         }
     }
+
+    /// Plain-language copy for customer screens (never HTTP codes or URLSession internals).
+    var customerMessage: String {
+        switch self {
+        case .networkError: return String(localized: "auth.error.offline")
+        case .notFound: return String(localized: "customer.lookup.not_found")
+        case .unauthorized: return String(localized: "error.unauthorized")
+        default: return String(localized: "auth.error.generic")
+        }
+    }
+}
+
+func customerErrorMessage(_ error: Error) -> String {
+    (error as? APIError)?.customerMessage ?? String(localized: "auth.error.generic")
 }
 
 extension Notification.Name {
