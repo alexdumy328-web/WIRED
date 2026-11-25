@@ -62,7 +62,7 @@
 "owner.booking.update_status" = "Update status";
 
 /* Customer Area */
-"customer.title" = "Repair Tracking";
+"customer.title" = "Repair tracking";
 "customer.lookup.placeholder" = "Booking code (e.g. NT-4K7Q)";
 "customer.lookup.button" = "Check Status";
 "customer.booking.details" = "Booking Details";
@@ -421,7 +421,7 @@
 "dev.health.ok %@" = "Connected! Store: %@";
 
 /* Production flow */
-"welcome.lead" = "We repair electronics down to the component. Laptops, PCs, espresso machines and car electrics, in the workshop or at your place.";
+"welcome.lead" = "Electronics repair in Iași, at the workshop or at your door.";
 "welcome.book" = "Book a repair";
 "welcome.sign_in" = "Sign in";
 "welcome.create" = "Create account";
@@ -437,8 +437,8 @@
 "customer.call_driver" = "Call the driver";
 "booking.title" = "New booking";
 "booking.new" = "New booking";
-"booking.kind.hint.shop" = "You bring the device to the workshop, Bd. Alexandru cel Bun 49. Diagnosis is free if you repair with us.";
-"booking.kind.hint.pickup" = "We collect the device from your address and bring it back repaired. Transport is charged separately.";
+"booking.kind.hint.shop" = "Drop off at Bd. Alexandru cel Bun 49.";
+"booking.kind.hint.pickup" = "We collect and return it. We bill transport separately.";
 "booking.kind.hint.mobile" = "We come to your car or home in Iași.";
 "booking.section.what" = "What needs repair";
 "booking.section.when" = "When";
@@ -532,7 +532,7 @@
 "account.feedback" = "Send feedback";
 "account.delete.staff" = "A staff account cannot be deleted in the app";
 "account.delete.reauth_title" = "Confirm deletion";
-"account.delete.reauth" = "For security, enter the account password. If you sign in with an email code only, sign in again and delete the account within a day.";
+"account.delete.reauth" = "Enter your password, or sign in again if you use email codes.";
 "account.delete.signin_again" = "Sign in again";
 "account.delete.email_subject" = "Account deletion request";
 "account.delete.email_body %@" = "Please delete the account linked to %@.";
@@ -642,7 +642,7 @@
 "progress.explain.cancelled" = "";
 "customer.repairs.active" = "In the workshop";
 "customer.repairs.upcoming" = "Upcoming";
-"progress.explain.received.pickup" = "The driver comes to your address at the time you picked. You get an email when they set off.";
+"progress.explain.received.pickup" = "The driver collects your device at the chosen time.";
 "progress.explain.received.collected" = "Your device is with us. Diagnosis is next.";
 "progress.explain.received.mobile" = "The technician comes to you at the time you picked.";
 "customer.pickup.today %@" = "Driver comes today at %@";
@@ -665,17 +665,17 @@
 "customer.booking.work_done" = "Work done";
 "customer.booking.updated %@" = "Updated %@";
 "customer.docs.title" = "Documents";
-"customer.docs.sheet" = "Service sheet (PDF)";
-"customer.docs.warranty %@" = "Warranty PDF (until %@)";
+"customer.docs.sheet" = "Service sheet PDF";
+"customer.docs.warranty %@" = "Warranty PDF, until %@";
 "customer.docs.failed" = "Could not download the document. Try again.";
-"customer.whatsapp.about %@" = "Hi, regarding booking %@";
+"customer.whatsapp.about %@" = "Hi, about booking %@";
 "customer.cancel.button" = "Cancel booking";
 "customer.cancel.title" = "Cancel this booking?";
 "customer.cancel.confirm" = "Cancel booking";
 "customer.cancel.keep" = "Keep booking";
 "customer.cancel.message" = "This frees the booked slot. You can book again any time.";
 "customer.cancel.failed" = "Could not cancel the booking";
-"customer.cancel.too_late" = "Bookings can only be cancelled at least 2 hours before the slot, before work starts.";
+"customer.cancel.too_late" = "You can cancel up to 2 hours before your slot, before work starts.";
 "customer.driver.arrived_badge" = "DRIVER AT YOUR DOOR";
 "customer.driver.at_door_short" = "Here now";
 "customer.driver.arrived" = "Your driver is here";
@@ -683,10 +683,10 @@
 "customer.driver.on_the_way_named %@" = "%@ is heading your way!";
 "customer.live.at_address %@" = "Waiting at %@.";
 "customer.live.waiting_door" = "Waiting at your address.";
-"customer.live.offline" = "Connection lost — retrying…";
+"customer.live.offline" = "Connection lost. Retrying...";
 "customer.live.stale %lld" = "Last updated %lld min ago";
 "customer.live.recenter" = "Recenter";
-"booking.kind.hint.dropoff" = "You bring the device to the workshop; we deliver it back once repaired. Transport is charged separately.";
+"booking.kind.hint.dropoff" = "Drop it off at the workshop, and we deliver it back. We bill transport separately.";
 "booking.address.dropoff" = "Delivery address";
 "booking.address.search_failed" = "Address search is unavailable right now.";
 "booking.address.pick_hint" = "Select an address from the list below.";
@@ -698,7 +698,7 @@
 "booking.eta.day_one" = "1 day";
 "booking.eta.days %lld" = "%lld days";
 "booking.eta.days_range %lld %lld" = "%lld–%lld days";
-"booking.payment_note" = "Pay at hand-back (cash or card). Diagnosis is free if you repair with us.";
+"booking.payment_note" = "Pay by cash or card at hand-back. Diagnosis is free if you repair with us.";
 "booking.missing.prefix %@" = "Still needed: %@";
 "booking.missing.service" = "service or description";
 "booking.missing.issue" = "what happened";
@@ -712,7 +712,7 @@
 "booking.discard.title" = "Discard this booking?";
 "booking.discard.confirm" = "Discard";
 "booking.discard.keep" = "Keep editing";
-"booking.discard.message" = "The details you entered will be lost.";
+"booking.discard.message" = "Closing discards the details you entered.";
 "booking.done.where" = "Location";
 "booking.done.no_email_warn" = "Without an email address, you won't receive status emails, driver alerts or PDFs.";
 "booking.done.calendar" = "Add to Calendar";

@@ -65,6 +65,7 @@
 		CD4C78902C0A4392EB207029 /* StaffHomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B67D15A7153C227D2B5A8E4B /* StaffHomeView.swift */; };
 		D81C182FE14D8474B5F04807 /* BackendSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 00F0CEF2771351EB91E5649F /* BackendSettingsView.swift */; };
 		DEA403BE43C6B98797800886 /* MockOwnerRepository.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3F2FE5D9B2D194AA3D12A691 /* MockOwnerRepository.swift */; };
+		E564644F33BF8B44E269E997 /* TraceFieldView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B7EC27B8DE5F0140222388E /* TraceFieldView.swift */; };
 		E58EF93DAE764D2EEDBB9FA3 /* DriverActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1F0485F07FD9E92F0409F756 /* DriverActivityAttributes.swift */; };
 		EB0418BD46AF3D47D20ECEB8 /* JobsTab.swift in Sources */ = {isa = PBXBuildFile; fileRef = C5396BDE49B1D31DDFC6118F /* JobsTab.swift */; };
 		F50018D44E5D165EC6897074 /* PushService.swift in Sources */ = {isa = PBXBuildFile; fileRef = E4E27D1F814C41C5ED3B402A /* PushService.swift */; };
@@ -147,6 +148,7 @@
 		803335B3567628905CF47352 /* Workshop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Workshop.swift; sourceTree = "<group>"; };
 		83445BA20548B7813B954853 /* DriverRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DriverRootView.swift; sourceTree = "<group>"; };
 		844B2E138D7579249B6FEED0 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		8B7EC27B8DE5F0140222388E /* TraceFieldView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TraceFieldView.swift; sourceTree = "<group>"; };
 		953E62233030FCCBC2F56EBD /* OwnerSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OwnerSettingsView.swift; sourceTree = "<group>"; };
 		9567685E983F5201FB3CCE24 /* LocationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocationService.swift; sourceTree = "<group>"; };
 		98C6305B2534614EEAA5D4E3 /* NorgelisTechApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NorgelisTechApp.swift; sourceTree = "<group>"; };
@@ -318,6 +320,7 @@
 			children = (
 				1D7A82FC4C6942C2F99279E9 /* RootView.swift */,
 				28F395CC0D785227DA003BA9 /* Theme.swift */,
+				8B7EC27B8DE5F0140222388E /* TraceFieldView.swift */,
 				04A9173E5E0D8ED7D90D00DE /* Auth */,
 				EC24E561A3F24409317EBC5C /* Booking */,
 				710D4B2E334EF3553037DE87 /* Customer */,
@@ -573,6 +576,7 @@
 				312E7B32A5AF2F3A6D7B9A5A /* StatsTab.swift in Sources */,
 				448AAFCFCF4F26AC7235874E /* Theme.swift in Sources */,
 				6CF8CE6EF19764C20E9DE5D9 /* TodayTab.swift in Sources */,
+				E564644F33BF8B44E269E997 /* TraceFieldView.swift in Sources */,
 				83443F4690E191BF8F8087DF /* WalkInSheet.swift in Sources */,
 				1BFFBD7A301561FE1DA03C0C /* WarrantiesView.swift in Sources */,
 				A0AAED7AF4095F219F1CCA6F /* WelcomeView.swift in Sources */,

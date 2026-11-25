@@ -554,7 +554,7 @@ private struct CalendarEventSheet: UIViewControllerRepresentable {
     func makeUIViewController(context: Context) -> EKEventEditViewController {
         let store = EKEventStore()
         let event = EKEvent(eventStore: store)
-        event.title = "Norgelis Tech — \(summary.code)"
+        event.title = "Norgelis Tech, \(summary.code)"
         event.startDate = summary.slotStart
         event.endDate = summary.slotStart.addingTimeInterval(TimeInterval(summary.slotDurationHours * 3600))
         event.location = summary.locationText

@@ -59,7 +59,7 @@
 
     <!-- Calendar: lets the customer add their booked repair slot to Calendar on confirmation. -->
     <key>NSCalendarsWriteOnlyAccessUsageDescription</key>
-    <string>Norgelis Tech salvează programarea în calendarul tău doar când apeși „Adaugă în calendar”.</string>
+    <string>Norgelis Tech salvează programarea în calendarul tău doar când apeși Adaugă în calendar.</string>
 
     <!-- The driver on the way, on the lock screen and in the Dynamic Island. -->
     <key>NSSupportsLiveActivities</key>

@@ -2,9 +2,12 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } 
 import { AnimatePresence, motion } from 'motion/react'
 import { fmt, useI18n } from '../i18n'
 import { catalog } from '../data/catalog'
-import { estimate, formatEta, formatLei } from '../lib/estimate'
+import { estimate, formatEta, formatLei, jobPrice } from '../lib/estimate'
 import { daysAhead, slotsFor } from '../lib/slots'
 import { closeBooking, useBooking } from '../lib/booking-store'
+import { buildBookingIcs, downloadIcs } from '../lib/booking-helpers'
+import { navigate } from '../lib/router'
+import { SHOP } from './Contact'
 import { modelFor } from '../lib/models'
 import { sceneState } from '../three/contract'
 import { lockPage } from '../lib/scroll'
@@ -67,7 +70,15 @@ function BookingModal() {
   const [day, setDay] = useState('')
   const [slot, setSlot] = useState('')
   const [location, setLocation] = useState('')
-  const [contact, setContact] = useState({ name: '', phone: '', email: '' })
+  const [contact, setContact] = useState(() => {
+    let savedPhone = ''
+    try {
+      savedPhone = window.localStorage.getItem('nt_last_phone') ?? ''
+    } catch {
+      // Ignore storage errors (private browsing).
+    }
+    return { name: '', phone: savedPhone, email: '' }
+  })
   // Signed in: fill name and email unless the customer already typed something.
   const { user: account } = useViewer()
   useEffect(() => {
@@ -77,7 +88,10 @@ function BookingModal() {
   const [errors, setErrors] = useState<Errors>({})
   const [sending, setSending] = useState(false)
   const [done, setDone] = useState<string | null>(null)
+  const [copied, setCopied] = useState(false)
+  const [bookedRecap, setBookedRecap] = useState<{ slot: string; whereText: string; price: string } | null>(null)
   const [taken, setTaken] = useState<string[]>([])
+  const [slotsLoading, setSlotsLoading] = useState(false)
   const [now] = useState(() => new Date())
   const todayIso = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Bucharest' }).format(now)
 
@@ -116,11 +130,17 @@ function BookingModal() {
   const est = estimate(picked, customOn && custom.trim().length > 0, tierValue)
   const days = useMemo(() => daysAhead(now, 12, mode), [now, mode])
   // Urgent pickup also offers today's windows from one hour ahead (slotsFor keeps a 2 h margin).
+  const urgentAvailableToday = where === 'pickup' && slotsFor(todayIso, mode, new Date(Date.now() - 60 * 60 * 1000), taken).length > 0
   const slotNow = where === 'pickup' && urgent ? new Date(Date.now() - 60 * 60 * 1000) : new Date()
   const slots = day ? slotsFor(day, mode, slotNow, taken) : []
   // Days with at least one free slot; the rest show crossed out in the calendar.
   const openDays = new Set(days.filter((d) => slotsFor(d, mode, slotNow, taken).length > 0))
   const firstOpen = days.find((d) => openDays.has(d))
+
+  // Urgent applies only to today; clear it if today has no slots left or the customer picks another day.
+  useEffect(() => {
+    if (urgent && !urgentAvailableToday) setUrgent(false)
+  }, [urgent, urgentAvailableToday])
   const needsValue = picked.some((j) => j.hourly?.byValue) || customOn
   // The price list figure, the same one the server stores and emails. The AI card shows its own guide price.
   const repair: [number, number] = [est.priceFrom, est.priceTo]
@@ -171,10 +191,18 @@ function BookingModal() {
   useEffect(() => {
     if (!days.length) return
     const ctl = new AbortController()
+    setSlotsLoading(true)
     fetch(`/api/slots?mode=${mode}&from=${days[0]}&to=${days[days.length - 1]}`, { signal: ctl.signal })
       .then((r) => (r.ok ? r.json() : { taken: [] }))
-      .then((d: { taken?: string[] }) => setTaken(d.taken ?? []))
+      .then((d: { taken?: string[] }) => {
+        const nextTaken = d.taken ?? []
+        setTaken(nextTaken)
+        setSlot((cur) => (cur && nextTaken.includes(cur) ? '' : cur))
+      })
       .catch(() => {})
+      .finally(() => {
+        if (!ctl.signal.aborted) setSlotsLoading(false)
+      })
     return () => ctl.abort()
   }, [mode, days])
 
@@ -287,6 +315,19 @@ function BookingModal() {
       }
       if (!r.ok) throw new Error(String(r.status))
       const d = (await r.json()) as { code: string }
+      try {
+        window.localStorage.setItem('nt_last_phone', contact.phone.trim())
+      } catch {
+        // Ignore storage errors.
+      }
+      const whereText =
+        where === 'pickup' && pickup?.address
+          ? pickup.address
+          : mode === 'mobile' && location.trim()
+            ? location.trim()
+            : t.contact.address
+      setBookedRecap({ slot, whereText, price: priceText })
+      setCopied(false)
       setDone(d.code)
     } catch {
       setErrors({ server: t.booking.errors.server })
@@ -379,13 +420,81 @@ function BookingModal() {
               </div>
               <p className="measure mt-4">{fmt(t.booking.success.body, { code: done })}</p>
               <p className="mt-6 text-[14px] text-muted">{t.booking.success.code}</p>
-              <p className="display text-5xl tracking-wide">{done}</p>
-              <button type="button" className="btn btn-gold mt-8" onClick={closeBooking}>
-                {t.booking.close}
-              </button>
-              <button type="button" className="btn btn-ghost ml-3 mt-8" onClick={reset}>
-                {t.booking.success.again}
-              </button>
+              <div className="mt-1 flex flex-wrap items-center gap-3">
+                <p className="display text-5xl tracking-wide">{done}</p>
+                <button
+                  type="button"
+                  className="btn btn-ghost h-10 min-h-0 px-4 text-[14px]"
+                  onClick={() => {
+                    void navigator.clipboard?.writeText(done)
+                    setCopied(true)
+                    setTimeout(() => setCopied(false), 1800)
+                  }}
+                >
+                  {copied ? t.booking.success.copied : t.booking.success.copy}
+                </button>
+              </div>
+              {bookedRecap && (
+                <dl className="mt-6 grid gap-3 rounded-[18px] border border-line bg-surface p-4 text-[14px] sm:grid-cols-3">
+                  <div>
+                    <dt className="text-muted">{t.account.bookings.when}</dt>
+                    <dd className="font-semibold">
+                      {new Intl.DateTimeFormat(locale, { timeZone: 'Europe/Bucharest', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(bookedRecap.slot))}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted">{t.owner.detail.address}</dt>
+                    <dd className="font-semibold">{bookedRecap.whereText}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-muted">{t.booking.summary.price}</dt>
+                    <dd className="font-semibold">{bookedRecap.price}</dd>
+                  </div>
+                </dl>
+              )}
+              <div className="mt-7 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  className="btn btn-gold"
+                  onClick={() => {
+                    const tracked = done
+                    closeBooking()
+                    if (account) {
+                      navigate('/cont')
+                    } else {
+                      window.history.replaceState(null, '', `/?cod=${encodeURIComponent(tracked)}#status`)
+                      window.dispatchEvent(new CustomEvent('nt:track', { detail: tracked }))
+                      document.getElementById('status')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+                    }
+                  }}
+                >
+                  {t.booking.success.track}
+                </button>
+                {bookedRecap && (
+                  <button
+                    type="button"
+                    className="btn btn-ghost"
+                    onClick={() => {
+                      const ics = buildBookingIcs({
+                        code: done,
+                        title: `Norgelis Tech, ${done}`,
+                        slot: bookedRecap.slot,
+                        location: bookedRecap.whereText,
+                        description: `${t.booking.success.code}: ${done}\n${t.booking.summary.price}: ${bookedRecap.price}`,
+                      })
+                      downloadIcs(done, ics)
+                    }}
+                  >
+                    {t.booking.success.calendar}
+                  </button>
+                )}
+                <button type="button" className="btn btn-ghost" onClick={reset}>
+                  {t.booking.success.again}
+                </button>
+                <button type="button" className="btn btn-ghost" onClick={closeBooking}>
+                  {t.booking.close}
+                </button>
+              </div>
             </motion.div>
           ) : (
             <>
@@ -462,14 +571,15 @@ function BookingModal() {
                           <div className="mt-2 max-h-[18rem] overflow-y-auto overscroll-contain rounded-[14px] border border-line" data-lenis-prevent>
                             {jobs.map((j) => {
                               const on = jobIds.includes(j.id)
+                              const [lo, hi] = jobPrice(j, tierValue)
                               return (
                                 <label key={j.id} className={`flex cursor-pointer items-start gap-3 border-b border-line px-4 py-3 last:border-0 ${on ? 'bg-surface' : ''}`}>
                                   <input type="checkbox" className="mt-1 size-4 accent-[var(--gold)]" checked={on} onChange={() => toggleJob(j.id)} />
                                   <span className="min-w-0 flex-1">
                                     <span className="block text-[15px] font-medium">{L(j.name)}</span>
                                     <span className="text-[13px] text-muted">
-                                      {formatLei(j.priceFrom, lang)}
-                                      {j.priceTo && j.priceTo !== j.priceFrom ? ` – ${formatLei(j.priceTo, lang)}` : ''}, {formatEta(j.etaHours, lang)}
+                                      {formatLei(lo, lang)}
+                                      {hi !== lo ? ` – ${formatLei(hi, lang)}` : ''}, {formatEta(j.etaHours, lang)}
                                     </span>
                                   </span>
                                 </label>
@@ -555,15 +665,27 @@ function BookingModal() {
                               <p className="font-semibold">{t.booking.pickup.title}</p>
                               <p className="measure mt-1 text-[14px] text-muted">{t.booking.pickup.lead}</p>
                             </div>
-                            <label className="flex cursor-pointer items-start gap-3 rounded-[14px] border border-line p-3.5">
-                              <input type="checkbox" className="mt-0.5 size-4 accent-[var(--gold)]" checked={urgent} onChange={(e) => setUrgent(e.target.checked)} />
+                            <label className={`flex items-start gap-3 rounded-[14px] border border-line p-3.5 ${urgentAvailableToday ? 'cursor-pointer' : 'opacity-60'}`}>
+                              <input
+                                type="checkbox"
+                                className="mt-0.5 size-4 accent-[var(--gold)]"
+                                checked={urgent}
+                                disabled={!urgentAvailableToday}
+                                onChange={(e) => {
+                                  const nextUrgent = e.target.checked
+                                  setUrgent(nextUrgent)
+                                  if (nextUrgent) setDay(todayIso)
+                                }}
+                              />
                               <span>
                                 <span className="block text-[15px] font-semibold">{t.booking.pickup.urgentToggle}</span>
-                                <span className="block text-[13px] text-muted">{t.booking.pickup.urgentHint}</span>
+                                <span className="block text-[13px] text-muted">
+                                  {urgentAvailableToday ? t.booking.pickup.urgentHint : t.booking.pickup.urgentUnavailableToday}
+                                </span>
                               </span>
                             </label>
                             <Suspense fallback={<div className="h-[300px] animate-pulse rounded-[18px] border border-line bg-surface md:h-[360px]" />}>
-                              <PickupMap value={pickup} onChange={setPickup} lang={lang} labels={t.booking.pickup} urgent={urgent} />
+                              <PickupMap value={pickup} onChange={setPickup} lang={lang} labels={t.booking.pickup} urgent={urgent} phone={SHOP.phone} />
                             </Suspense>
                             {errors.pickup && <p className="text-[13px] text-danger">{errors.pickup}</p>}
                           </div>
@@ -576,7 +698,10 @@ function BookingModal() {
                               today={todayIso}
                               label={t.booking.when.pickDay}
                               value={day || null}
-                              onSelect={setDay}
+                              onSelect={(d) => {
+                                setDay(d)
+                                if (d !== todayIso && urgent) setUrgent(false)
+                              }}
                               isDisabled={(d) => !openDays.has(d)}
                               minMonth={days[0]?.slice(0, 7)}
                               maxMonth={days[days.length - 1]?.slice(0, 7)}
@@ -589,7 +714,9 @@ function BookingModal() {
                           <fieldset className="min-w-0 md:border-l md:border-line md:pl-6">
                             <legend className="text-[14px] font-semibold">{where === 'pickup' ? t.booking.when.pickWindow : t.booking.when.pickTime}</legend>
                             {day && <p className="mt-1 text-[14px] text-muted first-letter:uppercase">{dayLong(day)}</p>}
-                            {!day ? (
+                            {slotsLoading ? (
+                              <p className="mt-3 text-[14px] text-muted">{t.booking.when.loadingSlots}</p>
+                            ) : !day ? (
                               <p className="mt-3 text-[14px] text-muted">{t.booking.when.pickDayFirst}</p>
                             ) : slots.length ? (
                               <div className={`mt-3 grid gap-2 ${where === 'pickup' ? 'grid-cols-2' : 'grid-cols-3 md:grid-cols-2 lg:grid-cols-3'}`}>
@@ -638,6 +765,7 @@ function BookingModal() {
                           </Field>
                           <Field label={t.booking.who.email} hint={t.booking.who.optional} error={errors.email}>
                             <input className="field" type="email" value={contact.email} onChange={(e) => setContact({ ...contact, email: e.target.value })} autoComplete="email" aria-invalid={!!errors.email} />
+                            {!account && !errors.email && <span className="text-[12px] text-muted">{t.booking.who.guestEmailNote}</span>}
                           </Field>
                         </div>
                         <label className="flex cursor-pointer items-start gap-3 text-[14px] text-muted">
@@ -683,6 +811,7 @@ function BookingModal() {
                     </ul>
                   )}
                   {mode === 'shop' && <p className="mt-4 text-[13px] text-ok">{t.booking.summary.free}</p>}
+                  <p className="mt-2 text-[13px] text-muted">{t.booking.summary.paymentNote}</p>
                   {est.partsExtra && <p className="mt-2 text-[13px] text-muted">{t.booking.summary.partsExtra}</p>}
                   {est.needsDiagnosis && <p className="mt-2 text-[13px] text-muted">{t.booking.summary.diagnosisNote}</p>}
                 </aside>

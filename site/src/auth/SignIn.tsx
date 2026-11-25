@@ -1,8 +1,9 @@
-import { useState, type FormEvent } from 'react'
+import { useEffect, useState, type FormEvent } from 'react'
 import { fmt, useI18n } from '../i18n'
 import { authClient } from './client'
 import { refreshViewer, useViewer } from './viewer'
 import { Field, Notice } from './ui'
+import { linkTo } from '../lib/router'
 
 type Method = 'code' | 'password'
 type Step = 'start' | 'code' | 'up' | 'verify' | 'forgot' | 'reset'
@@ -23,8 +24,15 @@ export function SignIn() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<string | null>(null)
+  const [resendCooldown, setResendCooldown] = useState(0)
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<'name' | 'email' | 'password' | 'code', string>>>({})
   const a = t.account
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return
+    const timer = setTimeout(() => setResendCooldown((s) => Math.max(0, s - 1)), 1000)
+    return () => clearTimeout(timer)
+  }, [resendCooldown])
 
   const explain = (err: AuthError): string => {
     if (!err) return a.errors.generic
@@ -36,12 +44,13 @@ export function SignIn() {
     return a.errors.generic
   }
 
-  const reset = (next: Step, message: string | null = null) => {
+  const reset = (next: Step, message: string | null = null, startCooldown = false) => {
     setStep(next)
     setError(null)
     setInfo(message)
     setFieldErrors({})
     setCode('')
+    setResendCooldown(startCooldown ? 45 : 0)
   }
 
   const validate = (need: Array<'name' | 'email' | 'password' | 'code'>): boolean => {
@@ -77,7 +86,7 @@ export function SignIn() {
   const sendSignInCode = (e?: FormEvent) => {
     e?.preventDefault()
     if (!validate(['email'])) return
-    void run(() => authClient.emailOtp.sendVerificationOtp({ email: mail, type: 'sign-in' }), () => reset('code', fmt(a.msgs.codeSent, { email: mail })))
+    void run(() => authClient.emailOtp.sendVerificationOtp({ email: mail, type: 'sign-in' }), () => reset('code', fmt(a.msgs.codeSent, { email: mail }), true))
   }
 
   const submitSignInCode = (e: FormEvent) => {
@@ -90,7 +99,7 @@ export function SignIn() {
     e.preventDefault()
     if (step === 'up') {
       if (!validate(['name', 'email', 'password'])) return
-      void run(() => authClient.signUp.email({ name: name.trim(), email: mail, password }), () => reset('verify', fmt(a.msgs.confirmSent, { email: mail })))
+      void run(() => authClient.signUp.email({ name: name.trim(), email: mail, password }), () => reset('verify', fmt(a.msgs.confirmSent, { email: mail }), true))
       return
     }
     if (!validate(['email', 'password'])) return
@@ -100,7 +109,7 @@ export function SignIn() {
       .email({ email: mail, password })
       .then(async ({ error: err }) => {
         if (!err) return refreshViewer()
-        if (err.status === 403) reset('verify', a.msgs.unverified)
+        if (err.status === 403) reset('verify', a.msgs.unverified, true)
         else setError(explain(err))
       })
       .catch(() => setError(a.errors.generic))
@@ -116,7 +125,7 @@ export function SignIn() {
   const sendReset = (e?: FormEvent) => {
     e?.preventDefault()
     if (!validate(['email'])) return
-    void run(() => authClient.emailOtp.requestPasswordReset({ email: mail }), () => reset('reset', fmt(a.msgs.resetSent, { email: mail })))
+    void run(() => authClient.emailOtp.requestPasswordReset({ email: mail }), () => reset('reset', fmt(a.msgs.resetSent, { email: mail }), true))
   }
 
   const submitReset = (e: FormEvent) => {
@@ -130,10 +139,17 @@ export function SignIn() {
   }
 
   const resend = () => {
+    if (resendCooldown > 0) return
     if (step === 'code') sendSignInCode()
     else if (step === 'reset') sendReset()
     else
-      void run(() => authClient.emailOtp.sendVerificationOtp({ email: mail, type: 'email-verification' }), () => setInfo(fmt(a.msgs.confirmSent, { email: mail })))
+      void run(
+        () => authClient.emailOtp.sendVerificationOtp({ email: mail, type: 'email-verification' }),
+        () => {
+          setInfo(fmt(a.msgs.confirmSent, { email: mail }))
+          setResendCooldown(45)
+        },
+      )
   }
 
   const emailField = (
@@ -158,8 +174,8 @@ export function SignIn() {
     </button>
   )
   const resendBtn = (
-    <button type="button" className={link} onClick={resend} disabled={busy}>
-      {a.actions.resend}
+    <button type="button" className={`${link} disabled:cursor-default disabled:text-muted disabled:no-underline`} onClick={resend} disabled={busy || resendCooldown > 0}>
+      {resendCooldown > 0 ? fmt(a.actions.resendIn, { s: resendCooldown }) : a.actions.resend}
     </button>
   )
   const messages = (
@@ -258,6 +274,17 @@ export function SignIn() {
                   </button>
                 )}
               </div>
+              {step === 'up' && (
+                <p className="flex flex-wrap justify-center gap-3 pt-1 text-[12px] text-muted">
+                  <a href="/confidentialitate" onClick={linkTo('/confidentialitate')} className="underline underline-offset-4 hover:text-ink">
+                    {t.footer.privacy}
+                  </a>
+                  <span aria-hidden="true">·</span>
+                  <a href="/termeni" onClick={linkTo('/termeni')} className="underline underline-offset-4 hover:text-ink">
+                    {t.footer.terms}
+                  </a>
+                </p>
+              )}
             </form>
           )}
           {method === 'password' && step === 'verify' && (

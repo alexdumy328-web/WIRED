@@ -84,6 +84,12 @@ export type Dict = {
     lead: string
     placeholder: string // e.g. "NT-4K7Q"
     button: string
+    clear: string
+    services: string
+    driverOnWay: string // "{name}", "{min}"
+    driverOnWayNoEta: string // "{name}"
+    driverArrived: string
+    callDriver: string
     notFound: string
     error: string
     statuses: Record<'received' | 'diagnosis' | 'waiting-parts' | 'repairing' | 'ready' | 'unrepairable' | 'done' | 'cancelled', string>
@@ -125,6 +131,10 @@ export type Dict = {
       urgent: string // line label for the surcharge in the quote panel
       urgentToggle: string // checkbox label
       urgentHint: string // what urgent means
+      urgentUnavailableToday: string
+      retry: string
+      callUs: string
+      dropoffHint: string
     }
     what: {
       pickJobs: string
@@ -156,9 +166,9 @@ export type Dict = {
       questions: string // heading for the clarifying questions
       disclaimer: string
     }
-    when: { pickDay: string; pickDayFirst: string; closedHint: string; todayFull: string; pickTime: string; pickWindow: string; noSlots: string; slotGone: string; location: string; locationPlaceholder: string }
-    who: { name: string; phone: string; email: string; optional: string; consent: string }
-    summary: { title: string; price: string; eta: string; free: string; diagnosisNote: string; partsExtra: string; pickup: string; repair: string }
+    when: { pickDay: string; pickDayFirst: string; closedHint: string; todayFull: string; pickTime: string; pickWindow: string; noSlots: string; loadingSlots: string; slotGone: string; location: string; locationPlaceholder: string }
+    who: { name: string; phone: string; email: string; optional: string; guestEmailNote: string; consent: string }
+    summary: { title: string; price: string; eta: string; free: string; diagnosisNote: string; partsExtra: string; paymentNote: string; pickup: string; repair: string }
     open: string // CTA that opens the booking popup
     close: string // aria-label of the X
     confirmClose: { title: string; leave: string; stay: string }
@@ -166,7 +176,7 @@ export type Dict = {
     next: string
     submit: string // "Send booking"
     sending: string
-    success: { title: string; body: string; code: string; again: string } // body may use {code}
+    success: { title: string; body: string; code: string; copy: string; copied: string; track: string; calendar: string; again: string } // body may use {code}
     errors: {
       required: string
       phone: string
@@ -200,6 +210,9 @@ export type Dict = {
       sendCode: string
       verify: string
       resend: string
+      resendIn: string
+      verifyEmail: string
+      refresh: string
       signIn: string
       createAccount: string
       forgot: string
@@ -230,6 +243,9 @@ export type Dict = {
     adminBar: { nav: string; owner: string; dev: string; site: string }
     bookings: {
       title: string
+      today: string
+      active: string
+      past: string
       empty: string
       bookNow: string
       loading: string
@@ -238,9 +254,19 @@ export type Dict = {
       when: string
       where: Record<'shop' | 'mobile', string>
       pickup: string
+      location: string
       estimate: string
       final: string
+      toPay: string
       timeline: string
+      copyCode: string
+      copied: string
+      whatsappAbout: string
+      cancel: string
+      cancelConfirm: string
+      cancelYes: string
+      cancelKeep: string
+      cancelError: string
     }
     noAccess: { title: string; body: string; signIn: string; home: string }
     unavailable: string

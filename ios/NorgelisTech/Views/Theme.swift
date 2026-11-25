@@ -179,6 +179,56 @@ extension View {
     func glassCard(radius: CGFloat = 24) -> some View {
         modifier(GlassCard(radius: radius))
     }
+
+    func tintedGlassCard(radius: CGFloat = 24) -> some View {
+        modifier(TintedGlassCard(radius: radius))
+    }
+}
+
+/// Tinted Liquid Glass card over animated backgrounds (such as `TraceFieldView`).
+/// Uses translucent iOS 26 Liquid Glass by default (letting iOS's Clear/Tinted Liquid Glass
+/// setting drive translucency) and automatically turns opaque when the user enables
+/// Reduce Transparency or Increase Contrast in iOS Settings.
+struct TintedGlassCard: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+    @Environment(\.colorSchemeContrast) private var contrast
+    var radius: CGFloat = 24
+
+    private var solidFallback: Bool {
+        reduceTransparency || contrast == .increased
+    }
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: radius, style: .continuous)
+        if solidFallback {
+            content
+                .background(
+                    shape.fill(Color(.secondarySystemBackground))
+                        .overlay(shape.strokeBorder(Color.primary.opacity(0.18), lineWidth: 1))
+                )
+        } else {
+            #if compiler(>=6.2)
+            if #available(iOS 26.0, *) {
+                content.glassEffect(.clear, in: shape)
+            } else {
+                fallback(content, shape: shape)
+            }
+            #else
+            fallback(content, shape: shape)
+            #endif
+        }
+    }
+
+    private func fallback(_ content: Content, shape: RoundedRectangle) -> some View {
+        let wash = Color(.systemBackground).opacity(colorScheme == .dark ? 0.28 : 0.36)
+        return content
+            .background(
+                shape.fill(.ultraThinMaterial)
+                    .overlay(shape.fill(wash))
+                    .overlay(shape.strokeBorder(Color.primary.opacity(colorScheme == .dark ? 0.12 : 0.08), lineWidth: 1))
+            )
+    }
 }
 
 /// Quiet button fill that sits on glass or material instead of covering it.

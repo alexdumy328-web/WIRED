@@ -34,40 +34,48 @@ struct SignInView: View {
 
     var body: some View {
         ScrollView {
-            VStack(spacing: 18) {
-                header
+                VStack(spacing: 18) {
+                    header
 
-                if step == .start || step == .code {
-                    Picker("auth.method.title", selection: $method) {
-                        Text("auth.method.code").tag(Method.code)
-                        Text("auth.method.password").tag(Method.password)
+                    if step == .start || step == .code {
+                        Picker("auth.method.title", selection: $method) {
+                            Text("auth.method.code").tag(Method.code)
+                            Text("auth.method.password").tag(Method.password)
+                        }
+                        .pickerStyle(.segmented)
+                        .disabled(step == .code)
+                        .onChange(of: method) { _, _ in reset(.start) }
                     }
-                    .pickerStyle(.segmented)
-                    .disabled(step == .code)
-                    .onChange(of: method) { _, _ in reset(.start) }
-                }
 
-                VStack(spacing: 12) {
-                    fields
-                    messages
-                    primary
-                    links
+                    VStack(spacing: 12) {
+                        fields
+                        messages
+                        primary
+                        links
+                    }
+                    .padding(16)
+                    .background(Color(.secondarySystemBackground))
+                    .clipShape(RoundedRectangle(cornerRadius: 18))
+
+                    if auth.googleAvailable, step == .start || step == .signUp {
+                        googleButton
+                    }
+
+                    if step == .signUp {
+                        LegalLinksFooter()
+                    }
                 }
                 .padding(16)
-                .background(Color(.secondarySystemBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 18))
-
-                if auth.googleAvailable, step == .start || step == .signUp {
-                    googleButton
-                }
-
-                if step == .signUp {
-                    LegalLinksFooter()
-                }
-            }
-            .padding(16)
+                .tintedGlassCard(radius: 24)
+                .padding(16)
         }
         .scrollDismissesKeyboard(.interactively)
+        .background {
+            ZStack {
+                Color(.systemBackground).ignoresSafeArea()
+                TraceFieldView(intensity: 0.6)
+            }
+        }
         .navigationTitle("")
         .toolbar {
             ToolbarItemGroup(placement: .keyboard) {
