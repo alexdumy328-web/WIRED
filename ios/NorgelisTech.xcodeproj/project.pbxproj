@@ -802,8 +802,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				NORGELIS_API_BASE_URL = "https://norgelis.ro";
-				NORGELIS_APP_LINK_DOMAIN = norgelis.ro;
+				NORGELIS_API_BASE_URL = "https://norgelis-tech.vercel.app";
+				NORGELIS_APP_LINK_DOMAIN = "norgelis-tech.vercel.app";
 				NORGELIS_DRIVER_PHONE = "(0758) 561 001";
 				NORGELIS_FEEDBACK_URL = "";
 				NORGELIS_PHONE = "+40 (771) 332 210";
@@ -905,8 +905,8 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				NORGELIS_API_BASE_URL = "https://norgelis.ro";
-				NORGELIS_APP_LINK_DOMAIN = norgelis.ro;
+				NORGELIS_API_BASE_URL = "https://norgelis-tech.vercel.app";
+				NORGELIS_APP_LINK_DOMAIN = "norgelis-tech.vercel.app";
 				NORGELIS_DRIVER_PHONE = "(0758) 561 001";
 				NORGELIS_FEEDBACK_URL = "";
 				NORGELIS_PHONE = "+40 (771) 332 210";

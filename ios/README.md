@@ -52,13 +52,13 @@ Everything that differs between builds is a build setting in `project.yml`. Over
 
 | Setting | What it does | Default |
 | --- | --- | --- |
-| `NORGELIS_API_BASE_URL` | The server the app talks to. | `https://norgelis.ro` (placeholder, set the real domain) |
+| `NORGELIS_API_BASE_URL` | The server the app talks to. | `https://norgelis-tech.vercel.app` (production) |
 | `NORGELIS_SITE_ORIGIN` | The website origin Better Auth trusts (`BETTER_AUTH_URL` or `APP_ORIGINS`). Needed when the API address is not that origin, for example `http://localhost:5173` in dev. | empty |
 | `NORGELIS_PHONE`, `NORGELIS_DRIVER_PHONE` | The shop and driver numbers (Call, WhatsApp, Call the driver). The app only builds `tel:` links, it never dials by itself. An empty value hides the matching row. The driver number falls back to the shop number. | shop `+40 (771) 332 210`, driver `(0758) 561 001` |
 | `NORGELIS_SUPPORT_EMAIL` | Fallback support address for Account. The server's `SUPPORT_EMAIL` (Vercel) wins. | empty |
 | `NORGELIS_PRIVACY_URL`, `NORGELIS_TERMS_URL` | Legal links in Account. When empty they follow the server address: `<server>/confidentialitate` and `<server>/termeni`, pages the website serves. | empty |
 | `NORGELIS_FEEDBACK_URL` | Fallback Google Form link for in-app feedback. The server's `FEEDBACK_URL` (Vercel, read from `GET /api/config` at launch) wins, so the link changes without a new build. Neither set hides the row. | empty |
-| `NORGELIS_APP_LINK_DOMAIN` | The website domain for Universal Links (booking links in emails open the app) and shared passwords. Release only; the server must have `APPLE_TEAM_ID`. | `norgelis.ro` (placeholder) |
+| `NORGELIS_APP_LINK_DOMAIN` | The website domain for Universal Links (booking links in emails open the app) and shared passwords. Release only; the server must have `APPLE_TEAM_ID`. | `norgelis-tech.vercel.app` |
 | `MARKETING_VERSION`, `CURRENT_PROJECT_VERSION` | Version and build number. Raise the build number for every App Store upload. | `1.0.0`, `1` |
 
 Debug builds also allow a plain HTTP server on the local network (`NSAllowsLocalNetworking` and the local network prompt text, added through plist preprocessing). Release builds are HTTPS only and have neither key.

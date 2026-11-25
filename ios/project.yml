@@ -43,7 +43,7 @@ targets:
         CODE_SIGN_STYLE: Automatic
         # The server the app talks to. Release builds default to the production site; a command line
         # override (NORGELIS_API_BASE_URL=http://192.168.1.20:8790) points a Debug build at a local server.
-        NORGELIS_API_BASE_URL: "https://norgelis.ro"
+        NORGELIS_API_BASE_URL: "https://norgelis-tech.vercel.app"
         # The website origin Better Auth trusts (BETTER_AUTH_URL or APP_ORIGINS), for example http://localhost:5173 in dev.
         NORGELIS_SITE_ORIGIN: ""
         # Shown in the app when set. Empty hides the matching row.
@@ -57,7 +57,7 @@ targets:
         NORGELIS_FEEDBACK_URL: ""
         # The website's domain, for Universal Links (booking links in emails open the app) and shared passwords.
         # The server must serve /.well-known/apple-app-site-association (APPLE_TEAM_ID set on Vercel).
-        NORGELIS_APP_LINK_DOMAIN: "norgelis.ro"
+        NORGELIS_APP_LINK_DOMAIN: "norgelis-tech.vercel.app"
       configs:
         Debug:
           CODE_SIGN_IDENTITY: "-"
