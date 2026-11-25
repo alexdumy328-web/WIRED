@@ -331,6 +331,17 @@ export function createPush(db: Db, env: Record<string, string | undefined>, opti
       await send(messages)
     },
 
+    /** The driver is at the door: an alert, and the Live Activity shows "arrived" before it closes. */
+    async driverArrived(code: string, driverName: string): Promise<void> {
+      if (!config) return
+      const booking = await bookings.findOne({ code }, { projection: { userId: 1 } })
+      if (booking?.userId) {
+        const phones = await devices.find({ userId: booking.userId }).limit(10).toArray()
+        await send(phones.map((p) => ({ token: p.token, env: p.env, pushType: 'alert' as const, priority: 10 as const, collapseId: `driver-${code}`, payload: { aps: { alert: { 'title-loc-key': 'push.driver.at_door', 'loc-key': 'push.driver.at_door.body', 'loc-args': [driverName] }, sound: 'default', 'thread-id': code }, code } })))
+      }
+      await this.driverStopped(code, 'arrived')
+    },
+
     /** The trip to this booking is over: arrived (collected or handed back) or cancelled. The Live Activity ends. */
     async driverStopped(code: string | undefined, phase: 'arrived' | 'ended' = 'ended'): Promise<void> {
       if (!config || !code) return

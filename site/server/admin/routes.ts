@@ -11,6 +11,7 @@ import type { PlatformDeps } from './deps.ts'
 import { localDate, isRealDate, DATE_ONLY, addDays } from './time.ts'
 import { mountWorkshop } from './workshop-routes.ts'
 import { ROMANIA_BBOX } from '../geo.ts'
+import { DRIVER_STATUSES } from './driver.ts'
 
 export function issues(error: z.ZodError) {
   return error.issues.map((i) => ({ path: i.path.map(String), message: i.message, code: i.code }))
@@ -137,7 +138,9 @@ export function createAdminRouter(deps: PlatformDeps): Router {
       return
     }
     const viewer = res.locals.viewer!
-    const { position, left } = await deps.driver.update(viewer, parsed.data)
+    const { position, started, left } = await deps.driver.update(viewer, parsed.data)
+    // The first position of a trip: tell the customer the driver set off (email now, push when configured).
+    if (started && position.bookingCode) await tellDriverNotice(position.bookingCode, 'on_the_way', position.name, position.etaMinutes).catch(() => undefined)
     // Live Activity: start or update the customer's, end the one the driver turned away from.
     await Promise.all([deps.push.driverMoved(position), deps.push.driverStopped(left)]).catch((error) => console.warn('[push]', (error as Error).message))
     res.status(204).end()
@@ -148,6 +151,23 @@ export function createAdminRouter(deps: PlatformDeps): Router {
     await deps.push.driverStopped(code).catch(() => undefined)
     res.status(204).end()
   }))
+
+  /**
+   * "On the way" and "arrived" mails, at most once per booking in a while (claimed in the database first, so a retry
+   * or a second phone cannot send twice). Only for bookings a driver can be heading to.
+   */
+  async function tellDriverNotice(code: string, kind: 'on_the_way' | 'arrived', driverName: string, etaMinutes?: number | null): Promise<boolean> {
+    const field = kind === 'on_the_way' ? 'driverNotice.onTheWayAt' : 'driverNotice.arrivedAt'
+    const quiet = new Date(Date.now() - (kind === 'on_the_way' ? 6 * 3600_000 : 30 * 60_000))
+    const claimed = await deps.db.collection('bookings').updateOne(
+      { code, status: { $in: DRIVER_STATUSES }, $or: [{ [field]: { $exists: false } }, { [field]: { $lt: quiet } }] },
+      { $set: { [field]: new Date() } },
+    )
+    if (!claimed.modifiedCount) return false
+    const booking = await bookings.detail(code)
+    if (booking) await deps.notifier.driverNotice(booking as never, kind, { name: driverName, etaMinutes })
+    return true
+  }
 
   // ---- push notifications (iOS) -----------------------------------------------------------
   const pushLimit = deps.limiters.create('push', 60_000, 20)
@@ -195,7 +215,10 @@ export function createAdminRouter(deps: PlatformDeps): Router {
   router.get('/admin/driver/live', adminLimit, staff, handle(async (_req, res) => {
     res.set('Cache-Control', 'no-store')
     const drivers = await deps.driver.live()
+    // Drivers not on a trip: where their last trip ended (the app tells "at the workshop" from that, by distance).
+    const idle = await deps.driver.lastSeen(drivers.map((d) => d.userId))
     res.json({
+      idle: idle.map((d) => ({ name: d.name, latitude: d.lat, longitude: d.lon, lastSeen: d.at.toISOString() })),
       drivers: drivers.map((d) => ({
         name: d.name,
         latitude: d.lat,
@@ -491,6 +514,21 @@ export function createAdminRouter(deps: PlatformDeps): Router {
       return
     }
     res.json(driverView(found))
+  }))
+
+  /** The driver is at the customer's address: the customer hears it (mail, and push when configured). */
+  drv.post('/bookings/:code/arrived', statusLimit, handle(async (req, res) => {
+    const code = codeParam.safeParse(req.params.code)
+    const found = code.success ? await bookings.detail(code.data) : null
+    if (!code.success || !found || !found.pickup) {
+      res.status(404).json({ error: 'not_found' })
+      return
+    }
+    const viewer = res.locals.viewer!
+    const name = viewer.name?.trim().split(/\s+/)[0] || 'Șofer'
+    const told = await tellDriverNotice(code.data, 'arrived', name)
+    if (told) await deps.push.driverArrived(code.data, name).catch(() => undefined)
+    res.json({ notified: told })
   }))
 
   /** Mark a delivery done, or leave a note. The status moves only to `done`, only from a finished repair. */

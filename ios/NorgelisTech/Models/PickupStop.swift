@@ -16,6 +16,8 @@ struct PickupStop: Identifiable, Hashable {
     var bookingStatus: BookingStatus?
     /// A delivery hands a repaired device back; otherwise the driver collects one.
     var isDelivery: Bool = false
+    /// "Lenovo ThinkPad T14", so the driver knows what to take or hand over.
+    var device: String = ""
 
     static func == (lhs: PickupStop, rhs: PickupStop) -> Bool {
         lhs.id == rhs.id && lhs.isCompleted == rhs.isCompleted
@@ -43,7 +45,8 @@ extension PickupStop {
             scheduledTime: job.leg == "deliver" ? String(localized: "driver.stop.to_deliver") : ShopCalendar.time(job.slot),
             isCompleted: isCompleted || job.completed == true,
             bookingStatus: job.status,
-            isDelivery: job.leg == "deliver" || (job.leg == nil && job.trips == .dropoff)
+            isDelivery: job.leg == "deliver" || (job.leg == nil && job.trips == .dropoff),
+            device: job.device
         )
     }
 }

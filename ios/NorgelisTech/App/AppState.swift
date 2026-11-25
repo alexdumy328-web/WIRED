@@ -17,6 +17,13 @@ final class AppState: ObservableObject {
     @Published var etaMinutes: Int = 12
     /// The stop whose details are open in the driver panel.
     @Published var focusedStopID: String?
+    /// The van is close to the stop: ask the driver whether they arrived (once per trip).
+    @Published var arrivalPrompt = false
+    /// The driver said they are at the door; the customer was told.
+    @Published var hasArrived = false
+    private var arrivalAsked = false
+    /// Within this distance of the stop the app asks "have you arrived?".
+    static let arrivalRadius: CLLocationDistance = 150
 
     // Bookings state for Owner and Customer
     @Published var bookings: [Booking] = APIClient.shared.useMockData ? MockData.bookings : []
@@ -66,6 +73,12 @@ final class AppState: ObservableObject {
                         // Live trips tell the server where the van is. Demo accounts and sample data stay on the phone.
                         if !self.apiClient.useMockData {
                             self.sharing.offer(fix, bookingCode: self.currentEnRouteStop?.bookingCode, etaMinutes: self.etaMinutes)
+                        }
+                        // Close to the door: ask once whether the driver is there.
+                        if !self.arrivalAsked, !self.hasArrived, let stop = self.currentEnRouteStop,
+                           here.distance(from: CLLocation(latitude: stop.coordinate.latitude, longitude: stop.coordinate.longitude)) < Self.arrivalRadius {
+                            self.arrivalAsked = true
+                            self.arrivalPrompt = true
                         }
                     } else {
                         // Idle fix: replan only when the driver really moved.
@@ -186,6 +199,7 @@ final class AppState: ObservableObject {
     // MARK: - Driver Actions
 
     func startTripToStop(_ stop: PickupStop) {
+        resetArrival()
         makeNext(stop)
         guard let target = stops.first(where: { $0.id == stop.id }) else { return }
         currentEnRouteStop = target
@@ -222,6 +236,7 @@ final class AppState: ObservableObject {
 
     /// The driver changes their mind before arriving. The stop stays on the list.
     func cancelTrip() {
+        resetArrival()
         tripTask?.cancel()
         sharing.stop()
         isDriverEnRoute = false
@@ -232,6 +247,7 @@ final class AppState: ObservableObject {
 
     func completeCurrentStop() {
         guard let current = currentEnRouteStop else { return }
+        resetArrival()
         tripTask?.cancel()
         if let idx = stops.firstIndex(where: { $0.id == current.id }) {
             stops[idx].isCompleted = true
@@ -254,6 +270,31 @@ final class AppState: ObservableObject {
         locationService.stopTracking()
         driverCoordinate = current.coordinate
         replan()
+    }
+
+    private func resetArrival() {
+        arrivalPrompt = false
+        hasArrived = false
+        arrivalAsked = false
+    }
+
+    /// The driver is at the door: the customer is told (mail, and push when the server has the key).
+    func markArrived() {
+        arrivalPrompt = false
+        arrivalAsked = true
+        hasArrived = true
+        guard let stop = currentEnRouteStop, !apiClient.useMockData else { return }
+        Task { try? await apiClient.requestVoid("POST", "api/driver/bookings/\(stop.bookingCode)/arrived", body: [:]) }
+    }
+
+    /// Nobody opened: a note on the booking for the workshop, and the stop stays to do (the trip ends).
+    func customerNotHome() {
+        guard let stop = currentEnRouteStop else { return }
+        if !apiClient.useMockData {
+            let note = String(localized: "driver.note.not_home")
+            Task { try? await apiClient.requestVoid("PATCH", "api/driver/bookings/\(stop.bookingCode)/status", body: ["note": note]) }
+        }
+        cancelTrip()
     }
 
     /// Tells the server the stop is done: a delivery closes the booking (and the customer gets the hand-back email),

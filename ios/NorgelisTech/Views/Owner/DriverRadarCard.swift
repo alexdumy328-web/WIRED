@@ -1,9 +1,11 @@
 import SwiftUI
+import CoreLocation
 
 /// Polls the drivers who are sharing right now, every 10 seconds while the Today tab is open.
 @MainActor
 final class DriverRadarModel: ObservableObject {
     @Published private(set) var drivers: [LiveDriver] = []
+    @Published private(set) var idle: [IdleDriver] = []
     @Published private(set) var failed = false
     private let api: APIClient
 
@@ -21,7 +23,8 @@ final class DriverRadarModel: ObservableObject {
             }
             do {
                 let next = try await api.fetchLiveDrivers()
-                if next != drivers { drivers = next }
+                if next.drivers != drivers { drivers = next.drivers }
+                if (next.idle ?? []) != idle { idle = next.idle ?? [] }
                 if failed { failed = false }
                 failures = 0
             } catch is CancellationError {
@@ -44,6 +47,13 @@ struct DriverRadarCard: View {
 
     private var live: LiveDriver? { model.drivers.first }
     private var moving: Bool { apiClient.useMockData ? appState.isDriverEnRoute : live != nil }
+    /// "At the workshop" only when the last trip ended within 200 m of it (or in demo mode, where it is the story).
+    private var lastStop: IdleDriver? { model.idle.first }
+    private func distanceFromShop(_ d: IdleDriver) -> CLLocationDistance {
+        CLLocation(latitude: d.latitude, longitude: d.longitude).distance(from: CLLocation(latitude: Shop.coordinate.latitude, longitude: Shop.coordinate.longitude))
+    }
+    private var atShop: Bool { apiClient.useMockData ? !appState.isDriverEnRoute : lastStop.map { distanceFromShop($0) < 200 } ?? false }
+    private var stateKey: String { moving ? "radar.moving" : atShop ? "radar.at_shop" : "radar.no_trip" }
     private var eta: Int? { apiClient.useMockData ? (appState.isDriverEnRoute ? appState.etaMinutes : nil) : live?.etaMinutes }
 
     var body: some View {
@@ -51,16 +61,16 @@ struct DriverRadarCard: View {
             HStack {
                 HStack(spacing: 8) {
                     Circle()
-                        .fill(moving ? Theme.ok : Theme.shop)
+                        .fill(moving ? Theme.ok : atShop ? Theme.shop : Color.secondary)
                         .frame(width: 10, height: 10)
                         .overlay(
                             Circle()
                                 .stroke(moving ? Theme.ok.opacity(0.4) : Color.clear, lineWidth: 6)
                                 .scaleEffect(moving ? 1.5 : 1.0)
                         )
-                    Text(LocalizedStringKey(moving ? "radar.moving" : "radar.at_shop"))
+                    Text(LocalizedStringKey(stateKey))
                         .font(.caption.bold())
-                        .foregroundColor(moving ? Theme.ok : Theme.shop)
+                        .foregroundColor(moving ? Theme.ok : atShop ? Theme.shop : .secondary)
                 }
                 Spacer()
                 if let eta {
@@ -103,8 +113,16 @@ struct DriverRadarCard: View {
             }
         } else if model.failed && !apiClient.useMockData {
             Text("radar.unavailable").font(.subheadline).foregroundColor(.secondary)
-        } else {
+        } else if !apiClient.useMockData, let d = lastStop {
+            // Not on a trip: where the last one ended, measured, not assumed.
+            let km = String(format: "%.1f", distanceFromShop(d) / 1000)
+            let time = ShopCalendar.parse(d.lastSeen).map(ShopCalendar.clock) ?? ""
+            Text(LocalizedStringKey(atShop ? "radar.last_at_shop \(d.name) \(time)" : "radar.last_seen \(d.name) \(time) \(km)"))
+                .font(.subheadline).foregroundColor(.secondary)
+        } else if apiClient.useMockData {
             Text("radar.waiting").font(.subheadline).foregroundColor(.secondary)
+        } else {
+            Text("radar.no_trip_detail").font(.subheadline).foregroundColor(.secondary)
         }
     }
 }

@@ -14,6 +14,8 @@ export type Notifier = {
   intakeReceived(booking: Booking, sheet: MailAttachment): Promise<MailOutcome>
   /** A warranty certificate sent on its own, when it is issued after the job was closed. */
   warrantyIssued(booking: Booking, label: string, endsOn: string, certificate: MailAttachment): Promise<MailOutcome>
+  /** The driver set off to the customer, or is at the door. Once per trip (the route decides). */
+  driverNotice(booking: Booking, kind: 'on_the_way' | 'arrived', driver: { name: string; etaMinutes?: number | null }): Promise<MailOutcome>
 }
 
 const SHOP = 'Norgelis Tech'
@@ -200,6 +202,26 @@ export function createNotifier(options: { mailer: Mailer; origin: string; ownerE
           : `Here is warranty certificate ${label} for job ${b.code}. It is valid until ${until} inclusive.\n\nKeep the certificate: bring it with the device if anything goes wrong.\n\n${SHOP}`,
         attachments: [certificate],
       })
+    },
+
+    async driverNotice(b, kind, driver) {
+      if (!b.contact.email) return 'skipped'
+      const ro = b.lang === 'ro'
+      const collect = !(b.status === 'ready' || b.status === 'unrepairable')
+      const what = ro ? (collect ? 'să ridice aparatul' : 'să-ți aducă aparatul') : collect ? 'to collect your device' : 'to bring your device back'
+      const eta = driver.etaMinutes != null && driver.etaMinutes > 0 ? (ro ? ` Ajunge în aproximativ ${driver.etaMinutes} minute.` : ` About ${driver.etaMinutes} minutes away.`) : ''
+      const name = driver.name && !/^(șofer|sofer|driver)$/i.test(driver.name) ? driver.name : ro ? 'Șoferul nostru' : 'Our driver'
+      const body =
+        kind === 'on_the_way'
+          ? ro
+            ? `${name} a pornit spre tine ${what}.${eta}\nUrmărește-l pe hartă: ${track(b.code)}`
+            : `${name} is on the way ${what}.${eta}\nFollow on the map: ${track(b.code)}`
+          : ro
+            ? `${name} a ajuns la adresa ta${b.pickup ? ` (${b.pickup.address})` : ''}. Te așteaptă.`
+            : `${name} is at your address${b.pickup ? ` (${b.pickup.address})` : ''} and waiting for you.`
+      const subject =
+        kind === 'on_the_way' ? (ro ? `${SHOP}: șoferul e pe drum (${b.code})` : `${SHOP}: your driver is on the way (${b.code})`) : ro ? `${SHOP}: șoferul a ajuns (${b.code})` : `${SHOP}: your driver is here (${b.code})`
+      return send({ to: b.contact.email, kind: `driver:${kind}`, subject, text: `${body}\n\n${ro ? 'Cod' : 'Code'}: ${b.code}\n\n${SHOP}` })
     },
 
     async statusChanged(b, attachments) {
