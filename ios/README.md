@@ -141,7 +141,7 @@ The app uses the website's colour system in light and dark (`Views/Theme.swift`)
 
 ## Screenshots
 
-`docs/screenshots/` holds simulator captures. The `prod-` files show the production flow: welcome, booking form, calendar, confirmation, customer repairs, call the driver, staff Today, Driver, More and the server address. The others show the driver panel, sign-in and console screens.
+`docs/screenshots/` holds simulator captures. The `prod-` files show the production flow: welcome, booking form, calendar, confirmation, customer repairs and call the driver, and the driver app (Today, Jobs, Schedule, one job, the live map from a real test server). The others show the driver panel, sign-in and console screens.
 
 ## API endpoints used
 
