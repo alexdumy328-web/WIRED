@@ -63,4 +63,5 @@ These need a decision or a change outside the app.
 3. Deploy, then check: `GET /api/health` answers `store: mongo`, `/confidentialitate` and `/termeni` load, and `POST /api/auth/delete-user` answers 401 (not 404) without a session.
 4. Build the app against it: `NORGELIS_API_BASE_URL=https://your-domain` (the same origin as `BETTER_AUTH_URL`). Set `NORGELIS_SUPPORT_EMAIL` and `NORGELIS_FEEDBACK_URL` when they exist, `DEVELOPMENT_TEAM`, and raise `CURRENT_PROJECT_VERSION`.
 5. Fill `OPERATOR` in `site/src/data/legal.ts` (company legal name, CUI, trade register, a contact email) and have the text read by a lawyer.
-6. Archive, upload to TestFlight, test on the owners' phones (sign in, book, run a delivery with two phones), then submit.
+6. Monitoring and backups: add a free uptime check (UptimeRobot or Better Stack) on `https://your-domain/api/health` every 5 minutes, alerting the owner by email, with a keyword check for `"store":"mongo"` (the route answers `ok` even on the throwaway store). In Atlas, check the tier's backup options and take a manual export before real customers arrive. Production refuses to start without `MONGODB_URI` (`VERCEL_ENV=production`), so a missing variable shows up as errors, not as lost bookings.
+7. Archive, upload to TestFlight, test on the owners' phones (sign in, book, run a delivery with two phones), then submit.

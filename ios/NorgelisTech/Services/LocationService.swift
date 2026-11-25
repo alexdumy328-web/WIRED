@@ -60,6 +60,9 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
     }
 
     private func beginUpdates() {
+        // During a trip every fix counts: a van parked at a door still reports, so it never drops off the customer's
+        // map. DriverSharing decides what is worth sending (a new spot, or every 20 s when standing still).
+        locationManager.distanceFilter = kCLDistanceFilterNone
         #if os(iOS)
         // Background updates crash the app unless the build declares the "location" background mode.
         let modes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String] ?? []
@@ -81,6 +84,7 @@ final class LocationService: NSObject, ObservableObject, CLLocationManagerDelega
 
     func stopTracking() {
         wantsTracking = false
+        locationManager.distanceFilter = 5.0
         // Nothing to stop, and nothing to ask the system about, when no trip ever started tracking.
         guard isUpdatingLocation || simulationTimer != nil else { return }
         locationManager.stopUpdatingLocation()

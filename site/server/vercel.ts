@@ -15,13 +15,16 @@ let ready: Promise<ReturnType<typeof createApp>> | null = null
 function boot() {
   ready ??= (async () => {
     const uri = process.env.MONGODB_URI?.trim()
+    // Production must never run on the throwaway /tmp store: bookings and accounts would vanish without a sound.
+    // Preview deployments may (they are demos). Failing every request loudly is the point.
+    if (!uri && process.env.VERCEL_ENV === 'production') throw new Error('MONGODB_URI is required in production')
     const store: Store = uri ? new MongoStore(uri, process.env.MONGODB_DB?.trim() || DEFAULT_DB_NAME) : new FileStore('/tmp/norgelis')
     if (!uri) console.warn('[api] MONGODB_URI is unset: bookings live in /tmp and disappear when the instance recycles')
     await store.init()
-    // Behind Vercel's proxy, trust X-Forwarded-For so the rate limit sees the client IP.
+    // Behind Vercel's proxy, trust exactly one hop: the address Vercel saw, not one the client wrote into the header.
     const platform = store instanceof MongoStore ? await createPlatform({ db: store.getDb(), storeKind: store.kind }) : undefined
     const app = createApp(store, { platform })
-    app.set('trust proxy', true)
+    app.set('trust proxy', 1)
     return app
   })().catch((err) => {
     ready = null // retry on the next request instead of caching the failure
