@@ -12,7 +12,7 @@ struct DriverHomeView: View {
                 .tabItem { Label("console.tab.today", systemImage: "sun.max.fill") }.tag(0)
             DriverJobsView()
                 .tabItem { Label("driver.tab.jobs", systemImage: "shippingbox.fill") }.tag(1)
-            DriverRootView()
+            DriverRootView(onClose: { tab = 0 })
                 .tabItem { Label("console.tab.driver", systemImage: "car.fill") }.tag(2)
             DriverScheduleView()
                 .tabItem { Label("console.tab.schedule", systemImage: "calendar") }.tag(3)

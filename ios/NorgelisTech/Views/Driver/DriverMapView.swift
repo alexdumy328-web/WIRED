@@ -7,8 +7,15 @@ struct DriverMapView: View {
     @EnvironmentObject var locationService: LocationService
     @ObservedObject var planner: DriverRoutePlanner
 
+    /// Closes the map (back to the previous tab). The sheet covers the tab bar, as in Apple Maps.
+    var onClose: (() -> Void)?
+
     @State private var detent: PanelDetent = .peek
     @State private var following = true
+    /// The system sheet is up only while the map is on screen.
+    @State private var sheetShown = false
+    /// The header's height: the sheet's smallest height.
+    @State private var peekHeight: CGFloat = 170
 
     @State private var cameraPosition: MapCameraPosition = .region(
         MKCoordinateRegion(
@@ -35,9 +42,19 @@ struct DriverMapView: View {
             .padding(.top, 8)
             .animation(.easeInOut(duration: 0.25), value: tripStop?.id)
 
-            // Recenter controls
+            // Close (top left) and recenter controls (top right)
             VStack {
-                HStack {
+                HStack(alignment: .top) {
+                    if let onClose {
+                        Button(action: onClose) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 16, weight: .semibold))
+                                .frame(width: 44, height: 44)
+                        }
+                        .foregroundColor(.primary)
+                        .glassCard(radius: 22)
+                        .accessibilityLabel(Text("common.close"))
+                    }
                     Spacer()
                     recenterControls
                 }
@@ -45,9 +62,21 @@ struct DriverMapView: View {
                 .padding(.top, tripStop == nil ? 12 : 92)
                 Spacer()
             }
-
-            panel
         }
+        .onAppear { sheetShown = true }
+        .onDisappear { sheetShown = false }
+        .sheet(isPresented: $sheetShown) {
+            panel
+                .environmentObject(appState)
+                .environmentObject(locationService)
+                .presentationDetents([.height(peekHeight), .fraction(PanelDetent.midFraction), .large], selection: detentBinding)
+                // The map stays usable under the small and middle heights.
+                .presentationBackgroundInteraction(.enabled(upThrough: .fraction(PanelDetent.midFraction)))
+                .presentationContentInteraction(.resizes)
+                .presentationDragIndicator(.visible)
+                .interactiveDismissDisabled()
+        }
+        .toolbar(onClose == nil ? .automatic : .hidden, for: .tabBar)
         .task { locationService.prepare() }
         .onChange(of: planner.legs.first?.id) { _, _ in
             if tripStop == nil { fitRoute() }
@@ -126,24 +155,40 @@ struct DriverMapView: View {
     @ViewBuilder
     private var panel: some View {
         if let stop = tripStop {
-            DriverPanel(detent: $detent) {
+            DriverPanel(peekHeight: $peekHeight) {
                 DriverTripHeader(planner: planner, stop: stop)
             } content: {
                 StopDetailContent(planner: planner, stop: stop)
             }
         } else if let stop = appState.focusedStop {
-            DriverPanel(detent: $detent) {
+            DriverPanel(peekHeight: $peekHeight) {
                 StopDetailHeader(planner: planner, stop: stop, onClose: closeStop)
             } content: {
                 StopDetailContent(planner: planner, stop: stop)
             }
         } else {
-            DriverPanel(detent: $detent) {
+            DriverPanel(peekHeight: $peekHeight) {
                 DriverListHeader(planner: planner, onOpen: focus)
             } content: {
                 DriverStopList(planner: planner, onOpen: focus)
             }
         }
+    }
+
+    /// The sheet's height, in the words the rest of the map uses.
+    private var detentBinding: Binding<PresentationDetent> {
+        Binding(
+            get: {
+                switch detent {
+                case .peek: return .height(peekHeight)
+                case .mid: return .fraction(PanelDetent.midFraction)
+                case .full: return .large
+                }
+            },
+            set: { value in
+                if value == .large { detent = .full } else if value == .fraction(PanelDetent.midFraction) { detent = .mid } else { detent = .peek }
+            }
+        )
     }
 
     // MARK: - Camera and focus

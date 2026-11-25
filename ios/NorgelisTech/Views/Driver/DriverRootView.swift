@@ -4,9 +4,11 @@ import SwiftUI
 struct DriverRootView: View {
     @EnvironmentObject var appState: AppState
     @EnvironmentObject var apiClient: APIClient
+    /// Back to the previous tab: the map's sheet covers the tab bar.
+    var onClose: (() -> Void)?
 
     var body: some View {
-        DriverMapView(planner: appState.planner)
+        DriverMapView(planner: appState.planner, onClose: onClose)
             .overlay(alignment: .top) { notice }
     }
 
