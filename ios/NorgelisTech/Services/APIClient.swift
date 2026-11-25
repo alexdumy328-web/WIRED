@@ -328,10 +328,8 @@ final class APIClient: ObservableObject {
     }
 
     /// Staff see every driver who is sharing right now.
-    func fetchLiveDrivers() async throws -> [LiveDriver] {
-        struct Reply: Decodable { var drivers: [LiveDriver] }
-        let reply: Reply = try await request("GET", "api/admin/driver/live")
-        return reply.drivers
+    func fetchLiveDrivers() async throws -> DriverRadar {
+        try await request("GET", "api/admin/driver/live")
     }
 
     // MARK: - Helper

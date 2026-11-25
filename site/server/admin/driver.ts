@@ -47,19 +47,23 @@ export function createDriverTracking(db: Db, now: () => number = Date.now) {
       col.createIndex({ userId: 1 }, { unique: true, name: 'userId' }),
       col.createIndex({ updatedAt: 1 }, { expireAfterSeconds: EXPIRE_SECONDS, name: 'ttl_24h' }),
       col.createIndex({ bookingCode: 1 }, { name: 'bookingCode', sparse: true }),
+      last.createIndex({ userId: 1 }, { unique: true, name: 'userId' }),
+      last.createIndex({ at: 1 }, { expireAfterSeconds: EXPIRE_SECONDS, name: 'ttl_24h' }),
     ]).catch(() => {
       // Try again next time instead of caching the failure (the unique and expiry indexes matter).
       ready = null
     }))
 
   const bookings = db.collection<{ code: string; status: string }>('bookings')
+  /** Where each driver was when their last trip ended, for the owner's "at the workshop or not" (24 h, then gone). */
+  const last = db.collection<{ userId: string; name: string; lat: number; lon: number; at: Date }>('driver_last')
   const cache = new Map<string, { at: number; value: DriverPosition | null }>()
   const cutoff = () => new Date(now() - FRESH_MS)
   const clean = <T extends Record<string, unknown>>(value: T) => Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined && v !== null)) as Partial<T>
 
   return {
     /** Saves the position. Returns it, and the booking the driver was heading to before, when that changed. */
-    async update(viewer: { id: string; name: string }, input: DriverUpdate): Promise<{ position: DriverPosition; left?: string }> {
+    async update(viewer: { id: string; name: string }, input: DriverUpdate): Promise<{ position: DriverPosition; started: boolean; left?: string }> {
       await ensureIndexes()
       const code = input.bookingCode ? input.bookingCode.toUpperCase() : undefined
       // The whole document is replaced, so a field the phone stopped sending (heading, ETA, destination) goes away.
@@ -78,13 +82,16 @@ export function createDriverTracking(db: Db, now: () => number = Date.now) {
       if (code) cache.delete(code)
       const left = before?.bookingCode && before.bookingCode !== code ? before.bookingCode : undefined
       if (left) cache.delete(left)
-      return { position: doc, ...(left ? { left } : {}) }
+      // A new trip: heading to this booking now, and was not a moment ago.
+      const started = Boolean(code) && before?.bookingCode !== code
+      return { position: doc, started, ...(left ? { left } : {}) }
     },
 
     /** Ends the share. Returns the booking the driver was heading to, if any. */
     async stop(userId: string): Promise<string | undefined> {
-      const gone = await col.findOneAndDelete({ userId })
-      const code = (gone as unknown as DriverPosition | null)?.bookingCode
+      const gone = (await col.findOneAndDelete({ userId })) as unknown as DriverPosition | null
+      if (gone) await last.replaceOne({ userId }, { userId, name: gone.name, lat: gone.lat, lon: gone.lon, at: new Date(now()) }, { upsert: true }).catch(() => undefined)
+      const code = gone?.bookingCode
       if (code) cache.delete(code)
       return code
     },
@@ -104,6 +111,12 @@ export function createDriverTracking(db: Db, now: () => number = Date.now) {
       if (cache.size >= 500) cache.delete(cache.keys().next().value as string)
       cache.set(key, { at: now(), value: found })
       return found
+    },
+
+    /** Drivers not on a trip now, with where their last trip ended. */
+    async lastSeen(exclude: string[]): Promise<{ userId: string; name: string; lat: number; lon: number; at: Date }[]> {
+      await ensureIndexes()
+      return last.find({ userId: { $nin: exclude } }, { projection: { _id: 0 } }).sort({ at: -1 }).limit(10).toArray()
     },
 
     async live(): Promise<DriverPosition[]> {

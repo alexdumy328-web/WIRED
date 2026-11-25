@@ -462,6 +462,11 @@ describe('bookings for owners and customers', () => {
     assert.equal((await call('/api/driver/location', { method: 'POST', cookie: owner, body: spot })).status, 204)
     assert.equal((await call('/api/driver/location', { method: 'DELETE', cookie: owner })).status, 204)
     assert.equal(await store.getDb().collection('driver_positions').countDocuments({}), 0, 'deleted when the trip ends')
+    // The owner still knows where the last trip ended, so "at the workshop" is not a guess.
+    const after = await call('/api/admin/driver/live', { cookie: owner })
+    assert.equal(after.body.drivers.length, 0)
+    assert.equal(after.body.idle.length, 1)
+    assert.equal(after.body.idle[0].latitude, spot.latitude)
     await store.getDb().collection('bookings').deleteOne({ code })
   })
 
@@ -480,6 +485,30 @@ describe('bookings for owners and customers', () => {
     assert.equal((await call('/api/bookings/NT-PUSH/activity', { method: 'POST', body: { token, env: 'production' } })).status, 204)
     assert.equal((await call('/api/bookings/NT-PUSH/activity', { method: 'POST', body: { token, env: 'staging' } })).status, 400)
     await store.getDb().collection('bookings').deleteOne({ code: 'NT-PUSH' })
+  })
+
+  test('the customer hears once when the driver sets off and once when the driver arrives', async () => {
+    const owner = await signIn(OWNER)
+    const db = store.getDb()
+    await db.collection('bookings').insertOne({ code: 'NT-ARRV', status: 'received', mode: 'shop', lang: 'ro', slot: '2031-01-08T08:00:00.000Z', contact: { name: 'Ana', phone: '0700000000', email: 'arrive@example.com' }, pickup: { address: 'Str. Palas 7A, Iași', lat: 47.1585, lon: 27.6014, trips: 'both', quote: { totalLei: 60, oneWayKm: 4 } } })
+    const mails = (kind: string) => db.collection('dev_outbox').countDocuments({ to: 'arrive@example.com', kind })
+    const spot = { latitude: 47.16, longitude: 27.58, bookingCode: 'NT-ARRV', etaMinutes: 8 }
+
+    assert.equal((await call('/api/driver/location', { method: 'POST', cookie: owner, body: spot })).status, 204)
+    assert.equal((await call('/api/driver/location', { method: 'POST', cookie: owner, body: { ...spot, latitude: 47.161 } })).status, 204)
+    assert.equal(await mails('driver:on_the_way'), 1, 'one mail for the trip, not one per position')
+
+    const arrived = await call('/api/driver/bookings/NT-ARRV/arrived', { method: 'POST', cookie: owner, body: {} })
+    assert.equal(arrived.status, 200)
+    assert.equal(arrived.body.notified, true)
+    assert.equal((await call('/api/driver/bookings/NT-ARRV/arrived', { method: 'POST', cookie: owner, body: {} })).body.notified, false, 'twice is once')
+    assert.equal(await mails('driver:arrived'), 1)
+    assert.equal((await call('/api/driver/bookings/NT-NONE/arrived', { method: 'POST', cookie: owner, body: {} })).status, 404)
+    const customer = await signIn('arrive-customer@example.com')
+    assert.equal((await call('/api/driver/bookings/NT-ARRV/arrived', { method: 'POST', cookie: customer, body: {} })).status, 403)
+
+    await call('/api/driver/location', { method: 'DELETE', cookie: owner })
+    await db.collection('bookings').deleteOne({ code: 'NT-ARRV' })
   })
 
   test('Google sign-in hands the website session to the app through a one-time code', async () => {

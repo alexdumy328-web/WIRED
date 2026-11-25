@@ -466,6 +466,8 @@ struct DriverTripHeader: View {
     @ObservedObject var planner: DriverRoutePlanner
     let stop: PickupStop
     @State private var confirmCancel = false
+    @State private var confirmNotHome = false
+    @Environment(\.openURL) private var openURL
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -485,17 +487,69 @@ struct DriverTripHeader: View {
                 Spacer(minLength: 4)
                 CloseButton(label: "driver.trip.cancel") { confirmCancel = true }
             }
-            SlideToConfirm(title: "driver.trip.slide", tint: Theme.ok) {
-                appState.completeCurrentStop()
+            if appState.hasArrived {
+                arrivedControls
+            } else {
+                // At the door: the customer is told, then the hand-over controls appear.
+                Button { appState.markArrived() } label: {
+                    Label("driver.arrive.button", systemImage: "mappin.and.ellipse")
+                        .font(.headline).frame(maxWidth: .infinity, minHeight: 50)
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.pickup)
             }
         }
         .padding(.horizontal, 16)
         .padding(.bottom, 14)
+        .animation(.snappy, value: appState.hasArrived)
+        // Asked once, when the van is within 150 m of the stop.
+        .alert(Text("driver.arrive.ask_title \(stop.customerName)"), isPresented: $appState.arrivalPrompt) {
+            Button("driver.arrive.yes") { appState.markArrived() }
+            Button("driver.arrive.not_yet", role: .cancel) {}
+        } message: {
+            Text("driver.arrive.ask_message")
+        }
+        .confirmationDialog("driver.arrive.not_home_title", isPresented: $confirmNotHome, titleVisibility: .visible) {
+            Button("driver.arrive.not_home_confirm", role: .destructive) { appState.customerNotHome() }
+            Button("driver.trip.keep", role: .cancel) {}
+        } message: {
+            Text("driver.arrive.not_home_message")
+        }
         .confirmationDialog("driver.trip.cancel_title", isPresented: $confirmCancel, titleVisibility: .visible) {
             Button("driver.trip.cancel", role: .destructive) { appState.cancelTrip() }
             Button("driver.trip.keep", role: .cancel) {}
         } message: {
             Text("driver.trip.cancel_message \(stop.customerName)")
         }
+    }
+
+    /// At the door: what to take or hand over, the hand-over itself, a call, or "nobody opened".
+    private var arrivedControls: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Label {
+                Text(LocalizedStringKey(stop.isDelivery ? "driver.arrive.hand_over \(stop.device)" : "driver.arrive.collect \(stop.device)"))
+                    .font(.subheadline.bold())
+            } icon: {
+                Image(systemName: stop.isDelivery ? "shippingbox.and.arrow.backward.fill" : "shippingbox.fill").foregroundColor(Theme.pickup)
+            }
+            .opacity(stop.device.isEmpty ? 0 : 1)
+            SlideToConfirm(title: stop.isDelivery ? "driver.arrive.slide_delivered" : "driver.arrive.slide_collected", tint: Theme.ok) {
+                appState.completeCurrentStop()
+            }
+            HStack(spacing: 10) {
+                if let url = Shop.telURL(stop.customerPhone) {
+                    Button { openURL(url) } label: {
+                        Label("driver.arrive.call", systemImage: "phone.fill").frame(maxWidth: .infinity, minHeight: 44)
+                    }
+                    .buttonStyle(.bordered)
+                }
+                Button { confirmNotHome = true } label: {
+                    Label("driver.arrive.not_home", systemImage: "person.crop.circle.badge.xmark").frame(maxWidth: .infinity, minHeight: 44)
+                }
+                .buttonStyle(.bordered)
+                .tint(Theme.danger)
+            }
+        }
+        .transition(.opacity.combined(with: .move(edge: .bottom)))
     }
 }
