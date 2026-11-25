@@ -46,15 +46,15 @@ export function Contact() {
             ))}
           </ul>
           <OpenStatus className="mt-5 inline-flex" />
-          <div className="mt-8 flex flex-wrap gap-3">
-            <a href={`tel:${SHOP.phone}`} className="btn btn-gold">
+          <div className="mt-7 grid gap-2.5 sm:mt-8 sm:flex sm:flex-wrap sm:gap-3">
+            <a href={`tel:${SHOP.phone}`} className="btn btn-gold w-full sm:w-auto">
               <Phone className="size-4" />
               {t.contact.call}
             </a>
-            <a href={`https://wa.me/${SHOP.phone.replace('+', '')}`} className="btn btn-ghost" target="_blank" rel="noreferrer">
+            <a href={`https://wa.me/${SHOP.phone.replace('+', '')}`} className="btn btn-ghost w-full sm:w-auto" target="_blank" rel="noreferrer">
               {t.contact.whatsapp}
             </a>
-            <a href={SHOP.maps} className="btn btn-ghost" target="_blank" rel="noreferrer">
+            <a href={SHOP.maps} className="btn btn-ghost w-full sm:w-auto" target="_blank" rel="noreferrer">
               {t.contact.directions}
             </a>
           </div>
@@ -78,7 +78,7 @@ export function Footer() {
       <div className="mx-auto flex max-w-[1360px] flex-col gap-6 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-10">
         <Logo />
         <div className="grid gap-2 text-[14px] text-muted sm:justify-items-end">
-          <nav aria-label={t.footer.privacy + ' / ' + t.footer.terms} className="flex gap-5">
+          <nav aria-label={t.footer.privacy + ' / ' + t.footer.terms} className="flex flex-wrap gap-x-5 gap-y-2">
             <a href="/confidentialitate" onClick={linkTo('/confidentialitate')} className="underline decoration-gold underline-offset-4 hover:text-ink">
               {t.footer.privacy}
             </a>

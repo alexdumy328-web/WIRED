@@ -140,6 +140,15 @@ export function Header() {
   }, [])
   useEffect(() => {
     document.body.style.overflow = open ? 'hidden' : ''
+    if (!open) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      document.body.style.overflow = ''
+      window.removeEventListener('keydown', onKey)
+    }
   }, [open])
 
   const onHome = pageOf(usePath()) === null
@@ -156,78 +165,83 @@ export function Header() {
   const themeBtn = <ThemeButton />
 
   return (
-    <header
-      className={`fixed inset-x-0 top-0 z-50 transition-[background-color,border-color] duration-300 ${scrolled ? 'scrim border-b border-line' : 'border-b border-transparent'}`}
-    >
-      <div className="mx-auto flex h-16 max-w-[1320px] items-center gap-6 px-4 sm:px-6">
-        <a href={onHome ? '#top' : '/'} onClick={onHome ? undefined : linkTo('/')} className="shrink-0 rounded-md" aria-label="Norgelis Tech">
-          <Logo draw />
-        </a>
-        <nav className="ml-4 hidden items-center gap-5 whitespace-nowrap text-[15px] xl:flex">
-          {links.map(([href, label]) => (
-            <a key={href} href={base + href} className="text-muted transition-colors hover:text-ink">
-              <Roll text={label} />
-            </a>
-          ))}
-        </nav>
-        <div className="ml-auto flex shrink-0 items-center gap-2.5">
-          <OpenStatus className="mr-2 hidden min-[1560px]:inline-flex" />
-          <div className="hidden items-center gap-2 sm:flex">
-            {langSwitch}
-            {themeBtn}
+    <>
+      <header
+        className={`fixed inset-x-0 top-0 z-50 transition-[background-color,border-color] duration-300 ${scrolled ? 'scrim border-b border-line' : 'border-b border-transparent'}`}
+      >
+        <div className="mx-auto flex h-16 max-w-[1320px] items-center gap-6 px-4 sm:px-6">
+          <a href={onHome ? '#top' : '/'} onClick={onHome ? undefined : linkTo('/')} className="shrink-0 rounded-md" aria-label="Norgelis Tech">
+            <Logo draw />
+          </a>
+          <nav className="ml-4 hidden items-center gap-5 whitespace-nowrap text-[15px] xl:flex">
+            {links.map(([href, label]) => (
+              <a key={href} href={base + href} className="text-muted transition-colors hover:text-ink">
+                <Roll text={label} />
+              </a>
+            ))}
+          </nav>
+          <div className="ml-auto flex shrink-0 items-center gap-2.5">
+            <OpenStatus className="mr-2 hidden min-[1560px]:inline-flex" />
+            <div className="hidden items-center gap-2 sm:flex">
+              {langSwitch}
+              {themeBtn}
+            </div>
+            <AccountLink />
+            <button type="button" onClick={() => openBooking()} className="btn btn-gold hidden h-10 min-h-0 sm:inline-flex">
+              {t.nav.book}
+            </button>
+            <button
+              type="button"
+              className="grid size-10 place-items-center rounded-full border border-line xl:hidden"
+              onClick={() => setOpen(true)}
+              aria-label={t.nav.openMenu}
+              aria-expanded={open}
+            >
+              <Menu />
+            </button>
           </div>
-          <AccountLink />
-          <button type="button" onClick={() => openBooking()} className="btn btn-gold hidden h-10 min-h-0 sm:inline-flex">
-            {t.nav.book}
-          </button>
-          <button
-            type="button"
-            className="grid size-10 place-items-center rounded-full border border-line xl:hidden"
-            onClick={() => setOpen(true)}
-            aria-label={t.nav.openMenu}
-            aria-expanded={open}
-          >
-            <Menu />
-          </button>
         </div>
-      </div>
+      </header>
 
+      {/* Rendered outside <header> so .scrim's backdrop-filter never traps position:fixed inside the 64px header bar. */}
       <AnimatePresence>
         {open && (
           <motion.div
-            className="fixed inset-0 z-50 flex flex-col bg-bg px-4 pb-8 sm:px-6"
+            className="fixed inset-0 z-[70] flex flex-col overflow-y-auto overscroll-contain bg-bg px-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:px-6"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.2 }}
             role="dialog"
             aria-modal="true"
+            aria-label={t.nav.sections}
+            data-lenis-prevent
           >
-            <div className="flex h-16 items-center justify-between">
+            <div className="flex h-16 shrink-0 items-center justify-between">
               <Logo />
               <button type="button" className="grid size-10 place-items-center rounded-full border border-line" onClick={() => setOpen(false)} aria-label={t.nav.closeMenu}>
                 <Close />
               </button>
             </div>
-            <nav className="mt-6 flex flex-col">
+            <nav className="mt-2 flex flex-col sm:mt-6">
               {[...links, ['#status', t.nav.track] as const, ['/cont', t.account.nav] as const].map(([href, label], i) => (
                 <motion.a
                   key={href}
-                  href={href}
+                  href={href.startsWith('#') ? base + href : href}
                   onClick={(e) => {
                     setOpen(false)
                     if (href.startsWith('/')) linkTo(href)(e)
                   }}
-                  className="display-2 border-b border-line py-4 text-3xl"
-                  initial={{ opacity: 0, y: 12 }}
+                  className="display-2 border-b border-line py-3 text-2xl sm:py-4 sm:text-3xl"
+                  initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.04 * i, duration: 0.3 }}
+                  transition={{ delay: 0.03 * i, duration: 0.25 }}
                 >
                   {label}
                 </motion.a>
               ))}
             </nav>
-            <div className="mt-auto flex flex-col gap-5">
+            <div className="mt-auto flex flex-col gap-4 pt-6 sm:gap-5">
               <OpenStatus className="inline-flex" />
               <div className="flex items-center gap-3">
                 {langSwitch}
@@ -247,6 +261,6 @@ export function Header() {
           </motion.div>
         )}
       </AnimatePresence>
-    </header>
+    </>
   )
 }

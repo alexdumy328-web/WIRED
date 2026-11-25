@@ -98,7 +98,7 @@ export function TodayTab({ onOpen, version, onGo }: { onOpen: (code: string) => 
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
-        <section className="rounded-[20px] border border-line bg-surface p-5 sm:p-6" aria-labelledby="agenda-title">
+        <section className="min-w-0 rounded-[20px] border border-line bg-surface p-5 sm:p-6" aria-labelledby="agenda-title">
           <div className="flex items-center justify-between gap-3">
             <h2 id="agenda-title" className="text-lg font-bold first-letter:uppercase">
               {data && data.day !== today ? fmt(d.agendaNext, { day: new Intl.DateTimeFormat(lang === 'ro' ? 'ro-RO' : 'en-GB', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(new Date(`${data.day}T12:00:00Z`)) }) : d.agenda}
@@ -120,14 +120,14 @@ export function TodayTab({ onOpen, version, onGo }: { onOpen: (code: string) => 
               {data.slots.map((s, i) => {
                 const past = isToday && Date.parse(s.slot) + 3600_000 <= now
                 return (
-                  <li key={s.code} className="relative grid grid-cols-[3.5rem_1.25rem_minmax(0,1fr)] gap-x-3">
+                  <li key={s.code} className="relative grid grid-cols-[3.25rem_1rem_minmax(0,1fr)] gap-x-2 sm:grid-cols-[3.5rem_1.25rem_minmax(0,1fr)] sm:gap-x-3">
                     {i === nextIndex && i > 0 && (
                       <div className="col-span-3 -mt-1 mb-2 flex items-center gap-2" aria-hidden="true">
                         <span className="text-[11px] font-bold uppercase tracking-wider text-danger">{d.now}</span>
                         <span className="h-px flex-1 bg-danger/60" />
                       </div>
                     )}
-                    <span className={`pt-3 text-right font-mono text-[14px] font-bold ${past ? 'text-muted' : ''}`}>{fmtDate.time(s.slot)}</span>
+                    <span className={`pt-3 text-right font-mono text-[13px] font-bold sm:text-[14px] ${past ? 'text-muted' : ''}`}>{fmtDate.time(s.slot)}</span>
                     <span className="relative flex justify-center">
                       <span className={`absolute top-0 w-px ${i === data.slots.length - 1 ? 'h-5' : 'h-full'} bg-line`} aria-hidden="true" />
                       <span className={`relative mt-4 size-3 rounded-full border-2 ${past ? 'border-line bg-surface-2' : `${KIND_TONE[kindOf(s)].border} bg-surface`}`} aria-hidden="true" />
@@ -135,7 +135,7 @@ export function TodayTab({ onOpen, version, onGo }: { onOpen: (code: string) => 
                     <button
                       type="button"
                       onClick={() => onOpen(s.code)}
-                      className={`mb-2.5 flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-[14px] border border-line px-4 py-3 text-left transition-colors hover:border-gold/60 hover:bg-surface-2/50 ${past ? 'opacity-60' : ''}`}
+                      className={`mb-2.5 flex min-w-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 rounded-[14px] border border-line px-3 py-2.5 text-left transition-colors hover:border-gold/60 hover:bg-surface-2/50 sm:px-4 sm:py-3 ${past ? 'opacity-60' : ''}`}
                     >
                       <span className="min-w-0">
                         <span className="block truncate font-semibold">{s.name}</span>
@@ -154,7 +154,7 @@ export function TodayTab({ onOpen, version, onGo }: { onOpen: (code: string) => 
           )}
         </section>
 
-        <section className="rounded-[20px] border border-line bg-surface p-5 sm:p-6" aria-labelledby="ready-title">
+        <section className="min-w-0 overflow-hidden rounded-[20px] border border-line bg-surface p-5 sm:p-6" aria-labelledby="ready-title">
           <div className="flex items-center justify-between gap-3">
             <h2 id="ready-title" className="text-lg font-bold">
               {c.today.handbackList}
@@ -172,10 +172,10 @@ export function TodayTab({ onOpen, version, onGo }: { onOpen: (code: string) => 
           ) : data.ready.length === 0 ? (
             <p className="mt-8 pb-4 text-center text-muted">{c.today.handbackEmpty}</p>
           ) : (
-            <ul className="mt-4 grid gap-1">
+            <ul className="mt-4 flex flex-col gap-1">
               {data.ready.map((b) => (
-                <li key={b.code} className="flex items-center gap-2 rounded-[12px] pr-2 transition-colors hover:bg-surface-2">
-                  <button type="button" onClick={() => onOpen(b.code)} className="flex min-w-0 flex-1 items-center gap-3 rounded-[12px] px-2 py-2.5 text-left">
+                <li key={b.code} className="flex w-full min-w-0 items-center gap-2 rounded-[12px] pr-2 transition-colors hover:bg-surface-2">
+                  <button type="button" onClick={() => onOpen(b.code)} className="flex min-w-0 flex-1 items-center gap-3 overflow-hidden rounded-[12px] px-2 py-2.5 text-left">
                     <Initials name={b.contact.name} />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-semibold">{b.contact.name}</span>

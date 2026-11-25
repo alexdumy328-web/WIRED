@@ -29,9 +29,12 @@ function turnaround() {
 function TurnaroundChart() {
   const { t } = useI18n()
   const rows = turnaround()
-  const maxH = Math.max(...rows.map((r) => r.max), 24)
-  const ticksDays = Array.from({ length: Math.ceil(maxH / 24) + 1 }, (_, i) => i)
-  const scale = (h: number) => (h / (ticksDays.at(-1)! * 24)) * 100
+  const maxDays = Math.ceil(Math.max(...rows.map((r) => r.max), 24) / 24)
+  const step = maxDays > 6 ? 2 : 1
+  const ticksDays: number[] = []
+  for (let d = 0; d <= maxDays; d += step) ticksDays.push(d)
+  if (ticksDays.at(-1) !== maxDays) ticksDays.push(maxDays)
+  const scale = (h: number) => (h / (maxDays * 24)) * 100
   const label = (h: number) => (h < 24 ? fmt(t.eta.hours, { n: h }) : fmt(t.eta.days, { n: Math.ceil(h / 24) }))
 
   return (
@@ -39,7 +42,47 @@ function TurnaroundChart() {
       <figcaption className="text-[15px] font-semibold" style={{ fontStretch: '110%' }}>
         {t.eta.chartTitle}
       </figcaption>
-      <div className="mt-4 grid grid-cols-[minmax(7rem,auto)_1fr] items-center pr-12 gap-x-4 gap-y-3 text-[14px]">
+
+      {/* Phones: full-width bars below each category header so short ranges stay readable. */}
+      <div className="mt-4 grid gap-3.5 text-[14px] sm:hidden">
+        {rows.map((r) => (
+          <div key={r.c} className="grid gap-1.5">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="text-muted">{t.services.categories[r.c as Exclude<typeof r.c, 'auto'>].name}</span>
+              <span className="shrink-0 text-[13px] font-semibold tabular-nums text-ink">{label(r.max)}</span>
+            </div>
+            <div className="relative h-4" title={`${label(r.min)} – ${label(r.max)}`}>
+              <span className="absolute inset-x-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-surface-2" aria-hidden="true" />
+              {ticksDays.map((d) => (
+                <span key={d} className="absolute inset-y-0 w-px bg-line/70" style={{ left: `${scale(d * 24)}%` }} aria-hidden="true" />
+              ))}
+              <motion.span
+                className="absolute top-1/2 h-2.5 -translate-y-1/2 rounded-full bg-gold"
+                style={{ left: `${scale(r.min)}%` }}
+                initial={{ width: 0 }}
+                whileInView={{ width: `${Math.max(scale(r.max) - scale(r.min), 2)}%` }}
+                viewport={{ once: true, amount: 0.1 }}
+                transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              />
+            </div>
+          </div>
+        ))}
+        <div className="relative mt-1 h-4 text-[12px] text-muted" aria-hidden="true">
+          {ticksDays.map((d, i) => (
+            <span
+              key={d}
+              className={`absolute ${i === 0 ? 'translate-x-0' : i === ticksDays.length - 1 ? '-translate-x-full' : '-translate-x-1/2'}`}
+              style={{ left: `${scale(d * 24)}%` }}
+            >
+              {d}
+            </span>
+          ))}
+        </div>
+        <span className="-mt-2 text-right text-[12px] text-muted">{t.eta.chartUnit}</span>
+      </div>
+
+      {/* Tablet and desktop */}
+      <div className="mt-4 hidden grid-cols-[minmax(7rem,auto)_1fr] items-center gap-x-4 gap-y-3 pr-12 text-[14px] sm:grid">
         {rows.map((r) => (
           <div key={r.c} className="contents">
             <span className="text-muted">{t.services.categories[r.c as Exclude<typeof r.c, 'auto'>].name}</span>

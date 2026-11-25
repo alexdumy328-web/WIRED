@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from 'react'
-import { motion } from 'motion/react'
 import { fmt, useI18n } from '../i18n'
 import { Section } from '../components/Section'
 import { DevicePanel } from '../components/Scene3D'
@@ -39,23 +38,25 @@ export function Process() {
   return (
     <Section id="proces" title={t.process.title}>
       {/* Phones and tablets */}
-      <ol className="relative grid gap-8 md:grid-cols-5 md:gap-6 lg:hidden">
-        <motion.span
+      <ol className="relative grid gap-7 md:grid-cols-5 md:gap-6 lg:hidden">
+        <span
           aria-hidden="true"
-          className="absolute left-[11px] top-3 bottom-3 w-[2px] origin-top bg-gold md:inset-x-3 md:bottom-auto md:top-[11px] md:h-[2px] md:w-auto md:origin-left"
-          initial={{ scale: 0 }}
-          whileInView={{ scale: 1 }}
-          viewport={{ once: true, margin: '-20% 0px' }}
-          transition={{ duration: 1.2, ease: [0.65, 0, 0.35, 1] }}
+          className="hidden md:block md:absolute md:inset-x-3 md:top-[calc(0.75rem-1px)] md:h-[2px] md:bg-gold/70"
         />
         {steps.map((s, i) => (
-          <li key={s.title} className="relative flex gap-5 md:block">
+          <li key={s.title} className="relative flex gap-4 md:block">
+            {i < steps.length - 1 && (
+              <span
+                aria-hidden="true"
+                className="absolute -bottom-7 left-[calc(0.75rem-1px)] top-6 w-[2px] bg-gold/70 md:hidden"
+              />
+            )}
             <span className="relative z-10 grid size-6 shrink-0 place-items-center rounded-full border-2 border-gold bg-bg text-[11px] font-bold text-gold">{i + 1}</span>
-            <div className="md:mt-6">
+            <div className="min-w-0 md:mt-6">
               <p className="font-semibold" style={{ fontStretch: '110%' }}>
                 {s.title}
               </p>
-              <p className="mt-2 text-[15px] text-muted">{s.body}</p>
+              <p className="mt-1.5 text-[15px] text-muted md:mt-2">{s.body}</p>
             </div>
           </li>
         ))}

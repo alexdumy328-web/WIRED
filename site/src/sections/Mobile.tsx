@@ -45,7 +45,7 @@ export function Mobile() {
       <StageCard model={model} className="mt-5 lg:hidden" label={t.mobile.tabs[tab]} hint={t.services.stageHint} />
       <AnimatePresence mode="wait" initial={false}>
         <motion.div key={tab} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.22 }}>
-          <ul className="mt-7 grid gap-3 sm:grid-cols-2">
+          <ul className="mt-6 grid gap-3 text-[15px] sm:mt-7 sm:grid-cols-2 sm:text-[17px]">
             {t.mobile.points[tab].map((p) => (
               <li key={p} className="flex gap-3">
                 <Check className="mt-0.5 size-5 shrink-0 text-gold" />
@@ -53,7 +53,7 @@ export function Mobile() {
               </li>
             ))}
           </ul>
-          <ul className="mt-8 rounded-[24px] border border-line bg-surface px-5 sm:px-7 [&>li:last-child]:border-0">
+          <ul className="mt-6 rounded-[24px] border border-line bg-surface px-4 sm:mt-8 sm:px-7 [&>li:last-child]:border-0">
             {jobs.map((j) => (
               <JobRow key={j.id} job={j} onBook={() => preselect([j.id], 'mobile')} />
             ))}
@@ -63,8 +63,8 @@ export function Mobile() {
       </div>
       </div>
 
-      <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-4">
-        <button type="button" className="btn btn-gold" onClick={() => preselect([], 'mobile')}>
+      <div className="mt-7 flex flex-col gap-4 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-8">
+        <button type="button" className="btn btn-gold w-full sm:w-auto" onClick={() => preselect([], 'mobile')}>
           {t.mobile.bookThis}
         </button>
         <p className="flex items-start gap-2 text-[15px] text-muted">

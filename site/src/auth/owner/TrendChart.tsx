@@ -119,7 +119,7 @@ export function TrendChart({
           <LineChart data={rows} margin={{ top: 8, right: 8, bottom: 0, left: 0 }}>
             <CartesianGrid vertical={false} stroke={c['--line']} />
             <XAxis dataKey="label" tickLine={false} axisLine={{ stroke: c['--line'] }} tick={{ fill: c['--muted'], fontSize: 12 }} minTickGap={12} interval="preserveStartEnd" />
-            <YAxis tickLine={false} axisLine={false} tick={{ fill: c['--muted'], fontSize: 12 }} tickFormatter={(v: number) => format(v)} width={64} allowDecimals={false} />
+            <YAxis tickLine={false} axisLine={false} tick={{ fill: c['--muted'], fontSize: 12 }} tickFormatter={(v: number) => format(v)} width={76} allowDecimals={false} />
             <Tooltip content={Tip} cursor={{ stroke: c['--muted'], strokeWidth: 1 }} isAnimationActive={false} />
             {series.map((s) => (
               <Line

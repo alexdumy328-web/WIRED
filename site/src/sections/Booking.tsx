@@ -116,7 +116,7 @@ function BookingModal() {
     // Everything beside the dialog goes inert, so Tab cannot reach the page hidden behind it.
     const node = dialog.current
     const undoInert = inertOutside(node)
-    node?.querySelector<HTMLElement>('button, input, textarea')?.focus()
+    node?.focus()
     return () => {
       undoInert()
       lockPage(false)
@@ -369,7 +369,8 @@ function BookingModal() {
       role="dialog"
       aria-modal="true"
       aria-labelledby="booking-title"
-      className="fixed inset-0 z-[90] flex flex-col bg-bg"
+      tabIndex={-1}
+      className="fixed inset-0 z-[90] flex flex-col bg-bg outline-none"
       initial={{ opacity: 0, y: 24 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 24 }}
@@ -779,7 +780,7 @@ function BookingModal() {
                   </motion.div>
                 </AnimatePresence>
 
-                <aside className="h-fit rounded-[18px] border border-line bg-surface p-5" aria-live="polite">
+                <aside className={`h-fit rounded-[18px] border border-line bg-surface p-5 ${step === 0 ? 'hidden xl:block' : ''}`} aria-live="polite">
                   <p className="text-[14px] font-semibold">{t.booking.summary.title}</p>
                   <dl className="mt-3 grid gap-3 text-[14px]">
                     {transport > 0 && (
@@ -816,26 +817,41 @@ function BookingModal() {
                   {est.needsDiagnosis && <p className="mt-2 text-[13px] text-muted">{t.booking.summary.diagnosisNote}</p>}
                 </aside>
               </div>
-
-              <div className="mt-8 flex items-center justify-between gap-3">
-                <button type="button" className="btn btn-ghost" onClick={() => setStep((s) => Math.max(s - 1, 0) as Step)} disabled={step === 0} style={{ visibility: step === 0 ? 'hidden' : 'visible' }}>
-                  {t.booking.back}
-                </button>
-                {step < 3 ? (
-                  <button type="button" className="btn btn-gold" onClick={next}>
-                    {t.booking.next}
-                  </button>
-                ) : (
-                  <button type="button" className="btn btn-gold" onClick={submit} disabled={sending}>
-                    {sending ? t.booking.sending : t.booking.submit}
-                  </button>
-                )}
-              </div>
             </>
           )}
         </div>
       </div>
       </div>
+      {!done && (
+        <div className="shrink-0 border-t border-line bg-bg px-4 py-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 lg:mr-[40vw]">
+          <div className="mx-auto flex max-w-[56rem] items-center justify-between gap-3">
+            <button
+              type="button"
+              className="btn btn-ghost min-h-11 px-4 text-[15px] sm:min-h-12 sm:px-[1.35rem] sm:text-[17px]"
+              onClick={() => setStep((s) => Math.max(s - 1, 0) as Step)}
+              disabled={step === 0}
+              style={{ visibility: step === 0 ? 'hidden' : 'visible' }}
+            >
+              {t.booking.back}
+            </button>
+            {priceText !== '–' && (
+              <div className="min-w-0 text-center xl:hidden">
+                <p className="truncate text-[15px] font-bold tabular-nums">{priceText}</p>
+                {est.etaHours[1] > 0 && <p className="truncate text-[12px] text-muted">{formatEta(est.etaHours, lang)}</p>}
+              </div>
+            )}
+            {step < 3 ? (
+              <button type="button" className="btn btn-gold min-h-11 px-5 text-[15px] sm:min-h-12 sm:px-[1.35rem] sm:text-[17px]" onClick={next}>
+                {t.booking.next}
+              </button>
+            ) : (
+              <button type="button" className="btn btn-gold min-h-11 px-5 text-[15px] sm:min-h-12 sm:px-[1.35rem] sm:text-[17px]" onClick={submit} disabled={sending}>
+                {sending ? t.booking.sending : t.booking.submit}
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </motion.div>
   )
 }

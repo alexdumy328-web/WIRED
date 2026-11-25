@@ -511,4 +511,15 @@ final class PushAndLinksTests: XCTestCase {
         XCTAssertEqual(m.day, "2026-12-09")
         XCTAssertFalse(m.urgent, "future day must not carry same-day urgent surcharge")
     }
+
+    func testStatsAxisFormattingAndTickThinning() {
+        XCTAssertEqual(StatsView.tickIndices(count: 0), [])
+        XCTAssertEqual(StatsView.tickIndices(count: 3), [0, 1, 2])
+        XCTAssertEqual(StatsView.tickIndices(count: 12), [0, 4, 7, 11])
+        XCTAssertEqual(StatsView.compactAxisNumber(0), "0")
+        XCTAssertEqual(StatsView.compactAxisNumber(650), "650")
+        XCTAssertEqual(StatsView.compactAxisNumber(1_000), "1k")
+        XCTAssertEqual(StatsView.compactAxisNumber(12_500), "12.5k")
+        XCTAssertEqual(StatsView.compactAxisNumber(1_200_000), "1.2M")
+    }
 }

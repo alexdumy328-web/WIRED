@@ -128,8 +128,8 @@ struct KpiCard: View {
                     .background(tint.opacity(0.14))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(title).font(.caption).foregroundColor(.secondary)
-                    Text(value).font(.title2.bold()).monospacedDigit().foregroundColor(.primary)
+                    Text(title).font(.caption).foregroundColor(.secondary).lineLimit(2)
+                    Text(value).font(.title2.bold()).monospacedDigit().foregroundColor(.primary).lineLimit(1).minimumScaleFactor(0.72)
                 }
                 Spacer(minLength: 0)
             }
