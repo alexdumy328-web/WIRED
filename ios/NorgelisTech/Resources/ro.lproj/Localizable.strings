@@ -421,7 +421,7 @@
 "dev.health.ok %@" = "Conectat! Store: %@";
 
 /* Production flow */
-"welcome.lead" = "Reparăm electronica până la componentă. Laptopuri, PC-uri, espressoare și electrică auto, în atelier sau la tine.";
+"welcome.lead" = "Reparații electronice în Iași — atelier, ridicare sau la tine.";
 "welcome.book" = "Programare";
 "welcome.sign_in" = "Autentifică-te";
 "welcome.create" = "Creează cont";
@@ -437,8 +437,8 @@
 "customer.call_driver" = "Sună șoferul";
 "booking.title" = "Programare nouă";
 "booking.new" = "Programare nouă";
-"booking.kind.hint.shop" = "Aduci aparatul la atelier, Bd. Alexandru cel Bun 49. Diagnosticul e gratuit dacă faci reparația la noi.";
-"booking.kind.hint.pickup" = "Ridicăm aparatul de la adresa ta și îl aducem înapoi reparat. Transportul se plătește separat.";
+"booking.kind.hint.shop" = "Aduci aparatul pe Bd. Alexandru cel Bun 49.";
+"booking.kind.hint.pickup" = "Ridicăm și livrăm înapoi. Transportul se taxează separat.";
 "booking.kind.hint.mobile" = "Venim noi la mașina ta sau acasă la tine, în Iași.";
 "booking.section.what" = "Ce trebuie reparat";
 "booking.section.when" = "Când";
@@ -532,7 +532,7 @@
 "account.feedback" = "Trimite feedback";
 "account.delete.staff" = "Contul de personal nu se șterge din aplicație";
 "account.delete.reauth_title" = "Confirmă ștergerea";
-"account.delete.reauth" = "Din motive de securitate, introdu parola contului. Dacă te autentifici doar cu cod pe email, intră din nou în cont și șterge-l în cel mult o zi.";
+"account.delete.reauth" = "Introdu parola, sau intră din nou dacă folosești cod pe email.";
 "account.delete.signin_again" = "Intră din nou în cont";
 "account.delete.email_subject" = "Cerere de ștergere a contului";
 "account.delete.email_body %@" = "Vă rog să ștergeți contul asociat adresei %@.";
@@ -642,7 +642,7 @@
 "progress.explain.cancelled" = "";
 "customer.repairs.active" = "În atelier";
 "customer.repairs.upcoming" = "Programate";
-"progress.explain.received.pickup" = "Șoferul vine la adresa ta la ora aleasă și ia aparatul. Primești un email când pornește spre tine.";
+"progress.explain.received.pickup" = "Șoferul ridică aparatul la ora aleasă.";
 "progress.explain.received.collected" = "Aparatul e la noi. Urmează diagnoza.";
 "progress.explain.received.mobile" = "Tehnicianul vine la tine la ora aleasă.";
 "customer.pickup.today %@" = "Șoferul vine azi la %@";
@@ -686,7 +686,7 @@
 "customer.live.offline" = "Conexiune pierdută — reîncercăm…";
 "customer.live.stale %lld" = "Ultima actualizare acum %lld min";
 "customer.live.recenter" = "Recentrează";
-"booking.kind.hint.dropoff" = "Aduci aparatul la atelier, iar noi îl livrăm înapoi reparat. Transportul se plătește separat.";
+"booking.kind.hint.dropoff" = "Îl aduci la atelier, noi îl livrăm înapoi. Transportul se taxează separat.";
 "booking.address.dropoff" = "Adresa de livrare";
 "booking.address.search_failed" = "Căutarea adresei nu funcționează acum.";
 "booking.address.pick_hint" = "Alege o adresă din lista de mai jos.";

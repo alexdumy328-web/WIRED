@@ -401,7 +401,7 @@ const en: Dict = {
     iosApp: {
       title: 'iPhone app',
       download: 'Download the app (Sideloadly)',
-      hint: 'Until it is on the App Store, install it with Sideloadly from a PC or Mac and a free Apple ID. The steps are on the download page. The install expires after 7 days and is refreshed from Sideloadly.',
+      hint: 'Install via Sideloadly on Mac or PC with a free Apple ID. Refresh every 7 days — steps are on the download page.',
     },
     adminBar: { nav: 'Dashboards', owner: 'Owner', dev: 'Developer', site: 'View the site' },
     bookings: {

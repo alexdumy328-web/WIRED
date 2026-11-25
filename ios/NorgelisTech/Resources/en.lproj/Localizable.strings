@@ -421,7 +421,7 @@
 "dev.health.ok %@" = "Connected! Store: %@";
 
 /* Production flow */
-"welcome.lead" = "We repair electronics down to the component. Laptops, PCs, espresso machines and car electrics, in the workshop or at your place.";
+"welcome.lead" = "Electronics repair in Iași — workshop, pickup or on site.";
 "welcome.book" = "Book a repair";
 "welcome.sign_in" = "Sign in";
 "welcome.create" = "Create account";
@@ -437,8 +437,8 @@
 "customer.call_driver" = "Call the driver";
 "booking.title" = "New booking";
 "booking.new" = "New booking";
-"booking.kind.hint.shop" = "You bring the device to the workshop, Bd. Alexandru cel Bun 49. Diagnosis is free if you repair with us.";
-"booking.kind.hint.pickup" = "We collect the device from your address and bring it back repaired. Transport is charged separately.";
+"booking.kind.hint.shop" = "Drop off at Bd. Alexandru cel Bun 49.";
+"booking.kind.hint.pickup" = "We collect and return it. Transport is billed separately.";
 "booking.kind.hint.mobile" = "We come to your car or home in Iași.";
 "booking.section.what" = "What needs repair";
 "booking.section.when" = "When";
@@ -532,7 +532,7 @@
 "account.feedback" = "Send feedback";
 "account.delete.staff" = "A staff account cannot be deleted in the app";
 "account.delete.reauth_title" = "Confirm deletion";
-"account.delete.reauth" = "For security, enter the account password. If you sign in with an email code only, sign in again and delete the account within a day.";
+"account.delete.reauth" = "Enter your password, or sign in again if you use email codes.";
 "account.delete.signin_again" = "Sign in again";
 "account.delete.email_subject" = "Account deletion request";
 "account.delete.email_body %@" = "Please delete the account linked to %@.";
@@ -642,7 +642,7 @@
 "progress.explain.cancelled" = "";
 "customer.repairs.active" = "In the workshop";
 "customer.repairs.upcoming" = "Upcoming";
-"progress.explain.received.pickup" = "The driver comes to your address at the time you picked. You get an email when they set off.";
+"progress.explain.received.pickup" = "The driver collects your device at the chosen time.";
 "progress.explain.received.collected" = "Your device is with us. Diagnosis is next.";
 "progress.explain.received.mobile" = "The technician comes to you at the time you picked.";
 "customer.pickup.today %@" = "Driver comes today at %@";
@@ -686,7 +686,7 @@
 "customer.live.offline" = "Connection lost — retrying…";
 "customer.live.stale %lld" = "Last updated %lld min ago";
 "customer.live.recenter" = "Recenter";
-"booking.kind.hint.dropoff" = "You bring the device to the workshop; we deliver it back once repaired. Transport is charged separately.";
+"booking.kind.hint.dropoff" = "You drop it off; we deliver it back. Transport is billed separately.";
 "booking.address.dropoff" = "Delivery address";
 "booking.address.search_failed" = "Address search is unavailable right now.";
 "booking.address.pick_hint" = "Select an address from the list below.";

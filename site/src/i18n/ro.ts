@@ -401,7 +401,7 @@ const ro: Dict = {
     iosApp: {
       title: 'Aplicația iPhone',
       download: 'Descarcă aplicația (Sideloadly)',
-      hint: 'Până apare în App Store, se instalează cu Sideloadly de pe un PC sau Mac, cu un Apple ID gratuit. Pașii sunt pe pagina de descărcare. Instalarea expiră după 7 zile și se reîmprospătează din Sideloadly.',
+      hint: 'Se instalează cu Sideloadly de pe Mac sau PC, cu un Apple ID gratuit. Se reîmprospătează la 7 zile — pașii sunt pe pagina de descărcare.',
     },
     adminBar: { nav: 'Panouri de lucru', owner: 'Proprietar', dev: 'Dezvoltator', site: 'Vezi site-ul' },
     bookings: {
