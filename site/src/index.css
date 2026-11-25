@@ -1,0 +1,347 @@
+@import 'tailwindcss';
+
+/* Tokens come from the workshop: matte black paint, LED-lit white walls,
+   concrete floor grey, ENIG gold pads, green and blue soldermask. */
+:root {
+  --bg: #f2f4f5;
+  --surface: #ffffff;
+  --surface-2: #e8ebed;
+  --ink: #15171a;
+  --muted: #596068;
+  --line: #d7dce0;
+  --gold: #8f6a10;
+  --gold-soft: #d9a93f;
+  --ok: #1e6b4a;
+  --danger: #b3372e;
+  --blue: #2f5e9e;
+  /* Status dots: their own hues, so they never read as workshop, pickup or on site. */
+  --violet: #6b4fb8;
+  --rose: #b8456f;
+  --on-gold: #ffffff;
+  --scrim: rgb(242 244 245 / 0.82);
+  /* Chart series, validated for colour-blind separation and contrast on each theme's surface. */
+  --chart-1: #8f6a10;
+  --chart-2: #2f5e9e;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --bg: #121314;
+    --surface: #1a1c1e;
+    --surface-2: #222528;
+    --ink: #eef1f2;
+    --muted: #8c9298;
+    --line: #2b2e31;
+    --gold: #d9a93f;
+    --gold-soft: #d9a93f;
+    --ok: #42b075;
+    --danger: #ff6b5e;
+    --blue: #6a9ae0;
+    --violet: #a48be8;
+    --rose: #ef7fa8;
+    --on-gold: #121314;
+    --scrim: rgb(18 19 20 / 0.78);
+    --chart-1: #b98a26;
+    --chart-2: #4a7ec4;
+    color-scheme: dark;
+  }
+}
+
+:root[data-theme='dark'] {
+  --bg: #121314;
+  --surface: #1a1c1e;
+  --surface-2: #222528;
+  --ink: #eef1f2;
+  --muted: #8c9298;
+  --line: #2b2e31;
+  --gold: #d9a93f;
+  --gold-soft: #d9a93f;
+  --ok: #42b075;
+  --danger: #ff6b5e;
+  --blue: #6a9ae0;
+    --violet: #a48be8;
+    --rose: #ef7fa8;
+  --on-gold: #121314;
+  --scrim: rgb(18 19 20 / 0.78);
+  --chart-1: #b98a26;
+  --chart-2: #4a7ec4;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-line: var(--line);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-ok: var(--ok);
+  --color-danger: var(--danger);
+  --color-blue: var(--blue);
+  --color-violet: var(--violet);
+  --color-rose: var(--rose);
+  --color-on-gold: var(--on-gold);
+  --font-sans: 'Archivo', ui-sans-serif, system-ui, sans-serif;
+}
+
+html {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 17px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-variant-numeric: tabular-nums;
+}
+
+body {
+  background: var(--bg);
+  min-height: 100dvh;
+  overflow-x: clip;
+}
+
+/* Lenis */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+/* Wide, heavy display type: silkscreen on a board. */
+.display {
+  font-family: var(--font-sans);
+  font-stretch: 118%;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 0.98;
+  text-wrap: balance;
+}
+.display-2 {
+  font-stretch: 112%;
+  font-weight: 750;
+  letter-spacing: -0.015em;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+.measure {
+  max-width: 62ch;
+}
+
+::selection {
+  background: var(--gold-soft);
+  color: #121314;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+@layer components {
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  min-height: 3rem;
+  padding: 0 1.35rem;
+  border-radius: 999px;
+  font-weight: 650;
+  font-stretch: 105%;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease,
+    border-color 160ms ease;
+  white-space: nowrap;
+}
+.btn:active {
+  transform: translateY(1px);
+}
+.btn-gold {
+  background: var(--gold);
+  color: var(--on-gold);
+}
+.btn-gold:hover {
+  background: color-mix(in oklab, var(--gold) 86%, var(--ink));
+}
+.btn-ghost {
+  border: 1px solid color-mix(in oklab, var(--ink) 24%, transparent);
+  color: var(--ink);
+}
+.btn-ghost:hover {
+  border-color: var(--ink);
+}
+
+.field {
+  width: 100%;
+  min-height: 3rem;
+  padding: 0.7rem 0.95rem;
+  border-radius: 10px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  color: var(--ink);
+  transition: border-color 140ms ease;
+}
+.field::placeholder {
+  color: color-mix(in oklab, var(--muted) 80%, transparent);
+}
+.field:hover {
+  border-color: color-mix(in oklab, var(--ink) 30%, transparent);
+}
+.field:focus-visible {
+  outline: none;
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px color-mix(in oklab, var(--gold) 28%, transparent);
+}
+.field[aria-invalid='true'] {
+  border-color: var(--danger);
+}
+
+}
+
+/* Frosted background for the fixed header. */
+.scrim {
+  background: var(--scrim);
+  -webkit-backdrop-filter: blur(14px) saturate(1.2);
+  backdrop-filter: blur(14px) saturate(1.2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Per-letter roll on hover: each letter slides up to reveal its copy. */
+.roll {
+  display: inline-flex;
+  overflow: hidden;
+  line-height: 1.25;
+  vertical-align: bottom;
+}
+.roll-ch {
+  position: relative;
+  display: inline-block;
+  transition: transform 320ms cubic-bezier(0.65, 0, 0.35, 1);
+}
+.roll-ch::after {
+  content: attr(data-ch);
+  position: absolute;
+  left: 0;
+  top: 100%;
+}
+a:hover > .roll .roll-ch,
+a:focus-visible > .roll .roll-ch {
+  transform: translateY(-100%);
+}
+
+/* Signals running along the background traces. */
+.nt-signal {
+  stroke-dashoffset: 1000;
+  opacity: 0.55;
+  animation: nt-signal linear infinite;
+}
+@keyframes nt-signal {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .nt-signal {
+    display: none;
+  }
+}
+
+/* Part label next to a highlighted part in the 3D viewer. */
+.nt-part-label {
+  display: inline-block;
+  padding: 0.3rem 0.65rem;
+  border-radius: 999px;
+  background: var(--gold-soft);
+  color: #121314;
+  font: 650 12px/1 var(--font-sans);
+  font-stretch: 108%;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 0.25);
+}
+
+/* -------------------------------------------------------------------------- */
+/* PickupMap Leaflet styles                                                   */
+/* -------------------------------------------------------------------------- */
+.nt-shop-icon,
+.nt-customer-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.leaflet-container {
+  font-family: var(--font-sans) !important;
+  background: var(--surface-2) !important;
+}
+
+.leaflet-bar a {
+  background-color: var(--surface) !important;
+  color: var(--ink) !important;
+  border-bottom: 1px solid var(--line) !important;
+}
+
+.leaflet-bar a:hover {
+  background-color: var(--surface-2) !important;
+  color: var(--ink) !important;
+}
+
+.leaflet-tooltip {
+  background: var(--surface) !important;
+  color: var(--ink) !important;
+  border: 1px solid var(--line) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  padding: 4px 8px !important;
+}
+
+.leaflet-control-attribution {
+  margin: 0 10px 8px 0 !important;
+  padding: 1px 8px !important;
+  border-radius: 999px;
+  background: color-mix(in oklab, var(--bg) 85%, transparent) !important;
+  color: var(--muted) !important;
+  font-size: 11px !important;
+}
+.leaflet-control-attribution a {
+  color: var(--ink) !important;
+}
+
+.leaflet-tooltip-top:before {
+  border-top-color: var(--line) !important;
+}
+
+/* OpenStreetMap tiles tuned to the site palette. */
+.nt-tiles-light {
+  filter: grayscale(0.55) contrast(0.95) brightness(1.03);
+}
+.nt-tiles-dark {
+  filter: invert(1) hue-rotate(180deg) grayscale(0.6) brightness(0.85) contrast(0.9);
+}
+
+/* Closed hours in the owner week calendar. */
+.closed-hatch {
+  background-image: repeating-linear-gradient(135deg, color-mix(in oklab, var(--muted) 30%, transparent) 0 1px, transparent 1px 9px);
+  background-color: color-mix(in oklab, var(--surface-2) 45%, transparent);
+}

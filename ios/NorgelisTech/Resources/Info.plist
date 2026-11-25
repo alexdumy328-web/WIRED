@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>CFBundleExecutable</key>
+    <string>$(EXECUTABLE_NAME)</string>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>ro</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+        <string>ro</string>
+        <string>en</string>
+    </array>
+    <key>CFBundleDisplayName</key>
+    <string>Norgelis Tech</string>
+    <key>CFBundleIdentifier</key>
+    <string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+    <key>CFBundleName</key>
+    <string>$(PRODUCT_NAME)</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleShortVersionString</key>
+    <string>$(MARKETING_VERSION)</string>
+    <key>CFBundleVersion</key>
+    <string>$(CURRENT_PROJECT_VERSION)</string>
+    <key>LSRequiresIPhoneOS</key>
+    <true/>
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.business</string>
+
+    <!-- The app talks to the shop server over HTTPS and uses no encryption of its own. -->
+    <key>ITSAppUsesNonExemptEncryption</key>
+    <false/>
+
+    <key>UILaunchScreen</key>
+    <dict>
+        <key>UIColorName</key>
+        <string>LaunchBackground</string>
+    </dict>
+    <key>UISupportedInterfaceOrientations</key>
+    <array>
+        <string>UIInterfaceOrientationPortrait</string>
+    </array>
+
+    <!-- Lets the app ask whether Waze is installed -->
+    <key>LSApplicationQueriesSchemes</key>
+    <array>
+        <string>waze</string>
+    </array>
+
+    <!-- Location: the driver map and route, and sharing the van position during a trip, also in the background. -->
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>Norgelis Tech folosește locația ca să arate poziția ta pe hartă, să calculeze traseul și, în timpul unei curse, să le arate clienților și atelierului unde ești. Funcționează și când treci în Waze.</string>
+    <!-- Keeps the position coming while the driver is in Waze. Only during a trip, with the blue status bar indicator. -->
+    <key>UIBackgroundModes</key>
+    <array>
+        <string>location</string>
+    </array>
+
+    <!-- The driver on the way, on the lock screen and in the Dynamic Island. -->
+    <key>NSSupportsLiveActivities</key>
+    <true/>
+
+    <!-- The norgelis URL scheme (norgelis:booking/NT-4K7Q) opens a booking from the Live Activity. Booking links from emails use Universal Links. Never write two slashes in a comment here: the plist is run through the C preprocessor. -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>ro.norgelis.app</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>norgelis</string>
+            </array>
+        </dict>
+    </array>
+
+    <!-- Build settings, set in project.yml or on the command line. -->
+    <key>NorgelisAPIBaseURL</key>
+    <string>$(NORGELIS_API_BASE_URL)</string>
+    <key>NorgelisSiteOrigin</key>
+    <string>$(NORGELIS_SITE_ORIGIN)</string>
+    <key>NorgelisSupportEmail</key>
+    <string>$(NORGELIS_SUPPORT_EMAIL)</string>
+    <key>NorgelisPhone</key>
+    <string>$(NORGELIS_PHONE)</string>
+    <key>NorgelisDriverPhone</key>
+    <string>$(NORGELIS_DRIVER_PHONE)</string>
+    <key>NorgelisPrivacyURL</key>
+    <string>$(NORGELIS_PRIVACY_URL)</string>
+    <key>NorgelisTermsURL</key>
+    <string>$(NORGELIS_TERMS_URL)</string>
+    <key>NorgelisFeedbackURL</key>
+    <string>$(NORGELIS_FEEDBACK_URL)</string>
+
+#ifdef DEBUG_BUILD
+    <!-- Debug builds may reach a server on this Mac or the local network. Release builds are HTTPS only. -->
+    <key>NSLocalNetworkUsageDescription</key>
+    <string>Norgelis Tech se conectează la serverul de dezvoltare din rețeaua locală.</string>
+    <key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsLocalNetworking</key>
+        <true/>
+    </dict>
+#endif
+</dict>
+</plist>

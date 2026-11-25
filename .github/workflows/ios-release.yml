@@ -1,0 +1,140 @@
+name: iOS Release (.ipa for Sideloadly)
+
+on:
+  push:
+    tags:
+      - 'ios-v*'
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'Release tag name (e.g. ios-v1.0.0)'
+        required: false
+        default: ''
+      api_base_url:
+        description: 'Optional NORGELIS_API_BASE_URL override'
+        required: false
+        default: ''
+      site_origin:
+        description: 'Optional NORGELIS_SITE_ORIGIN override'
+        required: false
+        default: ''
+
+permissions:
+  contents: write
+
+jobs:
+  build-ipa:
+    name: Build Unsigned NorgelisTech.ipa
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Ensure XcodeGen is installed
+        run: |
+          if ! command -v xcodegen >/dev/null 2>&1; then
+            brew install xcodegen
+          fi
+
+      - name: Generate Xcode project
+        working-directory: ios
+        run: xcodegen generate
+
+      - name: Archive unsigned Release build
+        working-directory: ios
+        # The production address comes from the dispatch input, else the repository variable NORGELIS_API_BASE_URL
+        # (Settings -> Secrets and variables -> Actions -> Variables), else the project.yml default.
+        env:
+          API_BASE_URL: ${{ inputs.api_base_url || vars.NORGELIS_API_BASE_URL }}
+          SITE_ORIGIN: ${{ inputs.site_origin || vars.NORGELIS_SITE_ORIGIN }}
+        run: |
+          EXTRA_ARGS=()
+          if [ -n "$API_BASE_URL" ]; then
+            EXTRA_ARGS+=("NORGELIS_API_BASE_URL=$API_BASE_URL")
+            # Universal Links follow the same domain.
+            EXTRA_ARGS+=("NORGELIS_APP_LINK_DOMAIN=$(echo "$API_BASE_URL" | sed -E 's#^https?://##; s#/.*$##')")
+          fi
+          if [ -n "$SITE_ORIGIN" ]; then
+            EXTRA_ARGS+=("NORGELIS_SITE_ORIGIN=$SITE_ORIGIN")
+          fi
+
+          xcodebuild \
+            -project NorgelisTech.xcodeproj \
+            -scheme NorgelisTech \
+            -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath build/NorgelisTech.xcarchive \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO \
+            DEVELOPMENT_TEAM="" \
+            "${EXTRA_ARGS[@]}" \
+            archive
+
+      - name: Package unsigned .ipa
+        working-directory: ios
+        run: |
+          mkdir -p build/ipa/Payload
+          cp -R build/NorgelisTech.xcarchive/Products/Applications/NorgelisTech.app build/ipa/Payload/
+          cd build/ipa
+          zip -qry ../NorgelisTech.ipa Payload
+          ls -lh ../NorgelisTech.ipa
+
+      - name: Determine release tag
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            echo "name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+          elif [ -n "${{ inputs.tag_name }}" ]; then
+            echo "name=${{ inputs.tag_name }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "name=ios-poc-${{ github.run_number }}" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Publish GitHub Release with Sideloadly instructions
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.name }}
+          name: Norgelis Tech iOS (${{ steps.tag.outputs.name }})
+          # Not a prerelease: /releases/latest (linked from the account page) skips prereleases.
+          prerelease: false
+          make_latest: true
+          files: ios/build/NorgelisTech.ipa
+          body: |
+            ## Norgelis Tech iOS App (POC — Unsigned `.ipa`)
+
+            Download **`NorgelisTech.ipa`** from the Assets section below and install it on any iPhone (iOS 18.0+) for free using **Sideloadly** on Windows or macOS.
+
+            ---
+
+            ### How to Install with Sideloadly (Free Apple ID)
+
+            #### 1. Prerequisites (Windows & macOS)
+            - **Windows:**
+              1. Install **iTunes** and **iCloud** directly from Apple's website (not the Microsoft Store versions).
+              2. Download and install **Sideloadly** from [sideloadly.io](https://sideloadly.io/).
+            - **macOS:**
+              1. Download and install **Sideloadly** from [sideloadly.io](https://sideloadly.io/).
+            - Download **`NorgelisTech.ipa`** from this release's **Assets** below.
+
+            #### 2. Sideload onto your iPhone
+            1. Connect your iPhone to your PC/Mac with a USB cable and tap **Trust** on the iPhone if prompted.
+            2. Open **Sideloadly**.
+            3. Confirm your iPhone appears in the **iDevice** dropdown.
+            4. Drag **`NorgelisTech.ipa`** into Sideloadly (or click the IPA icon to select it).
+            5. Enter your **Apple ID** email (any free Apple ID works).
+            6. Click **Start** and enter your Apple ID password / 2FA code if prompted.
+            7. Wait until Sideloadly shows **`Done`**.
+
+            #### 3. Trust the App on iOS
+            1. On your iPhone, open **Settings → General → VPN & Device Management**.
+            2. Under **Developer App**, tap your Apple ID email.
+            3. Tap **Trust** and confirm.
+            4. If iOS asks to enable **Developer Mode** (iOS 16+): go to **Settings → Privacy & Security → Developer Mode**, turn it on, and restart your iPhone.
+            5. Open **Norgelis Tech** from your Home Screen.
+
+            #### 4. Notes for Free Apple IDs
+            - Apps signed with a free Apple ID **expire after 7 days** and are limited to **3 active sideloaded apps** per device.
+            - To refresh before/after 7 days, enable **Wi-Fi Refresh** in Sideloadly (while your PC/Mac is on the same Wi-Fi) or re-run Sideloadly over USB without deleting the app.
+            - A free Apple ID cannot sign push notifications or Universal Links, so this build gets no status alerts and booking links open the website. The driver Live Activity still shows while the app is open. TestFlight or the App Store build has all of it.
