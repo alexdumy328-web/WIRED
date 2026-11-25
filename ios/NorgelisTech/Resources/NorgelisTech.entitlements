@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Status alerts and the driver Live Activity (server: APNS_* on Vercel). -->
+    <key>aps-environment</key>
+    <string>production</string>
+    <!-- Booking links in emails open the app; saved website passwords fill the sign-in form. -->
+    <key>com.apple.developer.associated-domains</key>
+    <array>
+        <string>applinks:$(NORGELIS_APP_LINK_DOMAIN)</string>
+        <string>webcredentials:$(NORGELIS_APP_LINK_DOMAIN)</string>
+    </array>
+</dict>
+</plist>

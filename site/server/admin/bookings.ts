@@ -6,7 +6,7 @@ import { ACTIVE_STATUSES, COLLECTION_NAME, isDuplicateKeyError } from '../store.
 import type { Counters } from './counters.ts'
 import { addDays, localDate, localYear, mondayOf, startOfLocalDay } from './time.ts'
 
-type Doc = Booking & { _id?: unknown }
+type Doc = Booking & { _id?: unknown; collectedAt?: string }
 
 const categoryOf = new Map(catalog.map((job) => [job.id, job.category]))
 const CI = { locale: 'en', strength: 2 } as const

@@ -378,6 +378,11 @@ const ro: Dict = {
     profile: { title: 'Profil', name: 'Nume', email: 'Email', role: 'Rol', verified: 'Confirmat', notVerified: 'Neconfirmat' },
     roles: { customer: 'Client', driver: 'Șofer', technician: 'Tehnician', owner: 'Proprietar', dev: 'Dezvoltator' },
     dashboards: { title: 'Panouri de lucru', owner: 'Panoul proprietarului', dev: 'Panoul dezvoltatorului' },
+    iosApp: {
+      title: 'Aplicația iPhone',
+      download: 'Descarcă aplicația (Sideloadly)',
+      hint: 'Până apare în App Store, se instalează cu Sideloadly de pe un PC sau Mac, cu un Apple ID gratuit. Pașii sunt pe pagina de descărcare. Instalarea expiră după 7 zile și se reîmprospătează din Sideloadly.',
+    },
     adminBar: { nav: 'Panouri de lucru', owner: 'Proprietar', dev: 'Dezvoltator', site: 'Vezi site-ul' },
     bookings: {
       title: 'Programările mele',

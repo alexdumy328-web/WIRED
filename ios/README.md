@@ -55,9 +55,10 @@ Everything that differs between builds is a build setting in `project.yml`. Over
 | `NORGELIS_API_BASE_URL` | The server the app talks to. | `https://norgelis.ro` (placeholder, set the real domain) |
 | `NORGELIS_SITE_ORIGIN` | The website origin Better Auth trusts (`BETTER_AUTH_URL` or `APP_ORIGINS`). Needed when the API address is not that origin, for example `http://localhost:5173` in dev. | empty |
 | `NORGELIS_PHONE`, `NORGELIS_DRIVER_PHONE` | The shop and driver numbers (Call, WhatsApp, Call the driver). The app only builds `tel:` links, it never dials by itself. An empty value hides the matching row. The driver number falls back to the shop number. | shop `+40 (771) 332 210`, driver `(0758) 561 001` |
-| `NORGELIS_SUPPORT_EMAIL` | Support address shown in Account. Empty hides the row. | empty |
+| `NORGELIS_SUPPORT_EMAIL` | Fallback support address for Account. The server's `SUPPORT_EMAIL` (Vercel) wins. | empty |
 | `NORGELIS_PRIVACY_URL`, `NORGELIS_TERMS_URL` | Legal links in Account. When empty they follow the server address: `<server>/confidentialitate` and `<server>/termeni`, pages the website serves. | empty |
-| `NORGELIS_FEEDBACK_URL` | A Google Form link for in-app feedback (Account and the welcome screen). Empty hides the row. | empty |
+| `NORGELIS_FEEDBACK_URL` | Fallback Google Form link for in-app feedback. The server's `FEEDBACK_URL` (Vercel, read from `GET /api/config` at launch) wins, so the link changes without a new build. Neither set hides the row. | empty |
+| `NORGELIS_APP_LINK_DOMAIN` | The website domain for Universal Links (booking links in emails open the app) and shared passwords. Release only; the server must have `APPLE_TEAM_ID`. | `norgelis.ro` (placeholder) |
 | `MARKETING_VERSION`, `CURRENT_PROJECT_VERSION` | Version and build number. Raise the build number for every App Store upload. | `1.0.0`, `1` |
 
 Debug builds also allow a plain HTTP server on the local network (`NSAllowsLocalNetworking` and the local network prompt text, added through plist preprocessing). Release builds are HTTPS only and have neither key.
@@ -84,12 +85,19 @@ Customers book from the welcome screen (no account) or the plus button in My rep
 
 ## Driver and live tracking
 
-- Today's stops come from `GET /api/admin/pickups?date=` and refresh when the Driver tab opens. Done stops are remembered on the phone for the day (booking codes only). Completing a stop updates the booking on the server: a delivery sets it to `done`, a pickup adds a history note. Nobody is emailed from there.
+- Today's stops come from `GET /api/driver/pickups?date=` and refresh when the Driver tab opens. Done comes from the server, so it survives a reinstall. Completing a stop updates the booking: a delivery sets it to `done` and emails the hand-back, a pickup records the collection.
 - The map draws the real driving route (Apple Maps directions) through the remaining stops. Navigate opens Waze or Apple Maps (`LSApplicationQueriesSchemes` lists `waze`).
 - **Tracking is real.** During a trip the phone posts its position to `POST /api/driver/location` and deletes it when the trip ends (`Services/DriverSharing.swift`). It sends at most one request at a time, 5 seconds apart, only when the driver moved 15 m or 20 seconds passed, and nothing when no trip runs. The `location` background mode keeps it going when the driver switches to Waze (blue indicator on, only during a trip).
 - **Customers** see the driver on the booking while one is heading to it (`GET /api/bookings/:code/driver`, polled every 5 s when the driver is within 10 minutes, 10 s otherwise, 20 s when nobody is sharing, with backoff). **Owners** see every sharing driver on the Today tab (`GET /api/admin/driver/live`, every 10 s).
 - The server keeps one document per driver, overwritten (no trail), a 3 second read cache, and a 24 hour expiry. It is polling, not sockets, because the site runs on Vercel functions (issue 13).
 - Customers call the driver from a pickup booking. The driver calls the customer from the stop.
+
+## Push notifications and the Live Activity
+
+- **Status alerts.** A signed-in customer is asked for notifications once, when their repairs list has something in it. The phone's token goes to `POST /api/push/device`. Every status change the customer is emailed about is also pushed. The server sends localisation keys (`push.*` in `Localizable.strings`), so the alert shows in the phone's language. Tapping it opens the booking.
+- **Live Activity** (`NorgelisTechWidgets/`, data in `Shared/DriverActivityAttributes.swift`). When the driver sets off to a booking, the lock screen and the Dynamic Island show the shop logo, a live countdown to arrival, the arrival time and a progress track from van to house. The server starts it by push-to-start, updates it at most every 30 s (or when the ETA changes) and ends it when the driver collects, delivers or turns away. While the app shows the driver it also starts and updates the activity itself, so it works without push too (Debug, free team). Tapping it opens the booking (`norgelis://booking/<code>`).
+- **Signing.** Push and associated domains need the paid team: `NorgelisTech.entitlements` is used by Release only. Debug builds stay installable with a free team. On the server, set `APNS_KEY_ID`, `APNS_TEAM_ID` (or `APPLE_TEAM_ID`) and `APNS_KEY` (the .p8 text); without them nothing is pushed and the app polls as before.
+- **Universal Links.** Booking links in emails (`/?cod=NT-XXXX`) and `/cont` open the app when installed. The server serves `/.well-known/apple-app-site-association` from `APPLE_TEAM_ID`.
 
 ## Owner console
 
@@ -109,7 +117,7 @@ Roles follow the server (`GET /api/me`). A technician never sees `finalLei`, Sta
 
 The server marks demo accounts (`DEMO_EMAILS`). For them the console and the driver map use `MockOwnerRepository` and a simulated drive, a rose notice shows, and nothing is sent to the server. Real accounts never see sample data. A demo account holds no staff role, so its credentials open nothing real on the website either.
 
-Not built yet: intake photo capture and push notifications (so customers see the driver while the app polls, not as an alert; see issue 13). PDFs download only from a real server.
+Not built yet: intake photo capture. PDFs download only from a real server.
 
 ## App architecture
 
@@ -119,6 +127,8 @@ ios/
 ├── scripts/export-catalog.mjs   # Site price list and holidays -> catalog.json
 ├── docs/                        # App Store guide and screenshots
 ├── NorgelisTechTests/           # Unit tests
+├── NorgelisTechWidgets/         # Live Activity (lock screen, Dynamic Island)
+├── Shared/                      # Live Activity data, in the app and the widget
 └── NorgelisTech/
     ├── App/                     # Entry point, AppState (driver stops, trips, lookup)
     ├── Models/                  # Booking, Catalog, Shop, stops, staff roles
@@ -152,4 +162,8 @@ The app uses the website's colour system in light and dark (`Views/Theme.swift`)
 
 ### Live tracking
 
-`POST /api/driver/location`, `DELETE /api/driver/location`, `GET /api/bookings/:code/driver`, `GET /api/admin/driver/live`. A push channel (sockets or APNs) is tracked in issue 13.
+`POST /api/driver/location`, `DELETE /api/driver/location`, `GET /api/bookings/:code/driver`, `GET /api/admin/driver/live`. The map polls; alerts and the Live Activity are pushed.
+
+### Push and config
+
+`POST`/`DELETE /api/push/device`, `POST /api/bookings/:code/activity`, `GET /api/config`.

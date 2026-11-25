@@ -57,6 +57,23 @@
         <string>location</string>
     </array>
 
+    <!-- The driver on the way, on the lock screen and in the Dynamic Island. -->
+    <key>NSSupportsLiveActivities</key>
+    <true/>
+
+    <!-- The norgelis URL scheme (norgelis:booking/NT-4K7Q) opens a booking from the Live Activity. Booking links from emails use Universal Links. Never write two slashes in a comment here: the plist is run through the C preprocessor. -->
+    <key>CFBundleURLTypes</key>
+    <array>
+        <dict>
+            <key>CFBundleURLName</key>
+            <string>ro.norgelis.app</string>
+            <key>CFBundleURLSchemes</key>
+            <array>
+                <string>norgelis</string>
+            </array>
+        </dict>
+    </array>
+
     <!-- Build settings, set in project.yml or on the command line. -->
     <key>NorgelisAPIBaseURL</key>
     <string>$(NORGELIS_API_BASE_URL)</string>

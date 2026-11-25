@@ -296,6 +296,8 @@ struct SignInView: View {
 /// The account: who is signed in, how to reach the shop, legal links, sign out and account deletion.
 /// Shown inside a navigation stack (a tab, or pushed from More).
 struct AccountView: View {
+    /// Re-draws when the server's feedback link and support email arrive.
+    @ObservedObject private var remote = RemoteConfig.shared
     @EnvironmentObject var auth: AuthStore
     @EnvironmentObject var ownerStore: OwnerStore
     @EnvironmentObject var apiClient: APIClient

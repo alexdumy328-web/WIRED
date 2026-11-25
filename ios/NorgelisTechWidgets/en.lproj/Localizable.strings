@@ -1,0 +1,14 @@
+/* Live Activity: the driver heading to the customer. Short: it is read at a glance. */
+"activity.on_the_way" = "Driver on the way";
+"activity.arriving" = "Arriving now";
+"activity.arrived" = "Driver has arrived";
+"activity.ended" = "Visit complete";
+"activity.minutes %lld" = "%lld min";
+"activity.minutes_short %lld" = "%lldm";
+"activity.around %@" = "~%@";
+"activity.now" = "Now";
+"activity.calculating" = "Calculating ETA…";
+"activity.stale" = "ETA outdated";
+"activity.waiting" = "Waiting at your address";
+"activity.waiting_named %@" = "%@ is waiting at your address";
+"activity.thanks" = "Thank you!";

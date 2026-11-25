@@ -1,7 +1,8 @@
 /**
  * Privacy policy and terms of service, in Romanian and English. Plain data: the pages render it.
- * Not legal advice. Have a lawyer read it before launch, and fill in OPERATOR (legal name, CUI,
- * trade register number) once they exist: empty values are left out of the page.
+ * Not legal advice. Have a lawyer read it before launch, and fill in OPERATOR (CUI, trade register
+ * number) once they exist: empty values are left out of the page. The contact email comes from the
+ * server's SUPPORT_EMAIL (GET /api/config) when `email` is empty.
  */
 
 export const LEGAL_UPDATED = '2026-11-25'
@@ -9,7 +10,7 @@ export const LEGAL_UPDATED = '2026-11-25'
 export const OPERATOR = {
   name: 'Norgelis Tech',
   /** Legal name of the company, if different (for example "Norgelis Tech SRL"). */
-  legalName: '',
+  legalName: 'Norgelis Tech',
   cui: '',
   regCom: '',
   address: 'Bd. Alexandru cel Bun 49, bl. Y1, parter, Iași',
@@ -40,6 +41,7 @@ export const PRIVACY: Both = {
           'Reparații: fișa de primire a aparatului, istoricul stărilor, notele tehnice, fotografiile făcute la primire, garanția, documentele și sumele facturate.',
           'Date tehnice și de securitate: adresa IP, ora autentificărilor, jurnal de audit al acțiunilor din contul de personal, mesajele de email pe care ți le trimitem.',
           'Locația șoferului: în timpul unei curse, telefonul șoferului trimite poziția (și când aplicația e în fundal, de exemplu în Waze) ca să vadă clientul și atelierul unde e mașina. Păstrăm doar ultima poziție, fără istoric. O ștergem când cursa se termină; dacă telefonul pierde semnalul sau aplicația se închide, nu mai e afișată după 90 de secunde și se șterge în cel mult 24 de ore. Poziția se vede doar cât șoferul se îndreaptă spre programarea ta și doar celor care au codul programării. Pentru clienți, aplicația nu citește locația telefonului. Șoferii noștri sunt informați separat, ca angajați, despre această prelucrare.',
+          'Notificări în aplicația iPhone: dacă le permiți, telefonul primește de la Apple un identificator de notificări pe care îl păstrăm legat de contul tău, ca să te anunțăm când se schimbă starea reparației și când șoferul pornește spre tine. Când șoferul vine spre programarea ta, ecranul de blocare poate afișa o Activitate Live cu timpul estimat; pentru ea păstrăm un identificator legat de codul programării, cel mult 12 ore. Le poți opri oricând din Configurări pe iPhone; identificatorii se șterg când ieși din cont, când îți ștergi contul sau după 60 de zile fără folosire.',
         ],
       },
       {
@@ -62,6 +64,7 @@ export const PRIVACY: Both = {
           'autentificarea cu Google, doar dacă o alegi;',
           'căutarea adreselor și calculul prețului de transport (servicii de hărți bazate pe OpenStreetMap): primesc adresa pe care o scrii;',
           'traseul șoferului (Apple Maps, în aplicația iPhone): primește poziția șoferului și adresele de ridicare ale cursei de azi; dacă șoferul alege navigarea în Waze, Waze primește adresa opririi;',
+          'notificările din aplicația iPhone (Apple Push Notification service): primește identificatorul telefonului și textul notificării (codul programării, aparatul, prenumele șoferului și timpul estimat);',
           'formularul de feedback din aplicație (Google Forms), doar dacă îl deschizi: ce scrii acolo ajunge la Google și la noi;',
           'estimarea prețului cu ajutorul unui serviciu de inteligență artificială (OpenRouter, care trimite cererea unui furnizor de modele): îi trimitem descrierea defectului și datele aparatului, fără nume, telefon sau email.',
         ],
@@ -130,6 +133,7 @@ export const PRIVACY: Both = {
           'Repairs: the intake sheet, status history, technical notes, photos taken at intake, warranty, documents and amounts invoiced.',
           'Technical and security data: IP address, sign-in times, an audit log of actions in staff accounts, the emails we send you.',
           'Driver location: during a trip, the driver\'s phone sends its position (also while the app is in the background, for example in Waze) so the customer and the workshop can see where the van is. We keep only the latest position, no trail. We delete it when the trip ends; if the phone loses signal or the app closes, it stops showing after 90 seconds and is deleted within 24 hours. The position is visible only while the driver is heading to your booking, and only to people who have the booking code. For customers, the app does not read the phone\'s location. Our drivers are told separately, as employees, about this processing.',
+          'Notifications in the iPhone app: if you allow them, Apple gives the phone a notification identifier that we keep with your account, to tell you when your repair\'s status changes and when the driver sets off to you. While the driver is heading to your booking, the lock screen can show a Live Activity with the estimated time; for it we keep an identifier tied to the booking code, for at most 12 hours. You can turn them off at any time in the iPhone\'s Settings; the identifiers are deleted when you sign out, delete your account or after 60 days unused.',
         ],
       },
       {
@@ -152,6 +156,7 @@ export const PRIVACY: Both = {
           'Google sign-in, only if you choose it;',
           'address search and transport pricing for pickups (OpenStreetMap-based map services): they receive the address you type;',
           'the driver route (Apple Maps, in the iPhone app): it receives the driver\'s position and today\'s pickup addresses; if the driver chooses Waze for navigation, Waze receives the stop address;',
+          'notifications in the iPhone app (Apple Push Notification service): it receives the phone\'s identifier and the notification content (booking code, device, the driver\'s first name and the estimated time);',
           'the in-app feedback form (Google Forms), only if you open it: what you write goes to Google and to us;',
           'the price estimate, made with an artificial intelligence service (OpenRouter, which passes the request to a model provider): it receives the problem description and the device details, without name, phone or email.',
         ],

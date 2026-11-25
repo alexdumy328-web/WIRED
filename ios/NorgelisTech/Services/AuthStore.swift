@@ -148,6 +148,8 @@ final class AuthStore: ObservableObject {
     func signOut() async -> Bool {
         // A driver signing out mid-trip: remove the van from the map while the session still works.
         if viewer?.isStaff == true { await api.stopDriverSharing() }
+        // While the session still works: this phone stops getting the account's alerts.
+        await PushService.shared.signingOut()
         var ended = true
         do {
             try await api.requestVoid("POST", "api/auth/sign-out", body: [:])
@@ -171,6 +173,8 @@ final class AuthStore: ObservableObject {
         let reply: Reply = try await callValue { try await self.api.request("POST", "api/auth/delete-user", body: body) }
         // The server may answer 200 with "Verification email sent" and delete nothing. Only "User deleted" counts.
         guard reply.success == true, reply.message == "User deleted" else { throw AuthProblem.unavailable }
+        // The server already forgot this account's phones; this ends any Live Activity here.
+        await PushService.shared.signingOut()
         api.clearSession()
         api.disableSample()
         api.resetServer()

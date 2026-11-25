@@ -564,3 +564,18 @@
 "driver.job.delivered" = "Handed to the customer";
 "driver.navigate.waze" = "Navigate with Waze";
 "driver.navigate.apple" = "Navigate with Apple Maps";
+
+/* Push notifications. The server sends these keys; the phone fills in the text. */
+"push.status.title" = "Repair %@";
+"push.status.received" = "We got your booking for %@.";
+"push.status.diagnosis" = "%@ is being diagnosed.";
+"push.status.waiting-parts" = "We are waiting for parts for %@.";
+"push.status.repairing" = "We are working on %@.";
+"push.status.ready" = "%@ is ready. Pick it up or we bring it to you.";
+"push.status.unrepairable" = "%@ cannot be repaired. We will call you with the details.";
+"push.status.done" = "%@ was handed back. Thank you!";
+"push.status.cancelled" = "The booking for %@ was cancelled.";
+"push.driver.title" = "Your driver is setting off";
+"push.driver.body" = "%@ is on the way. See the van in the app.";
+"push.driver.arriving" = "Your driver is arriving";
+"push.driver.arriving.body" = "%@ is 2 minutes away at most.";

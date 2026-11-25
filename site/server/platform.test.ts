@@ -416,8 +416,9 @@ describe('bookings for owners and customers', () => {
   test('a driver shares a position, the customer sees it while it is fresh, and it goes away', async () => {
     const owner = await signIn(OWNER)
     const customer = await signIn('driver-watch@example.com')
-    // The lookup only needs a well-formed code; no booking has to exist (and bookings are rate limited in tests).
+    // Written straight to the database: bookings are rate limited in tests. The van only shows while the job is open.
     const code = 'NT-ZX4Q'
+    await store.getDb().collection('bookings').insertOne({ code, status: 'received', mode: 'shop', slot: '2031-01-06T08:00:00.000Z', contact: { name: 'A', phone: '0700000000', email: 'driver-watch@example.com' } })
     const spot = { latitude: 47.16, longitude: 27.58, heading: 90, speedKmh: 35, bookingCode: code, etaMinutes: 9 }
 
     assert.equal((await call(`/api/bookings/${code}/driver`)).body.isEnRoute, false, 'nobody is on the way yet')
@@ -436,6 +437,14 @@ describe('bookings for owners and customers', () => {
     assert.equal((await call('/api/bookings/NT-ZZZZ/driver')).body.isEnRoute, false, 'another booking sees nothing')
     assert.equal((await call('/api/bookings/not-a-code/driver')).body.isEnRoute, false)
 
+    // A cancelled or closed job never shows the van, even when the driver's phone still names it.
+    await store.getDb().collection('bookings').updateOne({ code }, { $set: { status: 'cancelled' } })
+    assert.equal((await call('/api/driver/location', { method: 'POST', cookie: owner, body: spot })).status, 204)
+    assert.equal((await call(`/api/bookings/${code}/driver`)).body.isEnRoute, false, 'cancelled')
+    await store.getDb().collection('bookings').updateOne({ code }, { $set: { status: 'received' } })
+    assert.equal((await call('/api/driver/location', { method: 'POST', cookie: owner, body: spot })).status, 204)
+    assert.equal((await call(`/api/bookings/${code}/driver`)).body.isEnRoute, true, 'open again')
+
     const live = await call('/api/admin/driver/live', { cookie: owner })
     assert.equal(live.status, 200)
     assert.equal(live.body.drivers.length >= 1, true)
@@ -453,6 +462,38 @@ describe('bookings for owners and customers', () => {
     assert.equal((await call('/api/driver/location', { method: 'POST', cookie: owner, body: spot })).status, 204)
     assert.equal((await call('/api/driver/location', { method: 'DELETE', cookie: owner })).status, 204)
     assert.equal(await store.getDb().collection('driver_positions').countDocuments({}), 0, 'deleted when the trip ends')
+    await store.getDb().collection('bookings').deleteOne({ code })
+  })
+
+  test('push: a signed-in phone registers, a Live Activity registers by booking code, and both are checked', async () => {
+    const customer = await signIn('push-user@example.com')
+    const token = 'ab'.repeat(32)
+    assert.equal((await call('/api/push/device', { method: 'POST', body: { token, env: 'sandbox' } })).status, 401)
+    assert.equal((await call('/api/push/device', { method: 'POST', cookie: customer, body: { token: 'nope', env: 'sandbox' } })).status, 400)
+    assert.equal((await call('/api/push/device', { method: 'POST', cookie: customer, body: { token, env: 'sandbox', startToken: 'cd'.repeat(32) } })).status, 204)
+    assert.equal(await store.getDb().collection('push_devices').countDocuments({ token }), 1)
+    assert.equal((await call('/api/push/device', { method: 'DELETE', cookie: customer, body: { token } })).status, 204)
+    assert.equal(await store.getDb().collection('push_devices').countDocuments({ token }), 0)
+
+    assert.equal((await call('/api/bookings/NT-QQQQ/activity', { method: 'POST', body: { token, env: 'production' } })).status, 404, 'unknown booking')
+    await store.getDb().collection('bookings').insertOne({ code: 'NT-PUSH', status: 'received', mode: 'shop', slot: '2031-01-07T08:00:00.000Z', contact: { name: 'A', phone: '0700000000', email: 'push-user@example.com' } })
+    assert.equal((await call('/api/bookings/NT-PUSH/activity', { method: 'POST', body: { token, env: 'production' } })).status, 204)
+    assert.equal((await call('/api/bookings/NT-PUSH/activity', { method: 'POST', body: { token, env: 'staging' } })).status, 400)
+    await store.getDb().collection('bookings').deleteOne({ code: 'NT-PUSH' })
+  })
+
+  test('public config and the app site association come from the environment', async () => {
+    const { publicConfig, appSiteAssociation } = await import('./app.ts')
+    assert.deepEqual(publicConfig({}), { feedbackUrl: null, supportEmail: null })
+    assert.deepEqual(publicConfig({ FEEDBACK_URL: 'https://forms.gle/abc', SUPPORT_EMAIL: 'contact@norgelis.ro' }), { feedbackUrl: 'https://forms.gle/abc', supportEmail: 'contact@norgelis.ro' })
+    assert.equal(publicConfig({ FEEDBACK_URL: 'http://insecure.example', SUPPORT_EMAIL: 'not an email' }).feedbackUrl, null)
+    assert.equal((await call('/api/config')).status, 200)
+    assert.equal(appSiteAssociation({}), null)
+    assert.equal(appSiteAssociation({ APPLE_TEAM_ID: 'bad' }), null)
+    const aasa = appSiteAssociation({ APPLE_TEAM_ID: 'ABCDE12345' })!
+    assert.deepEqual(aasa.applinks.details[0]!.appIDs, ['ABCDE12345.ro.norgelis.app'])
+    assert.deepEqual(aasa.webcredentials.apps, ['ABCDE12345.ro.norgelis.app'])
+    assert.equal((await call('/.well-known/apple-app-site-association')).status, 404, 'no team id in the test env')
   })
 
   test('only a verified customer account on the demo list is a demo account', async () => {

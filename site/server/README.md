@@ -319,6 +319,10 @@ Copy `.env.example` to `.env.local` for the variable names.
 | `RESEND_API_KEY` / `MAIL_FROM` | Email delivery. Without them development uses the `dev_outbox` collection; production answers 503. |
 | `OWNER_EMAILS` / `DEV_EMAILS` | Comma separated emails that get the role once their address is verified. Every `OWNER_EMAILS` address also gets a mail for each new booking. |
 | `DRIVER_EMAILS` | Comma separated emails that get the `driver` role once verified: the iOS app opens the driver app and the server shows only pickups and deliveries. |
+| `FEEDBACK_URL` | https link to the feedback Google Form, shown in the iOS app (`GET /api/config`, cached 5 minutes). Empty hides it. |
+| `SUPPORT_EMAIL` | Support address for the iOS app and the legal pages. |
+| `APPLE_TEAM_ID` | Apple Developer team id. Serves `/.well-known/apple-app-site-association` (Universal Links for `/?cod=` and `/cont`, and shared passwords). |
+| `APNS_KEY_ID`, `APNS_TEAM_ID`, `APNS_KEY` | Apple push key (.p8). Turns on status alerts and the driver Live Activity (`server/push.ts`). Without them nothing is pushed and the app polls. |
 | `DEMO_EMAILS` | Verified customer accounts that open the iOS app in demo mode (sample data, no real access). Never staff: a listed address that also has a staff role is a real account. |
 | `TRUST_PROXY` | Set behind a reverse proxy so `req.ip` is the client address. |
 
@@ -330,7 +334,10 @@ can get a role from the env lists; they raise a role, never lower it.
 Routes (all validated with zod, per-IP limiters, JSON errors):
 
 - `GET /api/me` (adds `demo: true` for a demo account), `GET /api/me/bookings`, `GET /api/settings/public`
-- Driver tracking (iOS app): `POST /api/driver/location` and `DELETE /api/driver/location` (staff only, 40 a minute per IP; one document per driver in `driver_positions`, overwritten, deleted when the trip ends, TTL 24 h), `GET /api/bookings/:code/driver` (public by booking code; only a position fresher than 90 s counts; 3 s read cache; 90 a minute per IP), `GET /api/admin/driver/live` (staff). Polling, not sockets: see issue 13.
+- Driver tracking (iOS app): `POST /api/driver/location` and `DELETE /api/driver/location` (staff only, 40 a minute per IP; one document per driver in `driver_positions`, overwritten, deleted when the trip ends, TTL 24 h), `GET /api/bookings/:code/driver` (public by booking code; only a position fresher than 90 s counts, and only while the booking is one a driver can be heading to: received, diagnosis, ready, unrepairable; 3 s read cache; 90 a minute per IP), `GET /api/admin/driver/live` (staff). The map polls; status changes and the driver Live Activity are pushed.
+- Push (iOS app, `server/push.ts`, off until `APNS_KEY_ID`, `APNS_TEAM_ID` and `APNS_KEY` are set): `POST /api/push/device` and `DELETE /api/push/device` (signed in; the phone's token and its Live Activity push-to-start token, `push_devices`, TTL 60 days), `POST /api/bookings/:code/activity` (public by booking code, like the tracking page; a running Live Activity's token, `push_activities`, TTL 12 h). A status change the customer is emailed about is also pushed (localisation keys, so the phone shows its own language). The first position a driver posts for a booking starts the customer's Live Activity (push-to-start, or a plain alert when Live Activities are off), then it is updated at most every 30 s unless the ETA moves, at priority 10 when the driver is 2 minutes away, and ended when the driver collects, delivers, turns to another stop or ends the trip. Dead tokens (410) are removed.
+- `GET /api/config` (public, cached 5 min): `{ feedbackUrl, supportEmail }` from `FEEDBACK_URL` and `SUPPORT_EMAIL`.
+- `GET /.well-known/apple-app-site-association`: from `APPLE_TEAM_ID`, 404 without it.
 - Owner or dev: `GET /api/admin/bookings`, `GET /api/admin/bookings/:code`,
   `PATCH /api/admin/bookings/:code/status` (status, optional note, optional `finalLei`,
   `notify`; history and audit),

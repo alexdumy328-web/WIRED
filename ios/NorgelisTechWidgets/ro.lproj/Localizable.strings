@@ -1,0 +1,14 @@
+/* Live Activity: the driver heading to the customer. Short: it is read at a glance. */
+"activity.on_the_way" = "Pe drum spre tine";
+"activity.arriving" = "Ajunge imediat";
+"activity.arrived" = "Șoferul a ajuns";
+"activity.ended" = "Vizită încheiată";
+"activity.minutes %lld" = "%lld min";
+"activity.minutes_short %lld" = "%lldm";
+"activity.around %@" = "~%@";
+"activity.now" = "Acum";
+"activity.calculating" = "Se estimează ora…";
+"activity.stale" = "Estimare veche";
+"activity.waiting" = "Te așteaptă la adresă";
+"activity.waiting_named %@" = "%@ te așteaptă la adresă";
+"activity.thanks" = "Mulțumim!";

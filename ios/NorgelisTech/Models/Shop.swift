@@ -15,15 +15,16 @@ enum Shop {
         return raw
     }
 
-    static var supportEmail: String? { value("NorgelisSupportEmail") }
+    /// The server's SUPPORT_EMAIL wins; the build setting is the fallback.
+    @MainActor static var supportEmail: String? { RemoteConfig.shared.supportEmail ?? value("NorgelisSupportEmail") }
     static var phone: String? { value("NorgelisPhone") }
     /// The driver's own number when there is one, otherwise the shop's.
     static var driverPhone: String? { value("NorgelisDriverPhone") ?? phone }
     /// Both legal pages live on the website. Without a build setting they follow the server address.
     static var privacyURL: URL? { value("NorgelisPrivacyURL").flatMap(URL.init(string:)) ?? sitePage("confidentialitate") }
     static var termsURL: URL? { value("NorgelisTermsURL").flatMap(URL.init(string:)) ?? sitePage("termeni") }
-    /// The feedback form (a Google Form link). Hidden until the build sets it.
-    static var feedbackURL: URL? { value("NorgelisFeedbackURL").flatMap(URL.init(string:)) }
+    /// The feedback form (a Google Form link): the server's FEEDBACK_URL, else the build setting. Hidden when neither is set.
+    @MainActor static var feedbackURL: URL? { RemoteConfig.shared.feedbackURL ?? value("NorgelisFeedbackURL").flatMap(URL.init(string:)) }
 
     private static func sitePage(_ path: String) -> URL? {
         URL(string: APIClient.shared.baseURLString)?.appendingPathComponent(path)

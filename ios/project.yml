@@ -26,6 +26,10 @@ targets:
     deploymentTarget: "18.0"
     sources:
       - path: NorgelisTech
+      - path: Shared
+    dependencies:
+      - target: NorgelisTechWidgets
+        embed: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ro.norgelis.app
@@ -49,8 +53,11 @@ targets:
         # The legal pages default to <server>/confidentialitate and <server>/termeni. Set these to override.
         NORGELIS_PRIVACY_URL: ""
         NORGELIS_TERMS_URL: ""
-        # A Google Form link. The feedback row stays hidden until this is set.
+        # A Google Form link. The server's FEEDBACK_URL (Vercel) wins; this is the fallback. Empty and no server value hides it.
         NORGELIS_FEEDBACK_URL: ""
+        # The website's domain, for Universal Links (booking links in emails open the app) and shared passwords.
+        # The server must serve /.well-known/apple-app-site-association (APPLE_TEAM_ID set on Vercel).
+        NORGELIS_APP_LINK_DOMAIN: "norgelis.ro"
       configs:
         Debug:
           CODE_SIGN_IDENTITY: "-"
@@ -62,6 +69,40 @@ targets:
           VALIDATE_PRODUCT: "YES"
           STRIP_INSTALLED_PRODUCT: "YES"
           DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
+          # Push and associated domains need the paid Apple Developer team, so only Release (TestFlight,
+          # App Store) carries them. Debug stays buildable on a free team with a cable.
+          CODE_SIGN_ENTITLEMENTS: NorgelisTech/Resources/NorgelisTech.entitlements
+  NorgelisTechWidgets:
+    type: app-extension
+    platform: iOS
+    deploymentTarget: "18.0"
+    sources:
+      - path: NorgelisTechWidgets
+      - path: Shared
+    info:
+      path: NorgelisTechWidgets/Info.plist
+      properties:
+        CFBundleDisplayName: Norgelis Tech
+        CFBundleDevelopmentRegion: ro
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: ro.norgelis.app.widgets
+        PRODUCT_NAME: NorgelisTechWidgets
+        TARGETED_DEVICE_FAMILY: "1"
+        DEVELOPMENT_TEAM: ""
+        CODE_SIGN_STYLE: Automatic
+        SKIP_INSTALL: "YES"
+        APPLICATION_EXTENSION_API_ONLY: "YES"
+      configs:
+        Debug:
+          CODE_SIGN_IDENTITY: "-"
+          SWIFT_ACTIVE_COMPILATION_CONDITIONS: "DEBUG"
+        Release:
+          SWIFT_COMPILATION_MODE: wholemodule
   NorgelisTechTests:
     type: bundle.unit-test
     platform: iOS

@@ -564,3 +564,18 @@
 "driver.job.delivered" = "Predat clientului";
 "driver.navigate.waze" = "Navighează cu Waze";
 "driver.navigate.apple" = "Navighează cu Apple Maps";
+
+/* Push notifications. The server sends these keys; the phone fills in the text. */
+"push.status.title" = "Reparația %@";
+"push.status.received" = "Am primit programarea pentru %@.";
+"push.status.diagnosis" = "%@ e în diagnoză.";
+"push.status.waiting-parts" = "Așteptăm piesele pentru %@.";
+"push.status.repairing" = "Lucrăm la %@.";
+"push.status.ready" = "%@ e gata. Îl poți ridica sau ți-l aducem.";
+"push.status.unrepairable" = "%@ nu se poate repara. Te sunăm cu detaliile.";
+"push.status.done" = "%@ a fost predat. Mulțumim!";
+"push.status.cancelled" = "Programarea pentru %@ a fost anulată.";
+"push.driver.title" = "Șoferul pornește spre tine";
+"push.driver.body" = "%@ e pe drum. Vezi unde e mașina în aplicație.";
+"push.driver.arriving" = "Șoferul ajunge acum";
+"push.driver.arriving.body" = "%@ e la cel mult 2 minute.";

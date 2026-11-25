@@ -6,6 +6,9 @@ import { authClient } from '../auth/client'
 import { Guard } from '../auth/Guard'
 import { Card, Loading, Notice, PageShell, StatusBadge, useDateFormat } from '../auth/ui'
 import { refreshViewer, isStaff, type Viewer } from '../auth/viewer'
+
+/** The newest iOS build, published by .github/workflows/ios-release.yml. */
+const IOS_APP_RELEASES = 'https://github.com/alexdumy328-web/WIRED/releases/latest'
 import { openBooking } from '../lib/booking-store'
 import { linkTo, navigate } from '../lib/router'
 import { estimateText } from '../auth/owner/format'
@@ -79,6 +82,17 @@ function Account({ user }: { user: Viewer }) {
                   </a>
                 )}
               </div>
+            </Card>
+          )}
+
+          {/* The app is for the team for now (issue 7): staff and drivers see where to get it, customers do not. */}
+          {(isStaff(user) || user.role === 'driver') && (
+            <Card>
+              <h2 className="text-[15px] font-bold">{a.iosApp.title}</h2>
+              <p className="mt-2 text-[14px] text-muted">{a.iosApp.hint}</p>
+              <a href={IOS_APP_RELEASES} target="_blank" rel="noreferrer" className="btn btn-ghost mt-3 w-full">
+                {a.iosApp.download}
+              </a>
             </Card>
           )}
         </aside>

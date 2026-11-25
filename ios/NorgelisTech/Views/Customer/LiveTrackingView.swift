@@ -10,11 +10,15 @@ final class DriverTrackingModel: ObservableObject {
 
     init(api: APIClient) { self.api = api }
 
-    func run(code: String) async {
+    func run(code: String, device: String = "") async {
         var failures = 0
         while !Task.isCancelled {
             do {
-                status = try await api.fetchDriver(code: code)
+                let next = try await api.fetchDriver(code: code)
+                // The lock screen follows what the app sees (the server's pushes take over in the background).
+                if next.isEnRoute { PushService.shared.showDriver(code: code, device: device, status: next) }
+                else if status.isEnRoute { PushService.shared.driverGone(code: code) }
+                status = next
                 failures = 0
             } catch is CancellationError {
                 return
@@ -38,10 +42,13 @@ struct DriverOnTheWay: View {
     let code: String
     /// Where the customer is, when the booking says so (a guest lookup does not).
     var destination: CLLocationCoordinate2D?
+    /// Shown on the Live Activity, for example "Apple iPhone 13".
+    var device: String
 
-    init(code: String, destination: CLLocationCoordinate2D?) {
+    init(code: String, destination: CLLocationCoordinate2D?, device: String = "") {
         self.code = code
         self.destination = destination
+        self.device = device
         _model = StateObject(wrappedValue: DriverTrackingModel(api: APIClient.shared))
     }
 
@@ -54,10 +61,14 @@ struct DriverOnTheWay: View {
             } else if model.status.isEnRoute, let lat = model.status.latitude, let lon = model.status.longitude {
                 LiveDriverCard(name: model.status.driverName, driver: CLLocationCoordinate2D(latitude: lat, longitude: lon),
                                eta: model.status.etaMinutes, destination: destination, address: nil)
+            } else {
+                // An empty Group has no lifecycle, so `.task` would never start polling. A zero-height anchor
+                // keeps it alive; the negative padding gives back the parent stack's spacing.
+                Color.clear.frame(height: 0).padding(.bottom, -20).accessibilityHidden(true)
             }
         }
         .task(id: code) {
-            if !apiClient.useMockData { await model.run(code: code) }
+            if !apiClient.useMockData { await model.run(code: code, device: device) }
         }
     }
 }

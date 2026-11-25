@@ -185,6 +185,26 @@ export function createApp(store: Store, options: CreateAppOptions = {}): Express
     res.json({ ok: true, store: store.kind })
   })
 
+  // What the app shows that the owner changes without a new build: set on Vercel, read at launch.
+  app.get('/api/config', (_req, res) => {
+    res.set('Cache-Control', 'public, max-age=300, s-maxage=300')
+    res.json(publicConfig(process.env))
+  })
+
+  // Universal Links: booking links in emails (/?cod=...) and the account page open the app when it is installed.
+  // Vercel routes /.well-known/apple-app-site-association here (scripts/vercel-build.mjs).
+  const aasa = (_req: Request, res: Response) => {
+    const body = appSiteAssociation(process.env)
+    if (!body) {
+      res.status(404).json({ error: 'not_found' })
+      return
+    }
+    res.set({ 'Content-Type': 'application/json', 'Cache-Control': 'public, max-age=3600' })
+    res.send(JSON.stringify(body))
+  }
+  app.get('/.well-known/apple-app-site-association', aasa)
+  app.get('/api/apple-app-site-association', aasa)
+
   app.get('/api/geo/search', upstreamRateLimit, async (req, res) => {
     const q = typeof req.query.q === 'string' ? req.query.q.trim() : ''
     if (q.length < 3 || q.length > 120) {
@@ -493,4 +513,45 @@ export function createApp(store: Store, options: CreateAppOptions = {}): Express
   })
 
   return app
+}
+
+const httpsUrl = (value: string | undefined) => {
+  const v = value?.trim()
+  if (!v) return null
+  try {
+    return new URL(v).protocol === 'https:' ? v : null
+  } catch {
+    return null
+  }
+}
+
+/** Public, owner-set values for the app: feedback form and support email. Empty means the app hides the row. */
+export function publicConfig(env: Record<string, string | undefined>) {
+  const email = env.SUPPORT_EMAIL?.trim()
+  return {
+    feedbackUrl: httpsUrl(env.FEEDBACK_URL),
+    supportEmail: email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ? email : null,
+  }
+}
+
+/** apple-app-site-association for the iOS app. Needs the Apple team id; without it there is nothing to associate. */
+export function appSiteAssociation(env: Record<string, string | undefined>) {
+  const team = env.APPLE_TEAM_ID?.trim() || env.APNS_TEAM_ID?.trim()
+  if (!team || !/^[A-Z0-9]{10}$/.test(team)) return null
+  const appId = `${team}.${env.APNS_BUNDLE_ID?.trim() || 'ro.norgelis.app'}`
+  return {
+    applinks: {
+      details: [
+        {
+          appIDs: [appId],
+          components: [
+            { '/': '/', '?': { cod: '?*' }, comment: 'Booking status link from the emails' },
+            { '/': '/cont', comment: 'Account' },
+          ],
+        },
+      ],
+    },
+    // Saved passwords from the website fill in the app's sign-in form.
+    webcredentials: { apps: [appId] },
+  }
 }

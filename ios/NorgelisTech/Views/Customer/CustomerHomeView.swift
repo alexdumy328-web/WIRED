@@ -3,16 +3,29 @@ import CoreLocation
 
 /// A signed-in customer: their own repairs, a code lookup, and the account.
 struct CustomerHomeView: View {
-    @State private var showBooking = false
+    @EnvironmentObject var push: PushService
+    @EnvironmentObject var appState: AppState
+    @State private var tab = Tab.repairs
+
+    enum Tab: Hashable { case repairs, track, account }
 
     var body: some View {
-        TabView {
+        TabView(selection: $tab) {
             MyRepairsView()
                 .tabItem { Label("customer.tab.repairs", systemImage: "wrench.and.screwdriver.fill") }
+                .tag(Tab.repairs)
             NavigationStack { TrackView().navigationTitle(LocalizedStringKey("customer.title")).navigationBarTitleDisplayMode(.inline) }
                 .tabItem { Label("customer.tab.track", systemImage: "magnifyingglass") }
+                .tag(Tab.track)
             NavigationStack { AccountView() }
                 .tabItem { Label("customer.tab.account", systemImage: "person.crop.circle.fill") }
+                .tag(Tab.account)
+        }
+        // A tapped notification, Live Activity or booking link opens that booking.
+        .onReceive(push.$openCode.compactMap { $0 }) { code in
+            appState.searchBooking(code: code)
+            tab = .track
+            push.openCode = nil
         }
     }
 }
@@ -80,6 +93,8 @@ struct MyRepairsView: View {
         do {
             let items = try await api.fetchMyBookings().sorted { ($0.createdAt ?? "") > ($1.createdAt ?? "") }
             state = .loaded(items)
+            // Something to hear about: ask for notifications now, once, when the reason is plain.
+            if !items.isEmpty { PushService.shared.askIfUseful() }
         } catch is CancellationError {
             return
         } catch {
@@ -158,7 +173,8 @@ struct BookingSummaryCard: View {
     var body: some View {
         VStack(spacing: 20) {
             if Self.driverMayCome(booking) {
-                DriverOnTheWay(code: booking.code, destination: booking.pickup.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) })
+                DriverOnTheWay(code: booking.code, destination: booking.pickup.map { CLLocationCoordinate2D(latitude: $0.lat, longitude: $0.lon) },
+                               device: booking.device?.displayName ?? "")
             }
             if booking.hasPickup, booking.status != .done, booking.status != .cancelled {
                 VStack(alignment: .leading, spacing: 8) {

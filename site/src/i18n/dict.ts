@@ -224,6 +224,8 @@ export type Dict = {
     profile: { title: string; name: string; email: string; role: string; verified: string; notVerified: string }
     roles: Record<'customer' | 'driver' | 'technician' | 'owner' | 'dev', string>
     dashboards: { title: string; owner: string; dev: string }
+    /** Staff and drivers: where the iOS app comes from until it is on the App Store. */
+    iosApp: { title: string; download: string; hint: string }
     /** Slim top bar on the owner and dev dashboards (no customer nav there). */
     adminBar: { nav: string; owner: string; dev: string; site: string }
     bookings: {

@@ -408,3 +408,61 @@ final class TrackingTests: XCTestCase {
         XCTAssertNil(auth.viewer, "a 401 does")
     }
 }
+
+@MainActor
+final class PushAndLinksTests: XCTestCase {
+    func testBookingLinksFromEmailsAndTheLiveActivity() {
+        XCTAssertEqual(PushService.bookingCode(from: URL(string: "https://norgelis.ro/?cod=nt-4k7q#status")!), "NT-4K7Q")
+        XCTAssertEqual(PushService.bookingCode(from: URL(string: "norgelis://booking/NT-4K7Q")!), "NT-4K7Q")
+        XCTAssertNil(PushService.bookingCode(from: URL(string: "https://norgelis.ro/cont")!))
+        XCTAssertNil(PushService.bookingCode(from: URL(string: "https://norgelis.ro/?cod=../admin")!))
+        XCTAssertNil(PushService.bookingCode(from: URL(string: "norgelis://other/NT-4K7Q")!))
+    }
+
+    func testTheLiveActivityStateReadsWhatTheServerSends() throws {
+        // The exact shape of LiveState in site/server/push.ts.
+        let json = #"{"driverName":"Ion","etaMinutes":7,"phase":"onTheWay","updatedAt":1764064800}"#
+        let state = try JSONDecoder().decode(DriverActivityAttributes.ContentState.self, from: Data(json.utf8))
+        XCTAssertEqual(state.etaMinutes, 7)
+        XCTAssertEqual(state.phase, .onTheWay)
+        XCTAssertFalse(state.isOver)
+        let ended = try JSONDecoder().decode(DriverActivityAttributes.ContentState.self, from: Data(#"{"driverName":"","etaMinutes":null,"phase":"arrived","updatedAt":1}"#.utf8))
+        XCTAssertTrue(ended.isOver)
+        let attributes = try JSONDecoder().decode(DriverActivityAttributes.self, from: Data(#"{"code":"NT-4K7Q","device":"Apple iPhone 13"}"#.utf8))
+        XCTAssertEqual(attributes.code, "NT-4K7Q")
+    }
+
+    func testServerConfigWinsAndIsKeptForTheNextStart() throws {
+        let defaults = UserDefaults(suiteName: "remote-config-test")!
+        defaults.removePersistentDomain(forName: "remote-config-test")
+        let config = RemoteConfig(defaults: defaults)
+        XCTAssertNil(config.feedbackURL)
+        config.apply(.init(feedbackUrl: "https://forms.gle/abc", supportEmail: "contact@norgelis.ro"))
+        XCTAssertEqual(config.feedbackURL?.absoluteString, "https://forms.gle/abc")
+        XCTAssertEqual(RemoteConfig(defaults: defaults).supportEmail, "contact@norgelis.ro", "kept for an offline start")
+        config.apply(.init(feedbackUrl: "http://insecure.example", supportEmail: "nope"))
+        XCTAssertNil(config.feedbackURL)
+        XCTAssertNil(config.supportEmail)
+    }
+
+    func testConfigIsReadFromTheServer() async throws {
+        StubProtocol.handler = { req in
+            req.url?.path == "/api/config" ? (200, Data(#"{"feedbackUrl":"https://forms.gle/xyz","supportEmail":null}"#.utf8)) : (404, Data())
+        }
+        let defaults = UserDefaults(suiteName: "remote-config-fetch")!
+        defaults.removePersistentDomain(forName: "remote-config-fetch")
+        let config = RemoteConfig(defaults: defaults)
+        await config.refresh(api: APIClient(session: StubProtocol.session()))
+        XCTAssertEqual(config.feedbackURL?.absoluteString, "https://forms.gle/xyz")
+        XCTAssertNil(config.supportEmail)
+    }
+
+    func testAGuestLookupForTodayPollsTheDriver() throws {
+        let today = ShopCalendar.dateString()
+        let slot = ISO8601DateFormatter().string(from: ShopCalendar.date(today))
+        let json = #"{"code":"NT-LB6T","status":"received","mode":"shop","jobIds":["laptop-dc-jack"],"slot":"SLOT","updatedAt":"2026-11-25T10:18:26.439Z"}"#.replacingOccurrences(of: "SLOT", with: slot)
+        let booking = try JSONDecoder().decode(Booking.self, from: Data(json.utf8))
+        XCTAssertTrue(booking.isGuestLookup)
+        XCTAssertTrue(BookingSummaryCard.driverMayCome(booking))
+    }
+}

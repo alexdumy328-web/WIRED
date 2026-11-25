@@ -378,6 +378,11 @@ const en: Dict = {
     profile: { title: 'Profile', name: 'Name', email: 'Email', role: 'Role', verified: 'Confirmed', notVerified: 'Not confirmed' },
     roles: { customer: 'Customer', driver: 'Driver', technician: 'Technician', owner: 'Owner', dev: 'Developer' },
     dashboards: { title: 'Dashboards', owner: 'Owner dashboard', dev: 'Developer dashboard' },
+    iosApp: {
+      title: 'iPhone app',
+      download: 'Download the app (Sideloadly)',
+      hint: 'Until it is on the App Store, install it with Sideloadly from a PC or Mac and a free Apple ID. The steps are on the download page. The install expires after 7 days and is refreshed from Sideloadly.',
+    },
     adminBar: { nav: 'Dashboards', owner: 'Owner', dev: 'Developer', site: 'View the site' },
     bookings: {
       title: 'My bookings',

@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useI18n } from '../i18n'
 import { LEGAL_UPDATED, OPERATOR, PRIVACY, TERMS } from '../data/legal'
 import { PageShell } from '../auth/ui'
@@ -9,6 +10,20 @@ export function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
   const doc = (kind === 'privacy' ? PRIVACY : TERMS)[lang]
   const otherPath = kind === 'privacy' ? '/termeni' : '/confidentialitate'
   const otherTitle = (kind === 'privacy' ? TERMS : PRIVACY)[lang].title
+  // The support address is set on the server (SUPPORT_EMAIL), so it can change without a release.
+  const [serverEmail, setServerEmail] = useState<string | null>(null)
+  useEffect(() => {
+    if (OPERATOR.email) return
+    let live = true
+    fetch('/api/config')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((c: { supportEmail?: string | null } | null) => live && setServerEmail(c?.supportEmail ?? null))
+      .catch(() => undefined)
+    return () => {
+      live = false
+    }
+  }, [])
+  const email = OPERATOR.email || serverEmail
   const updated = new Date(`${LEGAL_UPDATED}T12:00:00`).toLocaleDateString(lang === 'ro' ? 'ro-RO' : 'en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
 
   return (
@@ -61,12 +76,12 @@ export function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
                 {OPERATOR.phone}
               </a>
             </dd>
-            {OPERATOR.email && (
+            {email && (
               <>
                 <dt className="text-muted">Email</dt>
                 <dd>
-                  <a className="underline decoration-gold underline-offset-4" href={`mailto:${OPERATOR.email}`}>
-                    {OPERATOR.email}
+                  <a className="underline decoration-gold underline-offset-4" href={`mailto:${email}`}>
+                    {email}
                   </a>
                 </dd>
               </>

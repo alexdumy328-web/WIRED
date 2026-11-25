@@ -30,6 +30,9 @@ const CACHE_MS = 3_000
 /** Leftovers expire on their own even if the driver never stops sharing cleanly. */
 const EXPIRE_SECONDS = 24 * 3600
 
+/** Bookings a driver can be on the way to: collecting (received) or handing back (ready, unrepairable). */
+export const DRIVER_STATUSES = ['received', 'diagnosis', 'ready', 'unrepairable']
+
 export type DriverTracking = ReturnType<typeof createDriverTracking>
 
 /**
@@ -49,12 +52,14 @@ export function createDriverTracking(db: Db, now: () => number = Date.now) {
       ready = null
     }))
 
+  const bookings = db.collection<{ code: string; status: string }>('bookings')
   const cache = new Map<string, { at: number; value: DriverPosition | null }>()
   const cutoff = () => new Date(now() - FRESH_MS)
   const clean = <T extends Record<string, unknown>>(value: T) => Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined && v !== null)) as Partial<T>
 
   return {
-    async update(viewer: { id: string; name: string }, input: DriverUpdate): Promise<void> {
+    /** Saves the position. Returns it, and the booking the driver was heading to before, when that changed. */
+    async update(viewer: { id: string; name: string }, input: DriverUpdate): Promise<{ position: DriverPosition; left?: string }> {
       await ensureIndexes()
       const code = input.bookingCode ? input.bookingCode.toUpperCase() : undefined
       // The whole document is replaced, so a field the phone stopped sending (heading, ETA, destination) goes away.
@@ -69,14 +74,19 @@ export function createDriverTracking(db: Db, now: () => number = Date.now) {
         bookingCode: code,
         updatedAt: new Date(now()),
       }) as DriverPosition
-      await col.replaceOne({ userId: viewer.id }, doc, { upsert: true })
+      const before = (await col.findOneAndReplace({ userId: viewer.id }, doc, { upsert: true, projection: { bookingCode: 1 } })) as unknown as DriverPosition | null
       if (code) cache.delete(code)
+      const left = before?.bookingCode && before.bookingCode !== code ? before.bookingCode : undefined
+      if (left) cache.delete(left)
+      return { position: doc, ...(left ? { left } : {}) }
     },
 
-    async stop(userId: string): Promise<void> {
+    /** Ends the share. Returns the booking the driver was heading to, if any. */
+    async stop(userId: string): Promise<string | undefined> {
       const gone = await col.findOneAndDelete({ userId })
       const code = (gone as unknown as DriverPosition | null)?.bookingCode
       if (code) cache.delete(code)
+      return code
     },
 
     /** The driver heading to this booking, if one shared a position in the last minute and a half. */
@@ -85,7 +95,11 @@ export function createDriverTracking(db: Db, now: () => number = Date.now) {
       const hit = cache.get(key)
       if (hit && now() - hit.at < CACHE_MS) return hit.value
       await ensureIndexes()
-      const found = await col.findOne({ bookingCode: key, updatedAt: { $gte: cutoff() } }, { projection: { _id: 0, userId: 0 } as never, sort: { updatedAt: -1 } })
+      const near = await col.findOne({ bookingCode: key, updatedAt: { $gte: cutoff() } }, { projection: { _id: 0, userId: 0 } as never, sort: { updatedAt: -1 } })
+      // Only while the booking is one a driver can be heading to: a stale code on the phone, a cancelled
+      // or closed job never shows the van to whoever holds that code.
+      const open = near ? await bookings.findOne({ code: key, status: { $in: DRIVER_STATUSES } }, { projection: { _id: 1 } }) : null
+      const found = open ? near : null
       // Bounded: drop the oldest entry, never the whole cache (so made-up codes cannot flush real ones).
       if (cache.size >= 500) cache.delete(cache.keys().next().value as string)
       cache.set(key, { at: now(), value: found })

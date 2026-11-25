@@ -4,6 +4,8 @@ import MapKit
 /// First screen for someone who is not signed in. It says what the shop does, then offers the three things
 /// the app can do without knowing who you are: sign in, create an account, track a repair with its code.
 struct WelcomeView: View {
+    @EnvironmentObject var push: PushService
+    @EnvironmentObject var appState: AppState
     @State private var sheet: Sheet?
 
     private enum Sheet: String, Identifiable {
@@ -30,6 +32,12 @@ struct WelcomeView: View {
             .scrollBounceBehavior(.basedOnSize)
         }
         .background(Color(.systemBackground))
+        // A booking link from an email opens the lookup with that code, no account needed.
+        .onReceive(push.$openCode.compactMap { $0 }) { code in
+            appState.searchBooking(code: code)
+            sheet = .track
+            push.openCode = nil
+        }
         .sheet(item: $sheet) { which in
             if which == .book {
                 BookingFlowView()
@@ -101,6 +109,8 @@ struct WelcomeView: View {
 /// Call, message and directions, the way the website's phone bar does it. Rows with no data stay out.
 struct ContactBar: View {
     @Environment(\.openURL) private var openURL
+    /// Re-draws when the server's feedback link arrives.
+    @ObservedObject private var remote = RemoteConfig.shared
 
     var body: some View {
         VStack(spacing: 10) {

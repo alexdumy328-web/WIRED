@@ -110,6 +110,8 @@ export function createAdminRouter(deps: PlatformDeps): Router {
   async function tellCustomer(booking: Parameters<typeof deps.notifier.statusChanged>[0], status: string): Promise<'sent' | 'failed' | 'skipped'> {
     const valid = status === 'done' ? (await deps.warranties.forBooking(booking.code)).find((w) => !w.voided) : undefined
     const attachment = valid ? await deps.documents.warranty(valid, booking).catch(() => null) : null
+    // The phone gets the same news as an alert (no-op until APNs is configured). It never holds up the email.
+    await deps.push.statusChanged({ code: booking.code, status }).catch(() => 0)
     return deps.notifier.statusChanged(booking, attachment ? [attachment] : undefined)
   }
 
@@ -135,12 +137,58 @@ export function createAdminRouter(deps: PlatformDeps): Router {
       return
     }
     const viewer = res.locals.viewer!
-    await deps.driver.update(viewer, parsed.data)
+    const { position, left } = await deps.driver.update(viewer, parsed.data)
+    // Live Activity: start or update the customer's, end the one the driver turned away from.
+    await Promise.all([deps.push.driverMoved(position), deps.push.driverStopped(left)]).catch((error) => console.warn('[push]', (error as Error).message))
     res.status(204).end()
   }))
 
   router.delete('/driver/location', driverWrite, driverOrStaff, handle(async (_req, res) => {
-    await deps.driver.stop(res.locals.viewer!.id)
+    const code = await deps.driver.stop(res.locals.viewer!.id)
+    await deps.push.driverStopped(code).catch(() => undefined)
+    res.status(204).end()
+  }))
+
+  // ---- push notifications (iOS) -----------------------------------------------------------
+  const pushLimit = deps.limiters.create('push', 60_000, 20)
+  const apnsToken = z.string().regex(/^[0-9a-f]{64,200}$/i)
+  const apnsEnv = z.enum(['sandbox', 'production'])
+
+  /** The signed-in user's phone: status alerts, and the token that lets the server start a Live Activity. */
+  router.post('/push/device', pushLimit, sessions.requireAuth, handle(async (req, res) => {
+    const body = z.object({ token: apnsToken, env: apnsEnv, startToken: apnsToken.nullish() }).strict().safeParse(req.body)
+    if (!body.success) {
+      res.status(400).json({ error: 'invalid', issues: issues(body.error) })
+      return
+    }
+    await deps.push.registerDevice(res.locals.viewer!.id, body.data)
+    res.status(204).end()
+  }))
+
+  router.delete('/push/device', pushLimit, sessions.requireAuth, handle(async (req, res) => {
+    const body = z.object({ token: apnsToken }).strict().safeParse(req.body)
+    if (!body.success) {
+      res.status(400).json({ error: 'invalid', issues: issues(body.error) })
+      return
+    }
+    await deps.push.forgetDevice(body.data.token, res.locals.viewer!.id)
+    res.status(204).end()
+  }))
+
+  /** A Live Activity the app started for a booking. Public like the tracking page: the code is the key. */
+  router.post('/bookings/:code/activity', pushLimit, handle(async (req, res) => {
+    const code = codeParam.safeParse(req.params.code)
+    const body = z.object({ token: apnsToken, env: apnsEnv }).strict().safeParse(req.body)
+    if (!code.success || !body.success) {
+      res.status(400).json({ error: 'invalid' })
+      return
+    }
+    const found = await bookings.detail(code.data)
+    if (!found) {
+      res.status(404).json({ error: 'not_found' })
+      return
+    }
+    await deps.push.registerActivity(code.data, body.data)
     res.status(204).end()
   }))
 
@@ -478,6 +526,8 @@ export function createAdminRouter(deps: PlatformDeps): Router {
     }
     // A delivery is the hand-back: the customer gets the same email (and warranty) as when the owner closes the job.
     if (delivered && result.statusChanged) await tellCustomer(result.booking, 'done').catch(() => 'failed')
+    // The driver is at the door: the customer's Live Activity shows "arrived" and closes.
+    if (delivered || collected) await deps.push.driverStopped(result.booking.code, 'arrived').catch(() => undefined)
     if (result.changed) await audit.record({
       action: 'booking_status',
       actor: { id: viewer.id, email: viewer.email, role: viewer.role },

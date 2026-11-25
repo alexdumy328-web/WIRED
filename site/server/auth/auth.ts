@@ -62,12 +62,14 @@ export type CreateAuthOptions = {
   config: AuthConfig
   mailer: Mailer
   audit: AuditLog
+  /** Forgets the phones of a deleted account. */
+  push?: { forgetUser(userId: string): Promise<void> }
   /** Turn Better Auth's own rate limiter off (tests that hammer one endpoint). */
   rateLimitEnabled?: boolean
 }
 
 export function createAuth(options: CreateAuthOptions) {
-  const { db, env, config, mailer, audit } = options
+  const { db, env, config, mailer, audit, push } = options
   const googleId = env.GOOGLE_CLIENT_ID?.trim()
   const googleSecret = env.GOOGLE_CLIENT_SECRET?.trim()
   const google = googleId && googleSecret ? { clientId: googleId, clientSecret: googleSecret, prompt: 'select_account' as const } : null
@@ -110,6 +112,7 @@ export function createAuth(options: CreateAuthOptions) {
         // Repair records and invoices must be kept, so bookings stay but lose the link to the account.
         afterDelete: async (user) => {
           await db.collection('bookings').updateMany({ userId: user.id }, { $unset: { userId: '' } })
+          await push?.forgetUser(user.id).catch(() => undefined)
           await audit.record({ action: 'account_deleted', actor: { id: user.id } })
         },
       },

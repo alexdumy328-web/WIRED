@@ -12,6 +12,7 @@ import { createCustomers } from './admin/customers.ts'
 import { createPhotos } from './admin/photos.ts'
 import { createWarranties } from './admin/warranties.ts'
 import { createDriverTracking } from './admin/driver.ts'
+import { createPush, type ApnsTransport } from './push.ts'
 import { createDocuments } from './documents/index.ts'
 import { createDevRouter } from './admin/dev-routes.ts'
 import type { PlatformDeps } from './admin/deps.ts'
@@ -52,6 +53,8 @@ export type PlatformOptions = {
   rateLimitEnabled?: boolean
   /** Replace Better Auth as the session source (unit tests). */
   sessionSource?: SessionSource
+  /** Replace the HTTP/2 connection to Apple (unit tests). */
+  apnsTransport?: ApnsTransport
 }
 
 export async function createPlatform(options: PlatformOptions): Promise<Platform> {
@@ -63,7 +66,8 @@ export async function createPlatform(options: PlatformOptions): Promise<Platform
   await attachErrorLog(db).catch(() => undefined)
   const audit = createAuditLog(db, config.secret)
   const mailer = createMailer({ db, env, production, fetchImpl: options.fetchImpl, quiet: options.quiet })
-  const auth = createAuth({ db, env, config, mailer, audit, rateLimitEnabled: options.rateLimitEnabled })
+  const push = createPush(db, env, { transport: options.apnsTransport })
+  const auth = createAuth({ db, env, config, mailer, audit, push, rateLimitEnabled: options.rateLimitEnabled })
   const sessions = createSessionService(options.sessionSource ?? betterAuthSource(auth), env, audit)
   const settings = createSettingsService(db, resolvePickupRates())
   const adminToken = env.ADMIN_TOKEN?.trim() || undefined
@@ -85,6 +89,7 @@ export async function createPlatform(options: PlatformOptions): Promise<Platform
     customers,
     warranties: createWarranties(db, counters),
     driver: createDriverTracking(db),
+    push,
     photos: createPhotos(db),
     documents: createDocuments({ settings, customers, origin: config.baseURL }),
     audit,
