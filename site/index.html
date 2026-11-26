@@ -13,9 +13,13 @@
     <script>
       (function () {
         try {
-          var t = localStorage.getItem('nt-theme');
-          if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
-          var l = new URLSearchParams(location.search).get('lang') || localStorage.getItem('nt-lang');
+          var raw = localStorage.getItem('nt-consent');
+          var prefs = raw && JSON.parse(raw).preferences === true;
+          if (prefs) {
+            var t = localStorage.getItem('nt-theme');
+            if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t;
+          }
+          var l = new URLSearchParams(location.search).get('lang') || (prefs ? localStorage.getItem('nt-lang') : null);
           if (l === 'en' || l === 'ro') document.documentElement.lang = l;
         } catch (e) {}
       })();

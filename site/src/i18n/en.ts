@@ -627,9 +627,31 @@ const en: Dict = {
     made: 'Made in Iași.',
     privacy: 'Privacy',
     terms: 'Terms',
+    cookies: 'Cookie settings',
     getApp: 'iPhone app',
+    anpcSalAlt: 'ANPC — Alternative Dispute Resolution (SAL)',
   },
   legal: { updated: 'Last updated', contact: 'Contact details', operator: 'Operator', address: 'Address', phone: 'Phone', home: 'Back to the site' },
+  cookies: {
+    bannerLabel: 'Cookie and privacy preferences',
+    bannerTitle: 'Cookies and local storage',
+    bannerBody:
+      'We use strictly necessary cookies for sign-in and, with your consent, local storage for language, theme and your phone number in bookings. We do not use advertising or tracking cookies. Read our',
+    policyLink: 'privacy policy',
+    accept: 'Accept all',
+    reject: 'Essential only',
+    settings: 'Settings',
+    settingsTitle: 'Cookie and storage settings',
+    settingsLead: 'Choose what we may store in your browser. You can change your choice at any time from the footer or read our',
+    close: 'Close',
+    necessaryTitle: 'Strictly necessary',
+    necessaryBody: 'Session cookies that keep you signed in to your account, plus a local entry that remembers this privacy choice.',
+    alwaysOn: 'Always on',
+    preferencesTitle: 'Preferences',
+    preferencesBody: 'Local storage for your chosen language, light/dark theme and remembering your phone number in the booking form.',
+    noTracking: 'We do not use advertising, profiling or third-party analytics cookies.',
+    save: 'Save choice',
+  },
 }
 
 export default en

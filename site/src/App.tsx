@@ -9,6 +9,7 @@ import { setLenis } from './lib/scroll'
 import { useHeroSnap } from './lib/hero-snap'
 import { SectionRail } from './components/SectionRail'
 import { ActionBar } from './components/ActionBar'
+import { CookieConsent } from './components/CookieConsent'
 import { pageOf, usePath } from './lib/router'
 import { LegalPage } from './pages/LegalPage'
 import { Hero } from './sections/Hero'
@@ -82,13 +83,23 @@ function Page() {
   const lenis = useSmoothScroll()
   const page = pageOf(usePath())
   useHeroSnap(page === null ? lenis : null)
-  if (page === null) return <Home />
-  if (page === '/confidentialitate') return <LegalPage kind="privacy" />
-  if (page === '/termeni') return <LegalPage kind="terms" />
+  const content =
+    page === null ? (
+      <Home />
+    ) : page === '/confidentialitate' ? (
+      <LegalPage kind="privacy" />
+    ) : page === '/termeni' ? (
+      <LegalPage kind="terms" />
+    ) : (
+      <Suspense fallback={null}>
+        {page === '/cont' ? <AccountPage /> : page === '/admin' ? <OwnerPage /> : <DevPage />}
+      </Suspense>
+    )
   return (
-    <Suspense fallback={null}>
-      {page === '/cont' ? <AccountPage /> : page === '/admin' ? <OwnerPage /> : <DevPage />}
-    </Suspense>
+    <>
+      {content}
+      <CookieConsent />
+    </>
   )
 }
 
