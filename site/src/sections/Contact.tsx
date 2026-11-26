@@ -1,10 +1,13 @@
 import { IOS_APP_RELEASES } from '../data/app'
+import { OPERATOR } from '../data/legal'
 import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import { useI18n } from '../i18n'
 import { Section } from '../components/Section'
 import { Logo } from '../components/Logo'
+import { AnpcSalBadge } from '../components/AnpcSalBadge'
 import { OpenStatus } from '../components/OpenStatus'
 import { Phone, Pin } from '../components/Icons'
+import { openCookieSettings } from '../lib/consent'
 import { linkTo } from '../lib/router'
 
 const ShopMap = lazy(() => import('../components/ShopMap'))
@@ -75,8 +78,12 @@ export function Footer() {
   const { t } = useI18n()
   return (
     <footer className="relative z-10 border-t border-line bg-bg">
-      <div className="mx-auto flex max-w-[1360px] flex-col gap-6 px-4 py-10 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-10">
-        <Logo />
+      <div className="mx-auto flex max-w-[1360px] flex-col gap-6 px-4 py-10 sm:flex-row sm:items-start sm:justify-between sm:px-6 lg:px-10">
+        <div className="grid gap-3">
+          <Logo />
+          <p className="text-[13px] text-muted">{OPERATOR.legalName}</p>
+          <AnpcSalBadge className="w-fit" />
+        </div>
         <div className="grid gap-2 text-[14px] text-muted sm:justify-items-end">
           <nav aria-label={t.footer.privacy + ' / ' + t.footer.terms} className="flex flex-wrap gap-x-5 gap-y-2">
             <a href="/confidentialitate" onClick={linkTo('/confidentialitate')} className="underline decoration-gold underline-offset-4 hover:text-ink">
@@ -85,6 +92,9 @@ export function Footer() {
             <a href="/termeni" onClick={linkTo('/termeni')} className="underline decoration-gold underline-offset-4 hover:text-ink">
               {t.footer.terms}
             </a>
+            <button type="button" onClick={openCookieSettings} className="cursor-pointer underline decoration-gold underline-offset-4 hover:text-ink">
+              {t.footer.cookies}
+            </button>
             <a href={IOS_APP_RELEASES} target="_blank" rel="noreferrer" className="font-medium text-ink underline decoration-gold underline-offset-4 hover:text-gold">
               {t.footer.getApp}
             </a>

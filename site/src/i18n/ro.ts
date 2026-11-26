@@ -627,9 +627,31 @@ const ro: Dict = {
     made: 'Făcut în Iași.',
     privacy: 'Confidențialitate',
     terms: 'Termeni',
+    cookies: 'Setări cookie',
     getApp: 'Aplicația iPhone',
+    anpcSalAlt: 'ANPC — Soluționarea Alternativă a Litigiilor',
   },
   legal: { updated: 'Actualizat la', contact: 'Date de contact', operator: 'Operator', address: 'Adresă', phone: 'Telefon', home: 'Înapoi la site' },
+  cookies: {
+    bannerLabel: 'Preferințe cookie și confidențialitate',
+    bannerTitle: 'Cookie-uri și stocare locală',
+    bannerBody:
+      'Folosim cookie-uri strict necesare pentru autentificare și, cu acordul tău, stocare locală pentru limbă, temă și numărul de telefon la programări. Nu folosim cookie-uri de publicitate sau urmărire. Detalii în',
+    policyLink: 'politica de confidențialitate',
+    accept: 'Acceptă toate',
+    reject: 'Doar necesare',
+    settings: 'Setări',
+    settingsTitle: 'Setări cookie și stocare',
+    settingsLead: 'Alege ce date putem păstra în browser. Îți poți schimba opțiunea oricând din subsolul paginii sau din',
+    close: 'Închide',
+    necessaryTitle: 'Strict necesare',
+    necessaryBody: 'Cookie-uri de sesiune ca să rămâi autentificat în cont și o intrare locală care reține alegerea ta privind cookie-urile.',
+    alwaysOn: 'Mereu active',
+    preferencesTitle: 'Preferințe',
+    preferencesBody: 'Stocare locală pentru limba aleasă, tema (luminos/întunecat) și completarea automată a numărului de telefon la programări.',
+    noTracking: 'Nu folosim cookie-uri de publicitate, profilare sau analiză a traficului de la terți.',
+    save: 'Salvează alegerea',
+  },
 }
 
 export default ro

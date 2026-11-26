@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { useI18n } from '../i18n'
 import { LEGAL_UPDATED, OPERATOR, PRIVACY, TERMS } from '../data/legal'
 import { PageShell } from '../auth/ui'
+import { AnpcSalBadge } from '../components/AnpcSalBadge'
+import { openCookieSettings } from '../lib/consent'
 import { linkTo } from '../lib/router'
 
 /** /confidentialitate and /termeni: the privacy policy and the terms, in the visitor's language. */
@@ -89,15 +91,22 @@ export function LegalPage({ kind }: { kind: 'privacy' | 'terms' }) {
           </dl>
         </section>
 
-        <p className="mt-8 text-[15px]">
-          <a href={otherPath} onClick={linkTo(otherPath)} className="underline decoration-gold underline-offset-4">
-            {otherTitle}
-          </a>
-          {' · '}
-          <a href="/" onClick={linkTo('/')} className="underline decoration-gold underline-offset-4">
-            {t.legal.home}
-          </a>
-        </p>
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-5">
+          <p className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[15px]">
+            <a href={otherPath} onClick={linkTo(otherPath)} className="underline decoration-gold underline-offset-4">
+              {otherTitle}
+            </a>
+            <span aria-hidden="true">·</span>
+            <button type="button" onClick={openCookieSettings} className="cursor-pointer underline decoration-gold underline-offset-4">
+              {t.footer.cookies}
+            </button>
+            <span aria-hidden="true">·</span>
+            <a href="/" onClick={linkTo('/')} className="underline decoration-gold underline-offset-4">
+              {t.legal.home}
+            </a>
+          </p>
+          <AnpcSalBadge />
+        </div>
       </article>
     </PageShell>
   )

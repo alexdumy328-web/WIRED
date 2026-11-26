@@ -10,7 +10,7 @@ export const LEGAL_UPDATED = '2026-11-25'
 export const OPERATOR = {
   name: 'Norgelis Tech',
   /** Legal name of the company, if different (for example "Norgelis Tech SRL"). */
-  legalName: 'Norgelis Tech',
+  legalName: 'Dumitriu C. Alexandru Întreprindere Familială',
   cui: '',
   regCom: '',
   address: 'Bd. Alexandru cel Bun 49, bl. Y1, parter, Iași',
@@ -30,7 +30,7 @@ export const PRIVACY: Both = {
       {
         h: '1. Cine este operatorul',
         p: [
-          'Operatorul datelor este Norgelis Tech, atelier de reparații electronice din Iași (datele de contact sunt la finalul paginii). Prelucrăm datele conform Regulamentului (UE) 2016/679 (GDPR) și legislației române.',
+          'Operatorul datelor este Dumitriu C. Alexandru Întreprindere Familială (Norgelis Tech), atelier de reparații electronice din Iași (datele de contact sunt la finalul paginii). Prelucrăm datele conform Regulamentului (UE) 2016/679 (GDPR) și legislației române.',
         ],
       },
       {
@@ -96,7 +96,7 @@ export const PRIVACY: Both = {
       {
         h: '8. Cookie-uri și stocare locală',
         p: [
-          'Folosim două cookie-uri de sesiune, strict necesare, ca să rămâi autentificat (identificatorul sesiunii și o copie semnată de scurtă durată), și stocare locală pentru limba și tema aleasă. Nu folosim cookie-uri de publicitate sau de urmărire și nu avem analiză a traficului de la terți. Aplicația păstrează sesiunea în Keychain-ul iPhone-ului și, pe telefonul șoferului, codurile opririlor terminate azi.',
+          'Folosim două cookie-uri de sesiune, strict necesare, ca să rămâi autentificat (identificatorul sesiunii și o copie semnată de scurtă durată), plus o intrare locală (nt-consent) care reține alegerea ta privind cookie-urile. Numai cu acordul tău, folosim stocare locală pentru limba aleasă, tema (luminos/întunecat) și completarea automată a numărului de telefon în formularul de programare. Îți poți schimba sau retrage acordul oricând din „Setări cookie” în subsolul paginii. Nu folosim cookie-uri de publicitate sau de urmărire și nu avem analiză a traficului de la terți. Aplicația păstrează sesiunea în Keychain-ul iPhone-ului și, pe telefonul șoferului, codurile opririlor terminate azi.',
         ],
       },
       {
@@ -122,7 +122,7 @@ export const PRIVACY: Both = {
       {
         h: '1. Who is responsible',
         p: [
-          'The data controller is Norgelis Tech, an electronics repair workshop in Iași, Romania (contact details are at the end of this page). We process data under Regulation (EU) 2016/679 (GDPR) and Romanian law.',
+          'The data controller is Dumitriu C. Alexandru Întreprindere Familială (Norgelis Tech), an electronics repair workshop in Iași, Romania (contact details are at the end of this page). We process data under Regulation (EU) 2016/679 (GDPR) and Romanian law.',
         ],
       },
       {
@@ -188,7 +188,7 @@ export const PRIVACY: Both = {
       {
         h: '8. Cookies and local storage',
         p: [
-          'We use two strictly necessary session cookies to keep you signed in (the session identifier and a short-lived signed copy), and local storage for your language and theme. We use no advertising or tracking cookies and no third-party traffic analytics. The app keeps your session in the iPhone Keychain and, on the driver\'s phone, the codes of today\'s finished stops.',
+          'We use two strictly necessary session cookies to keep you signed in (the session identifier and a short-lived signed copy), plus a local storage entry (nt-consent) that remembers your cookie choice. Only with your consent, we use local storage for your chosen language, light/dark theme and remembering your phone number in the booking form. You can change or withdraw your consent at any time from "Cookie settings" in the footer. We use no advertising or tracking cookies and no third-party traffic analytics. The app keeps your session in the iPhone Keychain and, on the driver\'s phone, the codes of today\'s finished stops.',
         ],
       },
       {
@@ -216,7 +216,7 @@ export const TERMS: Both = {
     sections: [
       {
         h: '1. Cine suntem',
-        p: ['Norgelis Tech este un atelier de reparații electronice din Iași: laptopuri, PC-uri, plăci electronice, espressoare, electrocasnice mici, aparatură audio vintage și electrică auto, la atelier sau la tine.'],
+        p: ['Norgelis Tech (operat de Dumitriu C. Alexandru Întreprindere Familială) este un atelier de reparații electronice din Iași: laptopuri, PC-uri, plăci electronice, espressoare, electrocasnice mici, aparatură audio vintage și electrică auto, la atelier sau la tine.'],
       },
       {
         h: '2. Programările',
@@ -266,7 +266,7 @@ export const TERMS: Both = {
       },
       {
         h: '8. Reclamații',
-        p: ['Dacă ceva nu e în regulă, spune-ne și căutăm o soluție. Ca consumator poți apela și la Autoritatea Națională pentru Protecția Consumatorilor (ANPC), www.anpc.ro.'],
+        p: ['Dacă ceva nu e în regulă, spune-ne și căutăm o soluție. Ca consumator poți apela și la Autoritatea Națională pentru Protecția Consumatorilor (ANPC), www.anpc.ro, sau la platforma de Soluționare Alternativă a Litigiilor (SAL), reclamatiisal.anpc.ro.'],
       },
       {
         h: '9. Legea aplicabilă',
@@ -284,7 +284,7 @@ export const TERMS: Both = {
     sections: [
       {
         h: '1. Who we are',
-        p: ['Norgelis Tech is an electronics repair workshop in Iași: laptops, PCs, circuit boards, espresso machines, small appliances, vintage audio and car electrics, at the workshop or at your place.'],
+        p: ['Norgelis Tech (operated by Dumitriu C. Alexandru Întreprindere Familială) is an electronics repair workshop in Iași: laptops, PCs, circuit boards, espresso machines, small appliances, vintage audio and car electrics, at the workshop or at your place.'],
       },
       {
         h: '2. Bookings',
@@ -334,7 +334,7 @@ export const TERMS: Both = {
       },
       {
         h: '8. Complaints',
-        p: ['If something is wrong, tell us and we will look for a solution. As a consumer you can also contact the National Authority for Consumer Protection (ANPC), www.anpc.ro.'],
+        p: ['If something is wrong, tell us and we will look for a solution. As a consumer you can also contact the National Authority for Consumer Protection (ANPC), www.anpc.ro, or the Alternative Dispute Resolution platform (SAL), reclamatiisal.anpc.ro.'],
       },
       {
         h: '9. Governing law',

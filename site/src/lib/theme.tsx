@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { canStorePreferences, useConsent } from './consent'
 
 export type ThemePref = 'system' | 'light' | 'dark'
 type ThemeCtx = { pref: ThemePref; resolved: 'light' | 'dark'; setPref: (p: ThemePref) => void }
@@ -11,6 +12,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     const t = document.documentElement.dataset.theme
     return t === 'light' || t === 'dark' ? t : 'system'
   })
+  const { choice } = useConsent()
   const [systemDark, setSystemDark] = useState(() => mq().matches)
   useEffect(() => {
     const m = mq()
@@ -18,11 +20,21 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     m.addEventListener('change', on)
     return () => m.removeEventListener('change', on)
   }, [])
+  useEffect(() => {
+    if (!choice?.preferences) return
+    try {
+      if (pref === 'system') localStorage.removeItem('nt-theme')
+      else localStorage.setItem('nt-theme', pref)
+    } catch {
+      /* storage blocked */
+    }
+  }, [choice?.preferences, pref])
   const setPref = (p: ThemePref) => {
     setPrefState(p)
     const root = document.documentElement
     if (p === 'system') delete root.dataset.theme
     else root.dataset.theme = p
+    if (!canStorePreferences()) return
     try {
       if (p === 'system') localStorage.removeItem('nt-theme')
       else localStorage.setItem('nt-theme', p)

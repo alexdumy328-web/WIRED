@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Lang, Localized } from '../types'
+import { canStorePreferences, useConsent } from '../lib/consent'
 import type { Dict } from './dict'
 import ro from './ro'
 import en from './en'
@@ -16,14 +17,24 @@ function initialLang(): Lang {
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>(initialLang)
+  const { choice } = useConsent()
   const setLang = useCallback((l: Lang) => {
     setLangState(l)
+    if (!canStorePreferences()) return
     try {
       localStorage.setItem('nt-lang', l)
     } catch {
       /* storage blocked */
     }
   }, [])
+  useEffect(() => {
+    if (!choice?.preferences) return
+    try {
+      localStorage.setItem('nt-lang', lang)
+    } catch {
+      /* storage blocked */
+    }
+  }, [choice?.preferences, lang])
   useEffect(() => {
     document.documentElement.lang = lang
     const t = dicts[lang]

@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react'
 import { useI18n } from '../i18n'
 import { openBooking, useBooking } from '../lib/booking-store'
+import { useConsent } from '../lib/consent'
 import { SHOP } from '../sections/Contact'
 import { Calendar, Chat, Phone } from './Icons'
 
 /**
  * Phones and tablets: Call, WhatsApp and Book pinned to the bottom edge. It shows once the hero
  * buttons are off screen and hides again over Contact, which has the same buttons, and while the
- * booking popup is open.
+ * booking popup or cookie consent UI is open.
  */
 export function ActionBar() {
   const { t } = useI18n()
   const booking = useBooking().open
+  const { choice, dialogOpen } = useConsent()
+  const cookieVisible = choice === null || dialogOpen
   const [pastHero, setPastHero] = useState(false)
   const [atContact, setAtContact] = useState(false)
   useEffect(() => {
@@ -30,7 +33,7 @@ export function ActionBar() {
     }
     return () => ios.forEach((io) => io.disconnect())
   }, [])
-  const shown = pastHero && !atContact && !booking
+  const shown = pastHero && !atContact && !booking && !cookieVisible
   return (
     <div
       role="region"

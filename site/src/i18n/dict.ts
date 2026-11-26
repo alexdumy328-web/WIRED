@@ -436,6 +436,25 @@ export type Dict = {
     users: { search: string; email: string; name: string; role: string; verified: string; created: string; saved: string; self: string; error: string }
     limits: { name: string; window: string; max: string; allowed: string; blocked: string; tracked: string }
   }
-  footer: { rights: string; made: string; privacy: string; terms: string; getApp: string }
+  footer: { rights: string; made: string; privacy: string; terms: string; cookies: string; getApp: string; anpcSalAlt: string }
   legal: { updated: string; contact: string; operator: string; address: string; phone: string; home: string }
+  cookies: {
+    bannerLabel: string
+    bannerTitle: string
+    bannerBody: string
+    policyLink: string
+    accept: string
+    reject: string
+    settings: string
+    settingsTitle: string
+    settingsLead: string
+    close: string
+    necessaryTitle: string
+    necessaryBody: string
+    alwaysOn: string
+    preferencesTitle: string
+    preferencesBody: string
+    noTracking: string
+    save: string
+  }
 }

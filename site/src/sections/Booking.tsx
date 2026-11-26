@@ -5,6 +5,7 @@ import { catalog } from '../data/catalog'
 import { estimate, formatEta, formatLei, jobPrice } from '../lib/estimate'
 import { daysAhead, slotsFor } from '../lib/slots'
 import { closeBooking, useBooking } from '../lib/booking-store'
+import { canStorePreferences } from '../lib/consent'
 import { buildBookingIcs, downloadIcs } from '../lib/booking-helpers'
 import { navigate } from '../lib/router'
 import { SHOP } from './Contact'
@@ -72,10 +73,12 @@ function BookingModal() {
   const [location, setLocation] = useState('')
   const [contact, setContact] = useState(() => {
     let savedPhone = ''
-    try {
-      savedPhone = window.localStorage.getItem('nt_last_phone') ?? ''
-    } catch {
-      // Ignore storage errors (private browsing).
+    if (canStorePreferences()) {
+      try {
+        savedPhone = window.localStorage.getItem('nt_last_phone') ?? ''
+      } catch {
+        // Ignore storage errors (private browsing).
+      }
     }
     return { name: '', phone: savedPhone, email: '' }
   })
@@ -315,10 +318,12 @@ function BookingModal() {
       }
       if (!r.ok) throw new Error(String(r.status))
       const d = (await r.json()) as { code: string }
-      try {
-        window.localStorage.setItem('nt_last_phone', contact.phone.trim())
-      } catch {
-        // Ignore storage errors.
+      if (canStorePreferences()) {
+        try {
+          window.localStorage.setItem('nt_last_phone', contact.phone.trim())
+        } catch {
+          // Ignore storage errors.
+        }
       }
       const whereText =
         where === 'pickup' && pickup?.address
